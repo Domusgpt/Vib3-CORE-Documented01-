@@ -437,31 +437,30 @@ export class HolographicVisualizer {
             float hexacosichoronLattice(vec3 p, float gridSize) {
                 vec3 cell = fract(p * gridSize) - 0.5;
                 float phi = 1.618034;
-                float invPhi = 1.0 / phi;
+                float invPhi = 0.618034;
 
+                // Central icosahedral structure
+                float core = 1.0 - smoothstep(0.12, 0.18, length(cell));
+
+                // Icosahedral vertex rings
                 float vertices = 0.0;
-
-                // Golden ratio vertices
-                vertices = max(vertices, 1.0 - smoothstep(0.0, 0.05, length(cell - vec3(phi * 0.3, invPhi * 0.3, 0.0))));
-                vertices = max(vertices, 1.0 - smoothstep(0.0, 0.05, length(cell - vec3(invPhi * 0.3, 0.0, phi * 0.3))));
-                vertices = max(vertices, 1.0 - smoothstep(0.0, 0.05, length(cell - vec3(0.0, phi * 0.3, invPhi * 0.3))));
-
-                // Edge network
-                float edges = 0.0;
-                edges = max(edges, 1.0 - smoothstep(0.0, 0.018, abs(length(cell.xy) - phi * 0.2)));
-                edges = max(edges, 1.0 - smoothstep(0.0, 0.018, abs(length(cell.yz) - phi * 0.18)));
-
-                // Pentagonal pattern (icosahedral symmetry)
+                float angleStep = 6.283185 / 5.0;
                 for(int i = 0; i < 5; i++) {
-                    float angle = float(i) * 1.2566;
-                    vec2 pent = vec2(cos(angle), sin(angle)) * phi * 0.25;
-                    vertices = max(vertices, 1.0 - smoothstep(0.0, 0.04, length(cell.xy - pent)));
+                    float angle = float(i) * angleStep;
+                    vec2 vert = vec2(cos(angle), sin(angle)) * 0.22;
+                    vertices = max(vertices, 1.0 - smoothstep(0.0, 0.035, length(cell.xy - vert)));
                 }
 
-                // Holographic interference with golden ratio
-                float interference = sin(length(cell) * 12.0 * phi + u_time) * 0.12;
+                // Edge network at golden ratio radii
+                float edges = 0.0;
+                edges = max(edges, 1.0 - smoothstep(0.0, 0.012, abs(length(cell.xy) - 0.16)));
+                edges = max(edges, 1.0 - smoothstep(0.0, 0.012, abs(length(cell.yz) - 0.14)));
 
-                return max(vertices, edges * 0.75) + interference;
+                // Holographic shimmer with golden ratio phase
+                float shimmer = sin(length(cell) * 18.0 + u_time * phi) *
+                               cos(cell.x * 15.0 - u_time) * 0.15;
+
+                return max(max(core * 0.5, vertices), edges * 0.7) + shimmer;
             }
 
             float getDynamicGeometry(vec3 p, float gridSize, float geometryType) {

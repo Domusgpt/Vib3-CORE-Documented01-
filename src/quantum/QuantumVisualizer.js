@@ -488,79 +488,63 @@ float hexacosichoronLattice(vec3 p, float gridSize) {
 
     // Golden ratio φ = (1 + √5)/2 ≈ 1.618
     float phi = 1.618034;
-    float invPhi = 1.0 / phi;  // 1/φ ≈ 0.618
+    float invPhi = 0.618034;  // 1/φ ≈ 0.618
 
-    // The 600-cell has vertices based on 3 groups using golden ratio coordinates:
-    // Group 1: (±1, ±1, ±1) with even # of minus signs - creates 8 vertices
-    // Group 2: Permutations of (0, 0, ±φ, ±1/φ) - creates 96 vertices
-    // Group 3: Permutations of (±φ, ±1, 0, 0) - creates 16 vertices
+    // Central icosahedral structure (600-cell has H₄ icosahedral symmetry)
+    float core = 1.0 - smoothstep(0.12, 0.20, length(cell));
 
-    // Since we're in 3D space, we'll create a 3D projection of key vertex positions
+    // Vertices distributed using golden ratio proportions
     float vertices = 0.0;
 
-    // Core vertices at golden ratio positions
-    float v1 = length(cell - vec3(phi * 0.3, invPhi * 0.3, 0.0));
-    float v2 = length(cell - vec3(invPhi * 0.3, 0.0, phi * 0.3));
-    float v3 = length(cell - vec3(0.0, phi * 0.3, invPhi * 0.3));
-    float v4 = length(cell - vec3(-phi * 0.3, -invPhi * 0.3, 0.0));
-    float v5 = length(cell - vec3(-invPhi * 0.3, 0.0, -phi * 0.3));
-    float v6 = length(cell - vec3(0.0, -phi * 0.3, -invPhi * 0.3));
-
-    // Additional vertices for richer structure
-    float v7 = length(cell - vec3(phi * 0.25, 0.0, invPhi * 0.25));
-    float v8 = length(cell - vec3(0.0, invPhi * 0.25, phi * 0.25));
-    float v9 = length(cell - vec3(invPhi * 0.25, phi * 0.25, 0.0));
-
-    // Combine vertex distances with smoothstep
-    vertices = max(vertices, 1.0 - smoothstep(0.0, 0.05, min(min(v1, v2), v3)));
-    vertices = max(vertices, 1.0 - smoothstep(0.0, 0.05, min(min(v4, v5), v6)));
-    vertices = max(vertices, 1.0 - smoothstep(0.0, 0.045, min(min(v7, v8), v9)));
-
-    // Edge network connecting vertices
-    float edges = 0.0;
-
-    // Circular edges at golden ratio radii (600-cell has icosahedral symmetry)
-    float r1 = abs(length(cell.xy) - phi * 0.2);
-    float r2 = abs(length(cell.yz) - phi * 0.18);
-    float r3 = abs(length(cell.xz) - phi * 0.22);
-
-    edges = max(edges, 1.0 - smoothstep(0.0, 0.018, r1));
-    edges = max(edges, 1.0 - smoothstep(0.0, 0.018, r2));
-    edges = max(edges, 1.0 - smoothstep(0.0, 0.018, r3));
-
-    // Pentagonal/icosahedral edge patterns (600-cell cells are tetrahedra arranged icosahedrally)
-    float angleStep = 6.283185 / 5.0;  // Pentagon
+    // Icosahedral vertex ring at golden ratio angle
+    float angleStep = 6.283185 / 5.0;  // Pentagon (icosahedral)
     for(int i = 0; i < 5; i++) {
         float angle = float(i) * angleStep;
-        vec2 pentVert = vec2(cos(angle), sin(angle)) * phi * 0.25;
-        float pentDist = length(cell.xy - pentVert);
-        vertices = max(vertices, 1.0 - smoothstep(0.0, 0.04, pentDist));
+        vec2 icoVert = vec2(cos(angle), sin(angle)) * 0.25;
+        float dist = length(cell.xy - icoVert);
+        vertices = max(vertices, 1.0 - smoothstep(0.0, 0.04, dist));
+
+        // Add vertical vertices too
+        float distVert = length(cell.yz - icoVert);
+        vertices = max(vertices, 1.0 - smoothstep(0.0, 0.04, distVert));
     }
 
-    // Tetrahedral cell structure - 600-cell is made of 600 tetrahedra
-    vec3 tetCenter1 = vec3(0.2, 0.2, 0.2);
-    vec3 tetCenter2 = vec3(-0.2, -0.2, 0.2);
-    vec3 tetCenter3 = vec3(-0.2, 0.2, -0.2);
-    vec3 tetCenter4 = vec3(0.2, -0.2, -0.2);
+    // Golden ratio spiral vertices (120-vertex distribution hint)
+    float spiral = atan(cell.y, cell.x);
+    for(int i = 0; i < 3; i++) {
+        float t = float(i) / 3.0;
+        float r = 0.15 + t * 0.15;
+        vec2 spiralPos = vec2(cos(spiral * phi + t), sin(spiral * phi + t)) * r;
+        vertices = max(vertices, 1.0 - smoothstep(0.0, 0.03, length(cell.xy - spiralPos)));
+    }
 
-    float tet1 = length(cell - tetCenter1);
-    float tet2 = length(cell - tetCenter2);
-    float tet3 = length(cell - tetCenter3);
-    float tet4 = length(cell - tetCenter4);
+    // Edge network at golden ratio radii
+    float edges = 0.0;
+    edges = max(edges, 1.0 - smoothstep(0.0, 0.015, abs(length(cell.xy) - 0.18)));
+    edges = max(edges, 1.0 - smoothstep(0.0, 0.015, abs(length(cell.yz) - 0.15)));
+    edges = max(edges, 1.0 - smoothstep(0.0, 0.015, abs(length(cell.xz) - 0.21)));
 
-    float tetCells = 1.0 - smoothstep(0.15, 0.2, min(min(tet1, tet2), min(tet3, tet4)));
+    // Tetrahedral cells (600-cell = 600 tetrahedra)
+    vec3 tet1 = vec3(0.15, 0.15, 0.15);
+    vec3 tet2 = vec3(-0.15, -0.15, 0.15);
+    vec3 tet3 = vec3(-0.15, 0.15, -0.15);
+    vec3 tet4 = vec3(0.15, -0.15, -0.15);
 
-    // Holographic interference using golden ratio phase
+    float tetField = min(min(length(cell - tet1), length(cell - tet2)),
+                         min(length(cell - tet3), length(cell - tet4)));
+    float tetCells = 1.0 - smoothstep(0.08, 0.14, tetField);
+
+    // Holographic interference with golden ratio phase
     float time = u_time * 0.001 * u_speed;
-    float interference = sin(length(cell) * 12.0 * phi + time) *
-                        cos(cell.x * 8.0 * invPhi - time * 0.8) *
-                        sin(cell.y * 10.0 * phi - time * 0.6) * 0.12;
+    float interference = sin(length(cell) * 15.0 + time * phi) *
+                        cos(cell.x * 20.0 - time) *
+                        sin(cell.y * 18.0 + time * invPhi) * 0.15;
 
-    // Volumetric density falloff (brighter at center)
-    float glow = exp(-length(cell) * 2.2) * 0.18;
+    // Volumetric glow
+    float glow = exp(-length(cell) * 3.0) * 0.2;
 
-    // Combine all elements
-    return max(max(vertices, edges * 0.75), tetCells * 0.4) + interference + glow;
+    // Combine: core structure + vertices + edges + cells + effects
+    return max(max(max(core * 0.6, vertices), edges * 0.8), tetCells * 0.5) + interference + glow;
 }
 
 // Enhanced geometry function with holographic effects (27 GEOMETRIES - NOW WITH HEXACOSICHORON!)
