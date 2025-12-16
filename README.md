@@ -23,6 +23,16 @@ VIB3+ Engine is a WebGL-based visualization tool that combines 5-layer holograph
     ```
 3.  Open `index.html` in your web browser.
 
+### Development commands (Phase 1 baseline)
+
+- **Run dev server / smoke:** `npm run dev` (or `npm start`) and load `index.html`; confirm a single WebGL2 context renders a background plus placeholder geometry.
+- **Lint:** `npm run lint` (log if script missing during planning).
+- **Tests:** `npm test` (or `npm run test`) to identify existing coverage and gaps; failures are noted for follow-up.
+- **WebSocket mock fixture:** `npx ws -p 12345` to feed dummy telemetry into the InputBridge during manual checks.
+- **Visual artifacts:** save baseline screenshots to `artifacts/baselines/p1/` for regression tracking.
+- **Phase 1 harness:** in the browser console call `vibPhase1Harness.runWebGLSmokeProbe()` for GL capability, `vibPhase1Harness.runAudioHarness()` for the 7-band FFT sample, and `vibPhase1Harness.startTelemetryReplay(console.log)` to stream fixture payloads.
+- **Phase 2 unified canvas demo:** load the page and check `window.vibUnifiedDemo.diagnostics()` for layer/FBO stats; use `window.vibUnifiedDemo.reinitialize()` to rebuild the five-layer stack and `window.vibUnifiedDemo.stop()` / `.start()` to pause or resume the virtual-layer compositing loop.
+
 ## Usage
 
 The user interface is divided into several panels:

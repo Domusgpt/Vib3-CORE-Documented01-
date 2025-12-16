@@ -4,6 +4,20 @@
 
 This guide covers all features and enhancements added to the VIB3+ Engine, organized by module with step-by-step testing instructions.
 
+## 🔎 Phase 1 Baseline Commands & Smoke Expectations
+
+- **Dev server / visual smoke:** `npm run dev` (or `npm start`) then open `index.html`; confirm single WebGL2 context initializes and canvas renders a background + placeholder geometry. Capture a baseline screenshot to `artifacts/baselines/p1/`.
+- **Lint:** `npm run lint` (note if script missing) — record output and any blockers.
+- **Tests:** `npm test` (or `npm run test`) — record availability and failures; no enforcement during planning.
+- **WebSocket mock:** `npx ws -p 12345` to exercise InputBridge fixtures.
+- **Audio FFT harness:** open DevTools console and run `await vibPhase1Harness.runAudioHarness()` to validate 7-band output shape for future mapping tests.
+- **Headless/CI flags:** note `--disable-gpu-sandbox` fallback for WebGL in CI and `chrome://flags/#enable-webgl2-compute-context` for local traces.
+- **GL probe:** run `vibPhase1Harness.runWebGLSmokeProbe()` to log renderer name, supported extensions, and framebuffer readiness.
+- **Telemetry replay:** call `const stop = vibPhase1Harness.startTelemetryReplay(console.log)` to stream canned payloads; run `stop()` to clean up.
+- **Unified canvas demo:** once the page loads, inspect `vibUnifiedDemo.diagnostics()` to confirm WebGL2 presence, layer sizes, and blend modes; use `vibUnifiedDemo.stop()` / `vibUnifiedDemo.start()` to validate pause/resume of the five-layer compositor and `vibUnifiedDemo.reinitialize()` to rebuild framebuffers after resize.
+
+Document outputs and gaps in this guide when commands are unavailable or require flags so later phases can close them.
+
 ---
 
 ## 📦 Module 1: Geometric SVG Icon System
