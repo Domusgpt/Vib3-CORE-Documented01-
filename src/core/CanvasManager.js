@@ -51,6 +51,9 @@ export class CanvasManager {
     let destroyedCount = 0;
     
     allCanvases.forEach(canvas => {
+      if (canvas.dataset && canvas.dataset.preserve === 'true') {
+        return;
+      }
       // Get any existing WebGL context
       const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
       if (gl) {
@@ -89,8 +92,12 @@ export class CanvasManager {
     
     // STEP 1: DESTROY all existing canvases completely
     const allCanvases = document.querySelectorAll('canvas');
-    allCanvases.forEach(canvas => canvas.remove());
-    console.log(`💥 Destroyed ${allCanvases.length} old canvases`);
+    allCanvases.forEach(canvas => {
+      if (canvas.dataset && canvas.dataset.preserve === 'true') return;
+      canvas.remove();
+    });
+    const destroyedCount = Array.from(allCanvases).filter(canvas => !(canvas.dataset && canvas.dataset.preserve === 'true')).length;
+    console.log(`💥 Destroyed ${destroyedCount} old canvases (preserved any marked canvases)`);
     
     // STEP 2: Clear all containers
     const containers = ['vib34dLayers', 'quantumLayers', 'holographicLayers', 'polychoraLayers'];
