@@ -1,10 +1,9 @@
 /**
- * Manages API keys and service configurations for VIB34D.
+ * API Configuration for VIB34D
+ * Manages API keys and service configurations
  */
+
 export class ApiConfig {
-    /**
-     * Initializes the API configuration.
-     */
     constructor() {
         this.keys = {
             gemini: null
@@ -18,7 +17,7 @@ export class ApiConfig {
     }
     
     /**
-     * Loads API keys from localStorage.
+     * Load API keys from localStorage
      */
     loadFromStorage() {
         const storedKeys = localStorage.getItem('vib34d-api-keys');
@@ -34,7 +33,7 @@ export class ApiConfig {
     }
     
     /**
-     * Saves API keys to localStorage.
+     * Save API keys to localStorage
      */
     saveToStorage() {
         localStorage.setItem('vib34d-api-keys', JSON.stringify(this.keys));
@@ -42,8 +41,7 @@ export class ApiConfig {
     }
     
     /**
-     * Sets the Gemini API key.
-     * @param {string} apiKey - The Gemini API key.
+     * Set Gemini API key
      */
     setGeminiKey(apiKey) {
         this.keys.gemini = apiKey;
@@ -51,23 +49,21 @@ export class ApiConfig {
     }
     
     /**
-     * Gets the Gemini API key.
-     * @returns {string} The Gemini API key.
+     * Get Gemini API key
      */
     getGeminiKey() {
         return this.keys.gemini;
     }
     
     /**
-     * Checks if Gemini is configured.
-     * @returns {boolean} True if Gemini is configured, false otherwise.
+     * Check if Gemini is configured
      */
     isGeminiConfigured() {
         return !!this.keys.gemini;
     }
     
     /**
-     * Clears all API keys.
+     * Clear all API keys
      */
     clearKeys() {
         this.keys = {
@@ -78,8 +74,7 @@ export class ApiConfig {
     }
     
     /**
-     * Gets the Gemini API endpoint URL with the API key.
-     * @returns {string} The Gemini API endpoint URL.
+     * Get API endpoint URL with key
      */
     getGeminiEndpoint() {
         if (!this.keys.gemini) {

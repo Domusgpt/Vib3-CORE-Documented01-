@@ -36,7 +36,7 @@ let currentState = {
 };
 
 /**
- * Initializes the state manager.
+ * Initialize state manager
  */
 function initializeStateManager() {
     console.log('💾 Initializing State Manager...');
@@ -73,8 +73,7 @@ function initializeStateManager() {
 }
 
 /**
- * Captures the current application state.
- * @returns {object} The current application state.
+ * Capture current application state
  */
 function captureCurrentState() {
     const state = {
@@ -109,8 +108,7 @@ function captureCurrentState() {
 }
 
 /**
- * Captures all parameter values.
- * @returns {object} An object containing all parameter values.
+ * Capture all parameter values
  */
 function captureParameters() {
     const params = {};
@@ -140,8 +138,7 @@ function captureParameters() {
 }
 
 /**
- * Captures the reactivity state.
- * @returns {object} An object containing the reactivity state.
+ * Capture reactivity state
  */
 function captureReactivityState() {
     const reactivity = {
@@ -168,8 +165,7 @@ function captureReactivityState() {
 }
 
 /**
- * Gets the current active tab.
- * @returns {string} The current active tab.
+ * Get current active tab
  */
 function getCurrentTab() {
     const activeTab = document.querySelector('.bezel-tab.active');
@@ -177,8 +173,7 @@ function getCurrentTab() {
 }
 
 /**
- * Checks if the bezel is collapsed.
- * @returns {boolean} True if the bezel is collapsed, false otherwise.
+ * Check if bezel is collapsed
  */
 function isBezelCollapsed() {
     const panel = document.getElementById('controlPanel');
@@ -186,8 +181,7 @@ function isBezelCollapsed() {
 }
 
 /**
- * Checks if the performance stats are visible.
- * @returns {boolean} True if the performance stats are visible, false otherwise.
+ * Check if performance stats are visible
  */
 function isPerformanceStatsVisible() {
     const stats = document.getElementById('performance-stats');
@@ -195,9 +189,7 @@ function isPerformanceStatsVisible() {
 }
 
 /**
- * Restores the application state.
- * @param {object} state - The state to restore.
- * @returns {boolean} True if the state was restored successfully, false otherwise.
+ * Restore state to application
  */
 function restoreState(state) {
     if (!state || !state.version) {
@@ -271,8 +263,7 @@ function restoreState(state) {
 }
 
 /**
- * Restores the reactivity state.
- * @param {object} reactivity - The reactivity state to restore.
+ * Restore reactivity state
  */
 function restoreReactivityState(reactivity) {
     if (!reactivity) return;
@@ -300,8 +291,7 @@ function restoreReactivityState(reactivity) {
 }
 
 /**
- * Saves the state to the history for undo/redo functionality.
- * @param {object} state - The state to save.
+ * Save state to history (for undo/redo)
  */
 function saveToHistory(state = null) {
     const stateToSave = state || captureCurrentState();
@@ -325,8 +315,7 @@ function saveToHistory(state = null) {
 }
 
 /**
- * Undoes to the previous state.
- * @returns {boolean} True if the undo was successful, false otherwise.
+ * Undo to previous state
  */
 function undo() {
     if (currentStateIndex <= 0) {
@@ -344,8 +333,7 @@ function undo() {
 }
 
 /**
- * Redoes to the next state.
- * @returns {boolean} True if the redo was successful, false otherwise.
+ * Redo to next state
  */
 function redo() {
     if (currentStateIndex >= stateHistory.length - 1) {
@@ -363,9 +351,7 @@ function redo() {
 }
 
 /**
- * Saves the state to localStorage.
- * @param {string} key - The key to use for saving the state.
- * @returns {boolean} True if the state was saved successfully, false otherwise.
+ * Save state to localStorage
  */
 function saveStateToStorage(key = 'vib3-plus-app-state') {
     const state = captureCurrentState();
@@ -381,9 +367,7 @@ function saveStateToStorage(key = 'vib3-plus-app-state') {
 }
 
 /**
- * Loads the state from localStorage.
- * @param {string} key - The key to use for loading the state.
- * @returns {object} The loaded state, or null if no state was found.
+ * Load state from localStorage
  */
 function loadStateFromStorage(key = 'vib3-plus-app-state') {
     try {
@@ -400,9 +384,7 @@ function loadStateFromStorage(key = 'vib3-plus-app-state') {
 }
 
 /**
- * Encodes the state to a URL-safe string.
- * @param {object} state - The state to encode.
- * @returns {string} The encoded state, or null if an error occurred.
+ * Encode state to URL parameters
  */
 function encodeStateToURL(state = null) {
     const stateToEncode = state || captureCurrentState();
@@ -428,8 +410,7 @@ function encodeStateToURL(state = null) {
 }
 
 /**
- * Loads the state from the URL.
- * @returns {object} The loaded state, or null if no state was found in the URL.
+ * Decode state from URL parameters
  */
 function loadStateFromURL() {
     const params = new URLSearchParams(window.location.search);
@@ -463,8 +444,7 @@ function loadStateFromURL() {
 }
 
 /**
- * Generates a shareable link containing the current state.
- * @returns {string} The shareable link, or null if an error occurred.
+ * Generate shareable link
  */
 function generateShareLink() {
     const encoded = encodeStateToURL();
@@ -478,8 +458,7 @@ function generateShareLink() {
 }
 
 /**
- * Copies the shareable link to the clipboard.
- * @returns {Promise<boolean>} A promise that resolves to true if the link was copied successfully, and false otherwise.
+ * Copy share link to clipboard
  */
 async function copyShareLinkToClipboard() {
     const shareURL = generateShareLink();
@@ -501,7 +480,7 @@ async function copyShareLinkToClipboard() {
 }
 
 /**
- * Sets up auto-save functionality.
+ * Setup auto-save
  */
 function setupAutoSave() {
     // Save on parameter changes
@@ -527,7 +506,7 @@ function setupAutoSave() {
 }
 
 /**
- * Schedules an auto-save with debouncing.
+ * Schedule auto-save with debouncing
  */
 function scheduleAutoSave() {
     if (!autoSaveEnabled) return;
@@ -540,7 +519,7 @@ function scheduleAutoSave() {
 }
 
 /**
- * Sets up keyboard shortcuts for state management.
+ * Setup keyboard shortcuts for state management
  */
 function setupStateShortcuts() {
     document.addEventListener('keydown', (e) => {
@@ -570,7 +549,7 @@ function setupStateShortcuts() {
 }
 
 /**
- * Sets up state change listeners.
+ * Setup state change listeners
  */
 function setupStateListeners() {
     // Capture initial state after everything loads
@@ -580,10 +559,7 @@ function setupStateListeners() {
 }
 
 /**
- * Shows a notification.
- * @param {string} title - The title of the notification.
- * @param {string} message - The message of the notification.
- * @param {string} type - The type of the notification.
+ * Show notification
  */
 function showNotification(title, message, type = 'info') {
     // Reuse notification system if available
