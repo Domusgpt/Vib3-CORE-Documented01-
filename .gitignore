@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+npm-debug.log*
+yarn-error.log*
+artifacts/*.tmp
+artifacts/*.png
+artifacts/*.jpg
+artifacts/*.jpeg
+artifacts/*.gif
+artifacts/*.webp
+artifacts/*.svg
+playwright-report/
+test-results/
+blob-report/
+.cache/
