@@ -84,6 +84,7 @@
   },
   "scripts": {
     "dev:web": "vite --open",
+    "dev:static": "python -m http.server 8000",
     "build:web": "vite build",
     "lint": "eslint \"src/**/*.{js,ts}\"",
     "test": "vitest run",
