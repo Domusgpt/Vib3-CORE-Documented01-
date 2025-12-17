@@ -84,9 +84,14 @@
   },
   "scripts": {
     "dev:web": "vite --open",
+    "dev:static": "python -m http.server 8000",
     "build:web": "vite build",
     "lint": "eslint \"src/**/*.{js,ts}\"",
     "test": "vitest run",
+    "test:e2e": "node tools/ensure-playwright.js && playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:all": "npm run test && npm run test:e2e",
+    "setup:playwright": "playwright install --with-deps chromium",
     "bench": "vitest bench",
     "analyze:bundle": "vite build --mode analyze",
     "check:bundle": "pnpm exec vite build --outDir dist-ci --emptyOutDir && node tools/ci/bundleSizeCheck.mjs dist-ci --cleanup",
@@ -105,16 +110,18 @@
     "ajv": "^8.17.1"
   },
   "devDependencies": {
-    "@types/node": "^20.14.9",
-    "@vitest/coverage-v8": "^1.6.1",
+    "@playwright/test": "^1.57.0",
     "@storybook/addon-essentials": "^8.1.6",
     "@storybook/addon-interactions": "^8.1.6",
     "@storybook/html-vite": "^8.1.6",
+    "@types/node": "^20.14.9",
+    "@vitest/coverage-v8": "^1.6.1",
     "eslint": "^9.6.0",
+    "playwright": "^1.57.0",
     "storybook": "^8.1.6",
+    "tsx": "^4.15.7",
     "typescript": "^5.5.3",
     "vite": "^5.3.3",
-    "vitest": "^1.6.0",
-    "tsx": "^4.15.7"
+    "vitest": "^1.6.0"
   }
 }
