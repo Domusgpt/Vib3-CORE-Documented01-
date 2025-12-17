@@ -4,6 +4,27 @@
 
 This guide covers all features and enhancements added to the VIB3+ Engine, organized by module with step-by-step testing instructions.
 
+## 🔎 Phase 1 Baseline Commands & Smoke Expectations
+
+- **Dev server / visual smoke:** `npm run dev` (or `npm start`) then open `index.html`; confirm single WebGL2 context initializes and canvas renders a background + placeholder geometry. Capture a baseline screenshot to `artifacts/baselines/p1/`.
+- **Static harness for screenshots/browser runs:** `npm run dev:static` launches `python -m http.server 8000` from repo root; forward port `8000` when using Playwright/browser tooling so the unified canvas page resolves instead of returning 404.
+- **Lint:** `npm run lint` (note if script missing) — record output and any blockers.
+- **Tests:** `npm test` (or `npm run test`) — record availability and failures; no enforcement during planning.
+- **WebSocket mock:** `npx ws -p 12345` to exercise InputBridge fixtures.
+- **Audio FFT harness:** open DevTools console and run `await vibPhase1Harness.runAudioHarness()` to validate 7-band output shape for future mapping tests.
+- **Headless/CI flags:** note `--disable-gpu-sandbox` fallback for WebGL in CI and `chrome://flags/#enable-webgl2-compute-context` for local traces.
+- **GL probe:** run `vibPhase1Harness.runWebGLSmokeProbe()` to log renderer name, supported extensions, and framebuffer readiness.
+- **Telemetry replay:** call `const stop = vibPhase1Harness.startTelemetryReplay(console.log)` to stream canned payloads; run `stop()` to clean up.
+- **Unified canvas demo:** once the page loads, inspect `vibUnifiedDemo.diagnostics()` to confirm WebGL2 presence, layer sizes, and blend modes; use `vibUnifiedDemo.stop()` / `vibUnifiedDemo.start()` to validate pause/resume of the five-layer compositor and `vibUnifiedDemo.reinitialize()` to rebuild framebuffers after resize.
+- **Reactive virtual layers:** call `vibUnifiedDemo.inputs.enableMic()` (prompts mic, oscillator fallback otherwise) and verify the five virtual layers brighten and tighten with louder input; simulate telemetry-only mode by running `vibUnifiedDemo.pushTelemetry({ player_health: 0.3, combo_multiplier: 3.5 })` then observe shadow depth and accent sparkle intensity adjust without audio.
+- **Content wireframe smoke:** with the unified demo running, confirm the `content` layer shows a rotating wireframe cube (WebGL2 program) whose color and rotation speed respond to mid/high bands; validate that WebGL errors stay empty in DevTools and the geometry remains visible after resizing the browser.
+- **Unified debug panel:** use the floating "🧪 Unified Canvas Debug" overlay (bottom-right) to start/stop, request mic access, adjust health/combo/zone sliders, and watch live FPS/energy; confirm slider inputs reach `vibUnifiedDemo.pushTelemetry` by observing immediate layer alpha shifts.
+- **Wireframe geometry controls:** switch geometry between cube/tesseract via the overlay dropdown and move the line-width slider; verify the content layer flips to a 4D-projected wireframe in "combat" mode and that lowering health inflates the edge stroke without breaking depth testing.
+- **Band normalization & smoothing tests:** run `npm test` to exercise `normalizeBandsFromFFT`, breakpoint ordering, and the reactive band smoothing/energy calculations; CI should record pass/fail output for traceability.
+- **Tesseract projection unit tests:** `npm test` now includes coverage for 4D projection helpers ensuring the line buffer count matches the expected 32 edges and projections remain finite.
+
+Document outputs and gaps in this guide when commands are unavailable or require flags so later phases can close them.
+
 ---
 
 ## 📦 Module 1: Geometric SVG Icon System

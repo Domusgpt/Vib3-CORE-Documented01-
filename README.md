@@ -23,6 +23,21 @@ VIB3+ Engine is a WebGL-based visualization tool that combines 5-layer holograph
     ```
 3.  Open `index.html` in your web browser.
 
+### Development commands (Phase 1 baseline)
+
+- **Run dev server / smoke:** `npm run dev` (or `npm start`) and load `index.html`; confirm a single WebGL2 context renders a background plus placeholder geometry.
+- **Static harness server (for screenshots/browser tool):** `npm run dev:static` starts a lightweight `python -m http.server 8000` from repo root so remote/browser tooling can reach the unified canvas demo without 404s; pair with port-forward `8000` when capturing screenshots.
+- **Lint:** `npm run lint` (log if script missing during planning).
+- **Tests:** `npm test` (or `npm run test`) to identify existing coverage and gaps; failures are noted for follow-up.
+- **WebSocket mock fixture:** `npx ws -p 12345` to feed dummy telemetry into the InputBridge during manual checks.
+- **Visual artifacts:** save baseline screenshots to `artifacts/baselines/p1/` for regression tracking.
+- **Phase 1 harness:** in the browser console call `vibPhase1Harness.runWebGLSmokeProbe()` for GL capability, `vibPhase1Harness.runAudioHarness()` for the 7-band FFT sample, and `vibPhase1Harness.startTelemetryReplay(console.log)` to stream fixture payloads.
+- **Phase 2 unified canvas demo:** load the page and check `window.vibUnifiedDemo.diagnostics()` for layer/FBO stats; use `window.vibUnifiedDemo.reinitialize()` to rebuild the five-layer stack and `window.vibUnifiedDemo.stop()` / `.start()` to pause or resume the virtual-layer compositing loop. The content layer now renders a live WebGL2 wireframe cube driven by audio band energy instead of the placeholder scissor blocks.
+- **Phase 2 reactive layers:** the unified compositor now reacts to live audio (mic if permitted, oscillator fallback) and telemetry; call `vibUnifiedDemo.inputs.enableMic()` from the console to request microphone access and `vibUnifiedDemo.pushTelemetry({ player_health: 0.42, combo_multiplier: 3 })` to modulate the shadow/accents without music.
+- **Unified debug panel:** open the floating "🧪 Unified Canvas Debug" widget (bottom-right) to start/stop the compositor, request mic input, push telemetry with sliders, and monitor energy/FPS/dimensions without leaving the page or console.
+- **Wireframe geometry controls:** from the debug panel, switch between cube/tesseract wireframes and adjust line width; telemetry zone "combat" auto-selects tesseract while low health thickens the edges for clearer visual feedback.
+- **Band normalization tests:** run `npm test` to validate psychoacoustic band aggregation via `normalizeBandsFromFFT`; this locks the 7-band mapping for future audio-reactive work.
+
 ## Usage
 
 The user interface is divided into several panels:
