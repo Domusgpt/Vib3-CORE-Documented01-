@@ -91,10 +91,25 @@ window.updateParameter = function(param, value) {
         }
         
         console.log(`📊 ${activeSystem.toUpperCase()}: ${param} = ${value}`);
-        
+
+        if (window.telemetry) {
+            window.telemetry.emit('slider-change', {
+                context: {
+                    system: activeSystem,
+                    geometry: window.currentGeometry,
+                    variation: window.currentVariation,
+                    controls: { [param]: parseFloat(value) }
+                }
+            });
+        }
+
     } catch (error) {
         console.error(`❌ Parameter update error in ${window.currentSystem || 'unknown'} for ${param}:`, error);
         // Don't break the UI, just log the error
+        window.telemetry?.emit('error', {
+            context: { system: window.currentSystem, controls: { [param]: value } },
+            error
+        });
     }
 };
 
@@ -104,6 +119,9 @@ window.updateParameter = function(param, value) {
 window.randomizeAll = function() {
     // Randomize ONLY parameters (NO hue, NO geometry)
     randomizeParameters();
+    window.telemetry?.emit('randomize-parameters', {
+        context: { system: window.currentSystem, source: 'ui' }
+    });
 };
 
 /**
@@ -113,6 +131,9 @@ window.randomizeEverything = function() {
     // Full randomization: parameters + geometry + hue
     randomizeParameters();
     setTimeout(() => randomizeGeometryAndHue(), 10);
+    window.telemetry?.emit('randomize-everything', {
+        context: { system: window.currentSystem, source: 'ui' }
+    });
 };
 
 /**
@@ -192,6 +213,10 @@ window.resetAll = function() {
         }
     });
     console.log('🔄 Reset all parameters');
+
+    window.telemetry?.emit('reset-all', {
+        context: { system: window.currentSystem, source: 'ui' }
+    });
 };
 
 /**

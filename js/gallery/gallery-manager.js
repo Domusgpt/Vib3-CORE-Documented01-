@@ -100,10 +100,19 @@ window.saveToGallery = async function() {
         const result = await unifiedSaveManager.save({ target: 'gallery' });
         
         console.log('🔵 Save result:', result);
-        
+
         if (result && result.success) {
             console.log('✅ Saved to gallery:', result.id);
-            
+
+            window.telemetry?.emit('gallery-save', {
+                context: {
+                    system: window.currentSystem,
+                    variation: result.id,
+                    controls: window.userParameterState,
+                    source: 'ui'
+                }
+            });
+
             // Show success message
             showSaveConfirmation('Variation saved to gallery!', result.id);
             
@@ -137,6 +146,10 @@ window.saveToGallery = async function() {
     } catch (error) {
         console.error('❌ Failed to save to gallery:', error);
         showSaveError(error.message || 'Gallery save failed');
+        window.telemetry?.emit('error', {
+            context: { system: window.currentSystem, source: 'gallery-save' },
+            error
+        });
     } finally {
         // CRITICAL FIX: Always restore functions after async operations
         setTimeout(restoreCriticalFunctions, 100);
@@ -148,11 +161,21 @@ window.saveToGallery = async function() {
  */
 window.createTradingCard = async function(format = 'classic') {
     console.log(`🎴 Creating ${format} trading card for ${window.currentSystem} system...`);
-    
+
     // CRITICAL FIX: Preserve functions before async operations
     preserveCriticalFunctions();
-    
+
     try {
+        window.telemetry?.emit('export-start', {
+            context: {
+                system: window.currentSystem,
+                geometry: getActiveGeometryIndex(),
+                source: 'ui',
+                route: 'trading-card'
+            },
+            meta: { format }
+        });
+
         // Dynamic import of TradingCardManager
         const { TradingCardManager } = await import('../../src/export/TradingCardManager.js');
         
@@ -184,10 +207,21 @@ window.createTradingCard = async function(format = 'classic') {
             format,
             parameters
         );
-        
+
         if (result.success) {
             console.log(`✅ ${result.system} trading card created: ${result.filename}`);
-            
+
+            window.telemetry?.emit('export-finish', {
+                context: {
+                    system: window.currentSystem,
+                    geometry: parameters.geometry,
+                    source: 'ui',
+                    route: 'trading-card'
+                },
+                metrics: { exportDurationMs: result.durationMs },
+                meta: { format, filename: result.filename }
+            });
+
             // Show success notification
             const notification = document.createElement('div');
             notification.style.cssText = `
@@ -216,7 +250,12 @@ window.createTradingCard = async function(format = 'classic') {
         }
     } catch (error) {
         console.error('❌ Failed to create trading card:', error);
-        
+
+        window.telemetry?.emit('error', {
+            context: { system: window.currentSystem, route: 'trading-card' },
+            error
+        });
+
         // Show error notification
         const notification = document.createElement('div');
         notification.style.cssText = `
