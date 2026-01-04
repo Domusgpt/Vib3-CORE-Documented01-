@@ -92,7 +92,13 @@
     "check:bundle": "pnpm exec vite build --outDir dist-ci --emptyOutDir && node tools/ci/bundleSizeCheck.mjs dist-ci --cleanup",
     "codegen:localization": "tsx tools/codegen/localization-quaternions.ts",
     "storybook": "storybook dev -p 6006",
-    "build:storybook": "storybook build"
+    "build:storybook": "storybook build",
+    "telemetry:emit": "node tools/telemetry/cli.js emit",
+    "telemetry:tail": "node tools/telemetry/cli.js tail",
+    "telemetry:validate": "node tools/telemetry/cli.js validate",
+    "telemetry:automate": "node tools/telemetry/cli.js automate",
+    "telemetry:lint-pack": "node tools/telemetry/cli.js lint-pack",
+    "telemetry:analyze-pack": "node tools/telemetry/cli.js analyze-pack"
   },
   "packageManager": "pnpm@9.4.0",
   "files": [

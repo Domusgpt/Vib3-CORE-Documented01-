@@ -324,9 +324,22 @@ window.loadGalleryVariation = async function(id) {
         // Show success notification
         showNotification(`✅ Loaded: ${data.name || `Variation #${id}`}`, 'success');
 
+        window.telemetry?.emit('gallery-load', {
+            context: {
+                system: data.system,
+                variation: id,
+                geometry: data.parameters?.geometry,
+                source: 'gallery'
+            }
+        });
+
     } catch (error) {
         console.error('❌ Failed to load variation:', error);
         showNotification(`❌ Failed to load variation: ${error.message}`, 'error');
+        window.telemetry?.emit('error', {
+            context: { system: window.currentSystem, source: 'gallery-load', variation: id },
+            error
+        });
     }
 };
 

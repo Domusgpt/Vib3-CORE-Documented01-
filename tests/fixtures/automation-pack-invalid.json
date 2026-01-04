@@ -1,0 +1,18 @@
+{
+  "states": {
+    "only": {
+      "controls": {
+        "rot4dXY": 2.5,
+        "nonexistent": 1
+      }
+    }
+  },
+  "sequences": {
+    "broken": [
+      { "state": "missing" }
+    ]
+  },
+  "rules": [
+    { "id": "no-action", "when": { "event": "automation-ready" }, "action": { "state": "missing" } }
+  ]
+}

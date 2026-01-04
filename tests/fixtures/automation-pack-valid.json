@@ -1,0 +1,27 @@
+{
+  "states": {
+    "base": {
+      "controls": {
+        "rot4dXY": 0.25,
+        "speed": 0.5,
+        "hue": 0.4
+      }
+    },
+    "burst": {
+      "controls": {
+        "rot4dXY": 0.8,
+        "speed": 0.9,
+        "hue": 0.95
+      }
+    }
+  },
+  "sequences": {
+    "demo": [
+      { "state": "base", "holdMs": 150 },
+      { "state": "burst", "sweep": { "durationMs": 300, "easing": "linear" }, "modulate": { "control": "hue", "amplitude": 0.1 } }
+    ]
+  },
+  "rules": [
+    { "id": "on-ready", "when": { "event": "automation-ready" }, "action": { "type": "sequence", "sequence": "demo" } }
+  ]
+}
