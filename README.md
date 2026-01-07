@@ -50,6 +50,5 @@ See [`DOCS/CONTROL_REFERENCE.md`](DOCS/CONTROL_REFERENCE.md) for the full walkth
 
 ## Additional references
 - [`DOCS/CONTROL_REFERENCE.md`](DOCS/CONTROL_REFERENCE.md) – Control IDs, slider ranges, toggle behaviors, and the underlying functions.
-
 - [`TESTING_GUIDE.md`](TESTING_GUIDE.md) – Available testing and verification steps.
 - [`UI-OVERHAUL-PLAN.md`](UI-OVERHAUL-PLAN.md) – Design intents and pending UI polish tasks.
