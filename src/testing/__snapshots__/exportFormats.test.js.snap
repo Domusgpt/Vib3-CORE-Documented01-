@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`export formats > matches the export format snapshot 1`] = `
+[
+  {
+    "description": "Vector sprite sheet for web and design tooling.",
+    "extension": ".svg",
+    "id": "svg-sprite",
+    "name": "SVG Sprite Sheet",
+  },
+  {
+    "description": "Motion-ready JSON payload for Lottie renderers.",
+    "extension": ".json",
+    "id": "lottie-json",
+    "name": "Lottie JSON",
+  },
+  {
+    "description": "CSS custom properties for theming pipelines.",
+    "extension": ".css",
+    "id": "css-variables",
+    "name": "CSS Variables",
+  },
+]
+`;
