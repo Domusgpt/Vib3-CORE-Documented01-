@@ -123,6 +123,7 @@ class True4DPolychoraVisualizer {
             uniform float u_hue;
             uniform float u_intensity;
             uniform float u_saturation;
+            uniform int u_projectionType;
             
             // Layer-specific uniforms
             uniform float u_layerIntensity;
@@ -154,9 +155,21 @@ class True4DPolychoraVisualizer {
             }
             
             // 4D to 3D projection - EXACT DNA from other systems
+            float safeDivide(float numerator, float denominator) {
+                float safe = max(abs(denominator), 0.0001);
+                return numerator / (denominator < 0.0 ? -safe : safe);
+            }
+
             vec3 project4Dto3D(vec4 p) {
-                float w = 2.5 / (2.5 + p.w);
-                return vec3(p.x * w, p.y * w, p.z * w);
+                float scale;
+                if (u_projectionType == 1) {
+                    scale = safeDivide(1.0, 1.0 - p.w);
+                } else if (u_projectionType == 2) {
+                    scale = 1.0;
+                } else {
+                    scale = safeDivide(2.5, 2.5 + p.w);
+                }
+                return p.xyz * scale;
             }
             
             // HSV to RGB conversion - EXACT DNA from other systems
@@ -432,6 +445,9 @@ class True4DPolychoraVisualizer {
         this.setUniform('u_hue', parameters.hue || 280);
         this.setUniform('u_intensity', parameters.intensity || 0.8);
         this.setUniform('u_saturation', parameters.saturation || 0.9);
+        this.setUniform('u_projectionType', Number.isFinite(parameters.projectionType)
+            ? Math.round(parameters.projectionType)
+            : 0);
         
         // Layer-specific uniforms
         this.setUniform('u_layerIntensity', this.layerIntensity);
@@ -452,7 +468,11 @@ class True4DPolychoraVisualizer {
         if (location === null) return;
         
         if (typeof value === 'number') {
-            this.gl.uniform1f(location, value);
+            if (name === 'u_projectionType') {
+                this.gl.uniform1i(location, value);
+            } else {
+                this.gl.uniform1f(location, value);
+            }
         } else if (Array.isArray(value)) {
             if (value.length === 2) {
                 this.gl.uniform2f(location, value[0], value[1]);

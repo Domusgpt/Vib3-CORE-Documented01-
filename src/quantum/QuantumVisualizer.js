@@ -252,6 +252,7 @@ uniform float u_rot4dYZ;
 uniform float u_rot4dXW;
 uniform float u_rot4dYW;
 uniform float u_rot4dZW;
+uniform int u_projectionType;
 uniform float u_mouseIntensity;
 uniform float u_clickIntensity;
 uniform float u_roleIntensity;
@@ -294,9 +295,21 @@ mat4 rotateZW(float theta) {
     return mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, c, -s, 0.0, 0.0, s, c);
 }
 
+float safeDivide(float numerator, float denominator) {
+    float safe = max(abs(denominator), 0.0001);
+    return numerator / (denominator < 0.0 ? -safe : safe);
+}
+
 vec3 project4Dto3D(vec4 p) {
-    float w = 2.5 / (2.5 + p.w);
-    return vec3(p.x * w, p.y * w, p.z * w);
+    float scale;
+    if (u_projectionType == 1) {
+        scale = safeDivide(1.0, 1.0 - p.w);
+    } else if (u_projectionType == 2) {
+        scale = 1.0;
+    } else {
+        scale = safeDivide(2.5, 2.5 + p.w);
+    }
+    return p.xyz * scale;
 }
 
 // ========================================
@@ -759,6 +772,7 @@ void main() {
             rot4dXW: this.gl.getUniformLocation(this.program, 'u_rot4dXW'),
             rot4dYW: this.gl.getUniformLocation(this.program, 'u_rot4dYW'),
             rot4dZW: this.gl.getUniformLocation(this.program, 'u_rot4dZW'),
+            projectionType: this.gl.getUniformLocation(this.program, 'u_projectionType'),
             mouseIntensity: this.gl.getUniformLocation(this.program, 'u_mouseIntensity'),
             clickIntensity: this.gl.getUniformLocation(this.program, 'u_mouseIntensity'),
             roleIntensity: this.gl.getUniformLocation(this.program, 'u_roleIntensity')
@@ -1028,6 +1042,10 @@ void main() {
         this.gl.uniform1f(this.uniforms.rot4dXW, this.params.rot4dXW || 0.0);
         this.gl.uniform1f(this.uniforms.rot4dYW, this.params.rot4dYW || 0.0);
         this.gl.uniform1f(this.uniforms.rot4dZW, this.params.rot4dZW || 0.0);
+        const projectionType = Number.isFinite(this.params.projectionType)
+            ? Math.round(this.params.projectionType)
+            : 0;
+        this.gl.uniform1i(this.uniforms.projectionType, projectionType);
         this.gl.uniform1f(this.uniforms.mouseIntensity, this.mouseIntensity);
         this.gl.uniform1f(this.uniforms.clickIntensity, this.clickIntensity);
         this.gl.uniform1f(this.uniforms.roleIntensity, roleIntensities[this.role] || 1.0);

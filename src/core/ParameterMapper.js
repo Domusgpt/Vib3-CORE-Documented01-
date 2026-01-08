@@ -118,17 +118,18 @@ export class ParameterMapper {
             morphFactor: { min: 0, max: 2, default: 0, type: 'float' },
             
             // 4D rotation parameters (existing)
-            rot4dXW: { min: -Math.PI, max: Math.PI, default: 0, type: 'float' },
-            rot4dYW: { min: -Math.PI, max: Math.PI, default: 0, type: 'float' },
-            rot4dZW: { min: -Math.PI, max: Math.PI, default: 0, type: 'float' },
+            rot4dXW: { min: -Math.PI * 2, max: Math.PI * 2, default: 0, type: 'float' },
+            rot4dYW: { min: -Math.PI * 2, max: Math.PI * 2, default: 0, type: 'float' },
+            rot4dZW: { min: -Math.PI * 2, max: Math.PI * 2, default: 0, type: 'float' },
             
             // 4D rotation parameters (new for Polychora)
-            rot4dXY: { min: -Math.PI, max: Math.PI, default: 0, type: 'float' },
-            rot4dXZ: { min: -Math.PI, max: Math.PI, default: 0, type: 'float' },
-            rot4dYZ: { min: -Math.PI, max: Math.PI, default: 0, type: 'float' },
+            rot4dXY: { min: -Math.PI * 2, max: Math.PI * 2, default: 0, type: 'float' },
+            rot4dXZ: { min: -Math.PI * 2, max: Math.PI * 2, default: 0, type: 'float' },
+            rot4dYZ: { min: -Math.PI * 2, max: Math.PI * 2, default: 0, type: 'float' },
             
             // Dimension and physics
             dimension: { min: 3.0, max: 4.5, default: 3.8, type: 'float' },
+            projectionType: { min: 0, max: 2, default: 0, type: 'integer' },
             
             // Animation and chaos
             speed: { min: 0.1, max: 3.0, default: 1.0, type: 'float' },

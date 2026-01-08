@@ -840,12 +840,13 @@ export class PolychoraSystem {
             // Update rotation based on physics body rotations
             const primaryBody = physicsFeedback[this.parameters.polytope] || physicsFeedback[0];
             if (primaryBody) {
-                this.parameters.rot4dXY = primaryBody.rotation[0];
-                this.parameters.rot4dXZ = primaryBody.rotation[1];
-                this.parameters.rot4dYZ = primaryBody.rotation[2];
-                this.parameters.rot4dXW = primaryBody.rotation[3];
-                this.parameters.rot4dYW = primaryBody.rotation[4];
-                this.parameters.rot4dZW = primaryBody.rotation[5];
+                const rotationPlanes = primaryBody.rotationPlanes || primaryBody.rotation || [];
+                this.parameters.rot4dXY = rotationPlanes[0] || 0;
+                this.parameters.rot4dXZ = rotationPlanes[1] || 0;
+                this.parameters.rot4dYZ = rotationPlanes[2] || 0;
+                this.parameters.rot4dXW = rotationPlanes[3] || 0;
+                this.parameters.rot4dYW = rotationPlanes[4] || 0;
+                this.parameters.rot4dZW = rotationPlanes[5] || 0;
             }
         }
     }
