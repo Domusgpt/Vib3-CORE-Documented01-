@@ -1,6 +1,6 @@
 {
   "name": "@vib3/sdk",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "VIB3+ 4D Visualization SDK - Unified engine with 6D rotation, MCP agentic integration, and cross-platform support",
   "type": "module",
   "main": "src/core/VIB3Engine.js",
@@ -26,7 +26,49 @@
       "import": "./src/core/Parameters.js"
     },
     "./geometry": {
-      "import": "./src/geometry/GeometryLibrary.js"
+      "import": "./src/geometry/index.js"
+    },
+    "./geometry/factory": {
+      "import": "./src/geometry/GeometryFactory.js"
+    },
+    "./geometry/generators": {
+      "import": "./src/geometry/generators/Tesseract.js"
+    },
+    "./geometry/generators/tesseract": {
+      "import": "./src/geometry/generators/Tesseract.js"
+    },
+    "./geometry/generators/tetrahedron": {
+      "import": "./src/geometry/generators/Tetrahedron.js"
+    },
+    "./geometry/generators/sphere": {
+      "import": "./src/geometry/generators/Sphere.js"
+    },
+    "./geometry/generators/torus": {
+      "import": "./src/geometry/generators/Torus.js"
+    },
+    "./geometry/generators/klein-bottle": {
+      "import": "./src/geometry/generators/KleinBottle.js"
+    },
+    "./geometry/generators/fractal": {
+      "import": "./src/geometry/generators/Fractal.js"
+    },
+    "./geometry/generators/wave": {
+      "import": "./src/geometry/generators/Wave.js"
+    },
+    "./geometry/generators/crystal": {
+      "import": "./src/geometry/generators/Crystal.js"
+    },
+    "./geometry/warp": {
+      "import": "./src/geometry/warp/index.js"
+    },
+    "./geometry/warp/hypersphere": {
+      "import": "./src/geometry/warp/HypersphereCore.js"
+    },
+    "./geometry/warp/hypertetra": {
+      "import": "./src/geometry/warp/HypertetraCore.js"
+    },
+    "./geometry/buffers": {
+      "import": "./src/geometry/buffers/index.js"
     },
     "./quantum": {
       "import": "./src/quantum/QuantumEngine.js"
