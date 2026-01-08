@@ -13,9 +13,11 @@ let interactivityEnabled = false;
  * Routes parameters to appropriate engine based on current system
  */
 window.updateParameter = function(param, value) {
+    const normalizedValue = normalizeParameterValue(param, value);
+
     // CRITICAL: Store user's parameter choice for persistence
-    window.userParameterState[param] = parseFloat(value);
-    console.log(`💾 User parameter: ${param} = ${value}`);
+    window.userParameterState[param] = normalizedValue;
+    console.log(`💾 User parameter: ${param} = ${normalizedValue}`);
     
     const displays = {
         rot4dXY: 'rot4dXY-display',
@@ -36,11 +38,11 @@ window.updateParameter = function(param, value) {
     const display = document.getElementById(displays[param]);
     if (display) {
         if (param === 'hue') {
-            display.textContent = value + '°';
+            display.textContent = normalizedValue + '°';
         } else if (param.startsWith('rot4d')) {
-            display.textContent = parseFloat(value).toFixed(2);
+            display.textContent = normalizedValue.toFixed(2);
         } else {
-            display.textContent = parseFloat(value).toFixed(1);
+            display.textContent = normalizedValue.toFixed(1);
         }
     }
     
@@ -60,18 +62,18 @@ window.updateParameter = function(param, value) {
             
             // CRITICAL FIX: Track retry count to prevent infinite loops
             if (!window.parameterRetryCount) window.parameterRetryCount = {};
-            const retryKey = `${param}_${value}_${activeSystem}`;
+            const retryKey = `${param}_${normalizedValue}_${activeSystem}`;
             const currentRetries = window.parameterRetryCount[retryKey] || 0;
             
             // Only retry once, then give up to prevent infinite loops
             if (currentRetries < 1) {
                 window.parameterRetryCount[retryKey] = currentRetries + 1;
-                console.log(`🔄 Retrying parameter ${param} = ${value} for ${activeSystem} (attempt ${currentRetries + 2})`);
+                console.log(`🔄 Retrying parameter ${param} = ${normalizedValue} for ${activeSystem} (attempt ${currentRetries + 2})`);
                 setTimeout(() => {
-                    window.updateParameter(param, value);
+                    window.updateParameter(param, normalizedValue);
                 }, 100);
             } else {
-                console.warn(`❌ Parameter ${param} = ${value} failed for ${activeSystem} - system not available, giving up after 2 attempts`);
+                console.warn(`❌ Parameter ${param} = ${normalizedValue} failed for ${activeSystem} - system not available, giving up after 2 attempts`);
                 // Clean up retry tracking for this parameter
                 delete window.parameterRetryCount[retryKey];
             }
@@ -80,23 +82,59 @@ window.updateParameter = function(param, value) {
         
         // Route to appropriate engine method
         if (activeSystem === 'faceted') {
-            engine.parameterManager.setParameter(param, parseFloat(value));
+            engine.parameterManager.setParameter(param, normalizedValue);
             engine.updateVisualizers();
         } else if (activeSystem === 'quantum') {
-            engine.updateParameter(param, parseFloat(value));
+            engine.updateParameter(param, normalizedValue);
         } else if (activeSystem === 'holographic') {
-            engine.updateParameter(param, parseFloat(value));
+            engine.updateParameter(param, normalizedValue);
         } else if (activeSystem === 'polychora') {
-            engine.updateParameters({ [param]: parseFloat(value) });
+            engine.updateParameters({ [param]: normalizedValue });
         }
         
-        console.log(`📊 ${activeSystem.toUpperCase()}: ${param} = ${value}`);
+        console.log(`📊 ${activeSystem.toUpperCase()}: ${param} = ${normalizedValue}`);
         
     } catch (error) {
         console.error(`❌ Parameter update error in ${window.currentSystem || 'unknown'} for ${param}:`, error);
         // Don't break the UI, just log the error
     }
 };
+
+function normalizeParameterValue(param, value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 0;
+    }
+
+    const slider = document.getElementById(param);
+    if (slider && slider instanceof HTMLInputElement) {
+        const min = Number(slider.min);
+        const max = Number(slider.max);
+        const step = Number(slider.step || 0);
+        return clampWithStep(numericValue, min, max, step);
+    }
+
+    const schema = {
+        projectionType: { min: 0, max: 2, step: 1, type: 'int' }
+    };
+
+    const rule = schema[param];
+    if (!rule) {
+        return numericValue;
+    }
+
+    const coerced = rule.type === 'int' ? Math.round(numericValue) : numericValue;
+    return clampWithStep(coerced, rule.min, rule.max, rule.step);
+}
+
+function clampWithStep(value, min, max, step) {
+    const clamped = Math.min(max, Math.max(min, value));
+    if (!step || !Number.isFinite(step) || step <= 0) {
+        return clamped;
+    }
+    const snapped = Math.round((clamped - min) / step) * step + min;
+    return Number.isFinite(snapped) ? snapped : clamped;
+}
 
 /**
  * Randomize all parameters except hue and geometry

@@ -123,6 +123,7 @@ class True4DPolychoraVisualizer {
             uniform float u_hue;
             uniform float u_intensity;
             uniform float u_saturation;
+            uniform int u_projectionType;
             
             // Layer-specific uniforms
             uniform float u_layerIntensity;
@@ -154,9 +155,21 @@ class True4DPolychoraVisualizer {
             }
             
             // 4D to 3D projection - EXACT DNA from other systems
+            float safeDivide(float numerator, float denominator) {
+                float safe = max(abs(denominator), 0.0001);
+                return numerator / (denominator < 0.0 ? -safe : safe);
+            }
+
             vec3 project4Dto3D(vec4 p) {
-                float w = 2.5 / (2.5 + p.w);
-                return vec3(p.x * w, p.y * w, p.z * w);
+                float scale;
+                if (u_projectionType == 1) {
+                    scale = safeDivide(1.0, 1.0 - p.w);
+                } else if (u_projectionType == 2) {
+                    scale = 1.0;
+                } else {
+                    scale = safeDivide(2.5, 2.5 + p.w);
+                }
+                return p.xyz * scale;
             }
             
             // HSV to RGB conversion - EXACT DNA from other systems
@@ -432,6 +445,9 @@ class True4DPolychoraVisualizer {
         this.setUniform('u_hue', parameters.hue || 280);
         this.setUniform('u_intensity', parameters.intensity || 0.8);
         this.setUniform('u_saturation', parameters.saturation || 0.9);
+        this.setUniform('u_projectionType', Number.isFinite(parameters.projectionType)
+            ? Math.round(parameters.projectionType)
+            : 0);
         
         // Layer-specific uniforms
         this.setUniform('u_layerIntensity', this.layerIntensity);
@@ -452,7 +468,11 @@ class True4DPolychoraVisualizer {
         if (location === null) return;
         
         if (typeof value === 'number') {
-            this.gl.uniform1f(location, value);
+            if (name === 'u_projectionType') {
+                this.gl.uniform1i(location, value);
+            } else {
+                this.gl.uniform1f(location, value);
+            }
         } else if (Array.isArray(value)) {
             if (value.length === 2) {
                 this.gl.uniform2f(location, value[0], value[1]);
@@ -514,6 +534,7 @@ export class NewPolychoraEngine {
         this.parameters.setParameter('saturation', 0.9);
         this.parameters.setParameter('gridDensity', 25); // Good for 4D detail
         this.parameters.setParameter('morphFactor', 1.0);
+        this.parameters.setParameter('projectionType', 0);
         
         this.init();
     }
@@ -598,6 +619,9 @@ export class NewPolychoraEngine {
             // Get current parameters - EXACT DNA pattern
             const params = {
                 geometry: this.parameters.getParameter('geometry'),
+                rot4dXY: this.parameters.getParameter('rot4dXY'),
+                rot4dXZ: this.parameters.getParameter('rot4dXZ'),
+                rot4dYZ: this.parameters.getParameter('rot4dYZ'),
                 rot4dXW: this.parameters.getParameter('rot4dXW'),
                 rot4dYW: this.parameters.getParameter('rot4dYW'),
                 rot4dZW: this.parameters.getParameter('rot4dZW'),
@@ -607,7 +631,8 @@ export class NewPolychoraEngine {
                 speed: this.parameters.getParameter('speed'),
                 hue: this.parameters.getParameter('hue'),
                 intensity: this.parameters.getParameter('intensity'),
-                saturation: this.parameters.getParameter('saturation')
+                saturation: this.parameters.getParameter('saturation'),
+                projectionType: this.parameters.getParameter('projectionType')
             };
             
             // Audio-reactive 4D rotation enhancement
@@ -694,7 +719,23 @@ export class NewPolychoraEngine {
         
         // Fallback parameter extraction
         const params = {};
-        const paramNames = ['geometry', 'rot4dXW', 'rot4dYW', 'rot4dZW', 'gridDensity', 'morphFactor', 'chaos', 'speed', 'hue', 'intensity', 'saturation'];
+        const paramNames = [
+            'geometry',
+            'rot4dXY',
+            'rot4dXZ',
+            'rot4dYZ',
+            'rot4dXW',
+            'rot4dYW',
+            'rot4dZW',
+            'gridDensity',
+            'morphFactor',
+            'chaos',
+            'speed',
+            'hue',
+            'intensity',
+            'saturation',
+            'projectionType'
+        ];
         
         paramNames.forEach(name => {
             if (this.parameters && typeof this.parameters.getParameter === 'function') {
