@@ -62,9 +62,6 @@ export class VIB34DApp {
                         
                         console.log(`✅ Switched to ${system} system successfully`);
                         return; // Success - exit early
-                    } else if (system === 'polychora') {
-                        console.log(`🔮 Polychora system not implemented yet`);
-                        return; // Expected for polychora
                     } else {
                         console.error(`❌ ${system} engine failed to create`);
                     }
@@ -106,9 +103,11 @@ export class VIB34DApp {
         // Get all current UI parameter values (prefers user-stored values)
         window.getCurrentUIParameterState = () => {
             const parameterIds = [
-                'rot4dXW', 'rot4dYW', 'rot4dZW', 
-                'gridDensity', 'morphFactor', 'chaos', 
-                'speed', 'hue', 'intensity', 'saturation'
+                'rot4dXY', 'rot4dXZ', 'rot4dYZ',
+                'rot4dXW', 'rot4dYW', 'rot4dZW',
+                'gridDensity', 'morphFactor', 'chaos',
+                'speed', 'hue', 'intensity', 'saturation',
+                'projectionType'
             ];
             
             const currentState = {};
