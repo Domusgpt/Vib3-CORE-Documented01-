@@ -101,6 +101,7 @@ class PolychoraVisualizer {
             uniform float u_rot4dXY;
             uniform float u_rot4dXZ;
             uniform float u_rot4dYZ;
+            uniform int u_projectionType;
             
             uniform float u_dimension;
             uniform float u_hue;
@@ -118,6 +119,23 @@ class PolychoraVisualizer {
             uniform float u_faceTransparency;
             uniform float u_edgeThickness;
             uniform float u_projectionDistance;
+            
+            float safeDivide(float numerator, float denominator) {
+                float safe = max(abs(denominator), 0.0001);
+                return numerator / (denominator < 0.0 ? -safe : safe);
+            }
+
+            vec3 project4Dto3D(vec4 p) {
+                float scale;
+                if (u_projectionType == 1) {
+                    scale = safeDivide(1.0, 1.0 - p.w);
+                } else if (u_projectionType == 2) {
+                    scale = 1.0;
+                } else {
+                    scale = safeDivide(2.5, 2.5 + p.w);
+                }
+                return p.xyz * scale;
+            }
             
             // COMPLETE 4D rotation matrices - All 6 possible rotations
             mat4 rotateXW(float angle) {
@@ -277,8 +295,10 @@ class PolychoraVisualizer {
                 // Apply complete 6D 4D rotation
                 pos = apply6DRotation(pos);
                 
+                vec4 projectedPos = vec4(project4Dto3D(pos), pos.w);
+                
                 // Get polytope distance
-                float dist = polytope4D(pos, u_polytope);
+                float dist = polytope4D(projectedPos, u_polytope);
                 
                 // Enhanced glassmorphic line rendering
                 float edgeCore = u_edgeThickness * 0.01;
@@ -300,7 +320,7 @@ class PolychoraVisualizer {
                 
                 // Apply procedural surface noise
                 if (u_noiseAmplitude > 0.0) {
-                    float noise_val = noise(pos * 10.0 + u_time * 0.1);
+                    float noise_val = noise(projectedPos * 10.0 + u_time * 0.1);
                     alpha *= 1.0 + (noise_val - 0.5) * u_noiseAmplitude;
                 }
                 
@@ -432,7 +452,8 @@ class PolychoraVisualizer {
             u_flowDirection: parameters.flowDirection || 180,
             u_faceTransparency: parameters.faceTransparency || 0.7,
             u_edgeThickness: parameters.edgeThickness || 2.0,
-            u_projectionDistance: parameters.projectionDistance || 5.0
+            u_projectionDistance: parameters.projectionDistance || 5.0,
+            u_projectionType: parameters.projectionType || 0
         };
         
         // Safely set uniforms with error checking
@@ -443,6 +464,8 @@ class PolychoraVisualizer {
                     if (Array.isArray(value)) {
                         if (value.length === 2) this.gl.uniform2fv(location, new Float32Array(value));
                         else if (value.length === 3) this.gl.uniform3fv(location, new Float32Array(value));
+                    } else if (name === 'u_projectionType') {
+                        this.gl.uniform1i(location, value);
                     } else {
                         this.gl.uniform1f(location, value);
                     }
@@ -549,6 +572,12 @@ export class PolychoraSystem {
             colorMagnetism: 0.7,// Color attraction between layers
             layerScale: 1.0,    // Overall layer scaling
             translucency: 0.8,  // Overall translucency
+            gridDensity: 15,    // Shared density parameter
+            morphFactor: 1.0,   // Shared morph parameter
+            chaos: 0.2,         // Shared chaos parameter
+            intensity: 0.5,     // Shared intensity parameter
+            saturation: 0.8,    // Shared saturation parameter
+            projectionType: 0,  // Shared projection parameter
             
             // COMPLETE 6D 4D Math parameters - Full rotational control
             rot4dXW: 0.0,       // X-W plane rotation (existing)
@@ -816,7 +845,7 @@ export class PolychoraSystem {
         
         // Set physics world properties
         this.physics.setGravity([0, 0, 0, this.parameters.gravity4D]);
-        this.physics.setMagneticField([0, 0, this.parameters.magneticField, 0]);
+        this.physics.setMagneticField([0, 0, 0, 0, 0, this.parameters.magneticField]);
         this.physics.setFluidFlow([this.parameters.fluidFlow, 0, 0, 0]);
     }
     
@@ -840,12 +869,13 @@ export class PolychoraSystem {
             // Update rotation based on physics body rotations
             const primaryBody = physicsFeedback[this.parameters.polytope] || physicsFeedback[0];
             if (primaryBody) {
-                this.parameters.rot4dXY = primaryBody.rotation[0];
-                this.parameters.rot4dXZ = primaryBody.rotation[1];
-                this.parameters.rot4dYZ = primaryBody.rotation[2];
-                this.parameters.rot4dXW = primaryBody.rotation[3];
-                this.parameters.rot4dYW = primaryBody.rotation[4];
-                this.parameters.rot4dZW = primaryBody.rotation[5];
+                const rotationPlanes = primaryBody.rotationPlanes || primaryBody.rotation || [];
+                this.parameters.rot4dXY = rotationPlanes[0] || 0;
+                this.parameters.rot4dXZ = rotationPlanes[1] || 0;
+                this.parameters.rot4dYZ = rotationPlanes[2] || 0;
+                this.parameters.rot4dXW = rotationPlanes[3] || 0;
+                this.parameters.rot4dYW = rotationPlanes[4] || 0;
+                this.parameters.rot4dZW = rotationPlanes[5] || 0;
             }
         }
     }
@@ -926,14 +956,6 @@ export class PolychoraSystem {
     }
     
     /**
-     * Update system parameters
-     */
-    updateParameters(newParams) {
-        Object.assign(this.parameters, newParams);
-        console.log('🔮 Updated Polychora parameters:', newParams);
-    }
-    
-    /**
      * Set current polytope
      */
     setPolytope(polytopeIndex) {
@@ -957,11 +979,32 @@ export class PolychoraSystem {
         if (newParams.rot4dXW !== undefined) this.parameters.rot4dXW = newParams.rot4dXW;
         if (newParams.rot4dYW !== undefined) this.parameters.rot4dYW = newParams.rot4dYW;
         if (newParams.rot4dZW !== undefined) this.parameters.rot4dZW = newParams.rot4dZW;
+        if (newParams.rot4dXY !== undefined) this.parameters.rot4dXY = newParams.rot4dXY;
+        if (newParams.rot4dXZ !== undefined) this.parameters.rot4dXZ = newParams.rot4dXZ;
+        if (newParams.rot4dYZ !== undefined) this.parameters.rot4dYZ = newParams.rot4dYZ;
         if (newParams.hue !== undefined) this.parameters.hue = newParams.hue;
+        if (newParams.dimension !== undefined) this.parameters.dimension = newParams.dimension;
+        if (newParams.saturation !== undefined) this.parameters.saturation = newParams.saturation;
+        if (newParams.morphFactor !== undefined) this.parameters.morphFactor = newParams.morphFactor;
+        if (newParams.chaos !== undefined) this.parameters.chaos = newParams.chaos;
+        if (newParams.projectionType !== undefined) this.parameters.projectionType = newParams.projectionType;
         
         // Map grid density to Polychora line thickness (missing connection!)
         if (newParams.gridDensity !== undefined) {
+            this.parameters.gridDensity = newParams.gridDensity;
             this.parameters.lineThickness = newParams.gridDensity * 0.01; // Scale 5-100 to 0.05-1.0
+        }
+
+        if (newParams.morphFactor !== undefined) {
+            this.parameters.edgeThickness = 1.0 + newParams.morphFactor;
+        }
+
+        if (newParams.chaos !== undefined) {
+            this.parameters.noiseAmplitude = Math.min(1.0, Math.max(0.0, newParams.chaos));
+        }
+
+        if (newParams.saturation !== undefined) {
+            this.parameters.chromaticAberration = 0.05 + newParams.saturation * 0.2;
         }
         
         // Map geometry to polytope selection
@@ -971,11 +1014,12 @@ export class PolychoraSystem {
         
         // Map speed to flow direction intensity
         if (newParams.speed !== undefined) {
-            this.parameters.flowDirection = newParams.speed;
+            this.parameters.flowDirection = (newParams.speed * 120) % 360;
         }
         
         // Map intensity to projection distance
         if (newParams.intensity !== undefined) {
+            this.parameters.intensity = newParams.intensity;
             this.parameters.projectionDistance = 1.0 + (newParams.intensity * 4.0); // Scale 0-1 to 1-5
         }
         
