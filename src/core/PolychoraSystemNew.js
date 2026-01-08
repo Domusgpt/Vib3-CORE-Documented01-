@@ -113,6 +113,9 @@ class True4DPolychoraVisualizer {
             // Standard VIB34D uniforms - following DNA pattern
             uniform float u_time;
             uniform float u_geometry;
+            uniform float u_rot4dXY;
+            uniform float u_rot4dXZ;
+            uniform float u_rot4dYZ;
             uniform float u_rot4dXW;
             uniform float u_rot4dYW; 
             uniform float u_rot4dZW;
@@ -123,6 +126,7 @@ class True4DPolychoraVisualizer {
             uniform float u_hue;
             uniform float u_intensity;
             uniform float u_saturation;
+            uniform int u_projectionType;
             
             // Layer-specific uniforms
             uniform float u_layerIntensity;
@@ -152,11 +156,41 @@ class True4DPolychoraVisualizer {
                 float s = sin(theta);
                 return mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, c, -s, 0.0, 0.0, s, c);
             }
+
+            mat4 rotateXY(float theta) {
+                float c = cos(theta);
+                float s = sin(theta);
+                return mat4(c, -s, 0.0, 0.0, s, c, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+            }
+
+            mat4 rotateXZ(float theta) {
+                float c = cos(theta);
+                float s = sin(theta);
+                return mat4(c, 0.0, s, 0.0, 0.0, 1.0, 0.0, 0.0, -s, 0.0, c, 0.0, 0.0, 0.0, 0.0, 1.0);
+            }
+
+            mat4 rotateYZ(float theta) {
+                float c = cos(theta);
+                float s = sin(theta);
+                return mat4(1.0, 0.0, 0.0, 0.0, 0.0, c, -s, 0.0, 0.0, s, c, 0.0, 0.0, 0.0, 0.0, 1.0);
+            }
             
             // 4D to 3D projection - EXACT DNA from other systems
+            float safeDivide(float numerator, float denominator) {
+                float safe = max(abs(denominator), 0.0001);
+                return numerator / (denominator < 0.0 ? -safe : safe);
+            }
+
             vec3 project4Dto3D(vec4 p) {
-                float w = 2.5 / (2.5 + p.w);
-                return vec3(p.x * w, p.y * w, p.z * w);
+                float scale;
+                if (u_projectionType == 1) {
+                    scale = safeDivide(1.0, 1.0 - p.w);
+                } else if (u_projectionType == 2) {
+                    scale = 1.0;
+                } else {
+                    scale = safeDivide(2.5, 2.5 + p.w);
+                }
+                return p.xyz * scale;
             }
             
             // HSV to RGB conversion - EXACT DNA from other systems
@@ -249,7 +283,8 @@ class True4DPolychoraVisualizer {
                 float gridSize = u_gridDensity * 0.1;
                 
                 // Apply 4D rotation - EXACT DNA pattern
-                mat4 rotation = rotateXW(u_rot4dXW) * rotateYW(u_rot4dYW) * rotateZW(u_rot4dZW);
+                mat4 rotation = rotateXY(u_rot4dXY) * rotateXZ(u_rot4dXZ) * rotateYZ(u_rot4dYZ);
+                rotation = rotation * rotateXW(u_rot4dXW) * rotateYW(u_rot4dYW) * rotateZW(u_rot4dZW);
                 vec4 rotatedP = rotation * p;
                 
                 // Apply grid tiling like other systems
@@ -422,6 +457,9 @@ class True4DPolychoraVisualizer {
         // Set uniforms - EXACT DNA pattern from other systems
         this.setUniform('u_time', this.time);
         this.setUniform('u_geometry', parameters.geometry || 0);
+        this.setUniform('u_rot4dXY', parameters.rot4dXY || 0);
+        this.setUniform('u_rot4dXZ', parameters.rot4dXZ || 0);
+        this.setUniform('u_rot4dYZ', parameters.rot4dYZ || 0);
         this.setUniform('u_rot4dXW', parameters.rot4dXW || 0);
         this.setUniform('u_rot4dYW', parameters.rot4dYW || 0);
         this.setUniform('u_rot4dZW', parameters.rot4dZW || 0);
@@ -432,6 +470,9 @@ class True4DPolychoraVisualizer {
         this.setUniform('u_hue', parameters.hue || 280);
         this.setUniform('u_intensity', parameters.intensity || 0.8);
         this.setUniform('u_saturation', parameters.saturation || 0.9);
+        this.setUniform('u_projectionType', Number.isFinite(parameters.projectionType)
+            ? Math.round(parameters.projectionType)
+            : 0);
         
         // Layer-specific uniforms
         this.setUniform('u_layerIntensity', this.layerIntensity);
@@ -452,7 +493,11 @@ class True4DPolychoraVisualizer {
         if (location === null) return;
         
         if (typeof value === 'number') {
-            this.gl.uniform1f(location, value);
+            if (name === 'u_projectionType') {
+                this.gl.uniform1i(location, value);
+            } else {
+                this.gl.uniform1f(location, value);
+            }
         } else if (Array.isArray(value)) {
             if (value.length === 2) {
                 this.gl.uniform2f(location, value[0], value[1]);
@@ -514,6 +559,7 @@ export class NewPolychoraEngine {
         this.parameters.setParameter('saturation', 0.9);
         this.parameters.setParameter('gridDensity', 25); // Good for 4D detail
         this.parameters.setParameter('morphFactor', 1.0);
+        this.parameters.setParameter('projectionType', 0);
         
         this.init();
     }
@@ -598,6 +644,9 @@ export class NewPolychoraEngine {
             // Get current parameters - EXACT DNA pattern
             const params = {
                 geometry: this.parameters.getParameter('geometry'),
+                rot4dXY: this.parameters.getParameter('rot4dXY'),
+                rot4dXZ: this.parameters.getParameter('rot4dXZ'),
+                rot4dYZ: this.parameters.getParameter('rot4dYZ'),
                 rot4dXW: this.parameters.getParameter('rot4dXW'),
                 rot4dYW: this.parameters.getParameter('rot4dYW'),
                 rot4dZW: this.parameters.getParameter('rot4dZW'),
@@ -607,7 +656,8 @@ export class NewPolychoraEngine {
                 speed: this.parameters.getParameter('speed'),
                 hue: this.parameters.getParameter('hue'),
                 intensity: this.parameters.getParameter('intensity'),
-                saturation: this.parameters.getParameter('saturation')
+                saturation: this.parameters.getParameter('saturation'),
+                projectionType: this.parameters.getParameter('projectionType')
             };
             
             // Audio-reactive 4D rotation enhancement
@@ -694,7 +744,23 @@ export class NewPolychoraEngine {
         
         // Fallback parameter extraction
         const params = {};
-        const paramNames = ['geometry', 'rot4dXW', 'rot4dYW', 'rot4dZW', 'gridDensity', 'morphFactor', 'chaos', 'speed', 'hue', 'intensity', 'saturation'];
+        const paramNames = [
+            'geometry',
+            'rot4dXY',
+            'rot4dXZ',
+            'rot4dYZ',
+            'rot4dXW',
+            'rot4dYW',
+            'rot4dZW',
+            'gridDensity',
+            'morphFactor',
+            'chaos',
+            'speed',
+            'hue',
+            'intensity',
+            'saturation',
+            'projectionType'
+        ];
         
         paramNames.forEach(name => {
             if (this.parameters && typeof this.parameters.getParameter === 'function') {
