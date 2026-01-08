@@ -213,6 +213,7 @@ export class HolographicVisualizer {
             uniform float u_rot4dXW;
             uniform float u_rot4dYW;
             uniform float u_rot4dZW;
+            uniform int u_projectionType;
 
             // 6D rotation matrices - 3D space rotations (XY, XZ, YZ)
             mat4 rotateXY(float theta) {
@@ -253,9 +254,21 @@ export class HolographicVisualizer {
             }
             
             // 4D to 3D projection
+            float safeDivide(float numerator, float denominator) {
+                float safe = max(abs(denominator), 0.0001);
+                return numerator / (denominator < 0.0 ? -safe : safe);
+            }
+
             vec3 project4Dto3D(vec4 p) {
-                float w = 2.5 / (2.5 + p.w);
-                return vec3(p.x * w, p.y * w, p.z * w);
+                float scale;
+                if (u_projectionType == 1) {
+                    scale = safeDivide(1.0, 1.0 - p.w);
+                } else if (u_projectionType == 2) {
+                    scale = 1.0;
+                } else {
+                    scale = safeDivide(2.5, 2.5 + p.w);
+                }
+                return p.xyz * scale;
             }
 
             // ========================================
@@ -615,7 +628,8 @@ export class HolographicVisualizer {
             rot4dYZ: this.gl.getUniformLocation(this.program, 'u_rot4dYZ'),
             rot4dXW: this.gl.getUniformLocation(this.program, 'u_rot4dXW'),
             rot4dYW: this.gl.getUniformLocation(this.program, 'u_rot4dYW'),
-            rot4dZW: this.gl.getUniformLocation(this.program, 'u_rot4dZW')
+            rot4dZW: this.gl.getUniformLocation(this.program, 'u_rot4dZW'),
+            projectionType: this.gl.getUniformLocation(this.program, 'u_projectionType')
         };
     }
     
@@ -910,6 +924,10 @@ export class HolographicVisualizer {
         this.gl.uniform1f(this.uniforms.rot4dXW, this.variantParams.rot4dXW || 0.0);
         this.gl.uniform1f(this.uniforms.rot4dYW, this.variantParams.rot4dYW || 0.0);
         this.gl.uniform1f(this.uniforms.rot4dZW, this.variantParams.rot4dZW || 0.0);
+        const projectionType = Number.isFinite(this.variantParams.projectionType)
+            ? Math.round(this.variantParams.projectionType)
+            : 0;
+        this.gl.uniform1i(this.uniforms.projectionType, projectionType);
 
         this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
     }
