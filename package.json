@@ -1,6 +1,6 @@
 {
   "name": "@vib3/sdk",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "VIB3+ 4D Visualization SDK - Unified engine with 6D rotation, MCP agentic integration, and cross-platform support",
   "type": "module",
   "main": "src/core/VIB3Engine.js",
@@ -108,6 +108,15 @@
     },
     "./render/webgl": {
       "import": "./src/render/backends/WebGLBackend.js"
+    },
+    "./wasm": {
+      "import": "./src/wasm/index.js"
+    },
+    "./wasm/loader": {
+      "import": "./src/wasm/WasmLoader.js"
+    },
+    "./types/render": {
+      "types": "./types/render/index.d.ts"
     },
     "./quantum": {
       "import": "./src/quantum/QuantumEngine.js"
