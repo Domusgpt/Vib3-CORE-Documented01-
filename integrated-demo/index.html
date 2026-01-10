@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIB3+ Integrated System - WASM Core + New Architecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-panel: #12121a;
+            --accent-quantum: #00ff88;
+            --accent-faceted: #ff4488;
+            --accent-holographic: #44aaff;
+            --accent-cyan: #00ffff;
+            --accent-magenta: #ff00ff;
+            --text: #ffffff;
+            --text-dim: #888;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: linear-gradient(180deg, rgba(0,255,255,0.1) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(0,255,255,0.2);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .wasm-badge {
+            background: var(--accent-quantum);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .system-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .system-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .system-tab:hover {
+            border-color: var(--accent-cyan);
+            color: var(--text);
+        }
+
+        .system-tab.active {
+            background: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            color: #000;
+        }
+
+        .system-tab[data-system="quantum"].active { background: var(--accent-quantum); border-color: var(--accent-quantum); }
+        .system-tab[data-system="faceted"].active { background: var(--accent-faceted); border-color: var(--accent-faceted); }
+        .system-tab[data-system="holographic"].active { background: var(--accent-holographic); border-color: var(--accent-holographic); }
+
+        /* Main Layout */
+        .main {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            height: calc(100vh - 56px);
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-panel);
+            padding: 16px;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .panel:last-child {
+            border-right: none;
+            border-left: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .panel-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .panel-section {
+            margin-bottom: 20px;
+        }
+
+        /* Canvas */
+        .canvas-area {
+            position: relative;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #mainCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .overlay-btn {
+            padding: 8px 14px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .overlay-btn:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .fps-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.8);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--accent-quantum);
+        }
+
+        /* Controls */
+        .slider-group {
+            margin-bottom: 12px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .slider-label span:first-child {
+            color: var(--text-dim);
+        }
+
+        .slider-label span:last-child {
+            font-family: monospace;
+            color: var(--accent-cyan);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 12px;
+        }
+
+        /* Geometry Grid */
+        .geometry-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .geo-btn {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .geo-btn:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0,255,255,0.1);
+        }
+
+        .geo-btn.active {
+            background: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+            color: #000;
+        }
+
+        /* Feature Buttons */
+        .feature-btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 12px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .feature-btn:hover {
+            border-color: var(--accent-magenta);
+            background: rgba(255,0,255,0.1);
+        }
+
+        .feature-btn.active {
+            border-color: var(--accent-magenta);
+            background: rgba(255,0,255,0.2);
+        }
+
+        .feature-icon {
+            font-size: 18px;
+        }
+
+        /* Status */
+        .status-bar {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-quantum);
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0,255,255,0.2);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Initializing WASM Core...</div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="logo">VIB3+ INTEGRATED</div>
+            <div class="wasm-badge">WASM CORE ACTIVE</div>
+        </div>
+
+        <div class="system-tabs">
+            <button class="system-tab active" data-system="quantum">QUANTUM</button>
+            <button class="system-tab" data-system="faceted">FACETED</button>
+            <button class="system-tab" data-system="holographic">HOLOGRAPHIC</button>
+        </div>
+
+        <div style="font-size: 11px; color: var(--text-dim);">
+            v1.9.0 | C++ Core | 6D Rotation
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Left Panel: Rotation Controls -->
+        <div class="panel">
+            <div class="panel-section">
+                <div class="panel-title">3D Space Rotation</div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>XY Plane</span><span id="xyVal">0.00</span></div>
+                    <input type="range" id="rotXY" min="0" max="6.28" step="0.01" value="0">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>XZ Plane</span><span id="xzVal">0.00</span></div>
+                    <input type="range" id="rotXZ" min="0" max="6.28" step="0.01" value="0">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>YZ Plane</span><span id="yzVal">0.00</span></div>
+                    <input type="range" id="rotYZ" min="0" max="6.28" step="0.01" value="0">
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">4D Hyperspace Rotation</div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>XW Plane</span><span id="xwVal">0.00</span></div>
+                    <input type="range" id="rotXW" min="0" max="6.28" step="0.01" value="0">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>YW Plane</span><span id="ywVal">0.00</span></div>
+                    <input type="range" id="rotYW" min="0" max="6.28" step="0.01" value="0">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>ZW Plane</span><span id="zwVal">0.00</span></div>
+                    <input type="range" id="rotZW" min="0" max="6.28" step="0.01" value="0">
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">Visualization</div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>Projection Distance</span><span id="projVal">3.0</span></div>
+                    <input type="range" id="projDist" min="1.5" max="6" step="0.1" value="3">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-label"><span>Point Size</span><span id="sizeVal">4</span></div>
+                    <input type="range" id="pointSize" min="1" max="10" step="0.5" value="4">
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Canvas -->
+        <div class="canvas-area">
+            <canvas id="mainCanvas"></canvas>
+            <div class="fps-badge" id="fpsBadge">-- FPS</div>
+
+            <div class="canvas-overlay">
+                <button class="overlay-btn" id="autoRotateBtn">▶ Auto-Rotate</button>
+                <button class="overlay-btn" id="resetBtn">↺ Reset</button>
+                <button class="overlay-btn" id="fullscreenBtn">⛶ Fullscreen</button>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span id="wasmStatus">WASM</span>
+                </div>
+                <div class="status-item">
+                    <span id="vertexCount">0 vertices</span>
+                </div>
+                <div class="status-item">
+                    <span id="geoInfo">Geometry 0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Geometry & Features -->
+        <div class="panel">
+            <div class="panel-section">
+                <div class="panel-title">Geometry (24 Variants)</div>
+                <div class="geometry-grid" id="geometryGrid">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">Core Type</div>
+                <select id="coreType">
+                    <option value="0">Base (0-7)</option>
+                    <option value="1">Hypersphere Core (8-15)</option>
+                    <option value="2">Hypertetra Core (16-23)</option>
+                </select>
+            </div>
+
+            <div class="panel-section">
+                <div class="panel-title">Features (New Architecture)</div>
+                <button class="feature-btn" id="cardBendBtn">
+                    <span class="feature-icon">🃏</span>
+                    <span>Card Bending Effect</span>
+                </button>
+                <button class="feature-btn" id="audioBtn">
+                    <span class="feature-icon">🎵</span>
+                    <span>Audio Reactivity</span>
+                </button>
+                <button class="feature-btn" id="gyroBtn">
+                    <span class="feature-icon">📱</span>
+                    <span>Gyroscope Control</span>
+                </button>
+                <button class="feature-btn" id="exportBtn">
+                    <span class="feature-icon">📸</span>
+                    <span>Export Trading Card</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- WASM Module -->
+    <script src="../wasm/vib3_core.js"></script>
+
+    <!-- Application -->
+    <script type="module">
+        // Import from new src/ modules
+        import { Vec4 } from '../src/math/Vec4.js';
+        import { Rotor4D } from '../src/math/Rotor4D.js';
+        import { Mat4x4 } from '../src/math/Mat4x4.js';
+        import * as Projection from '../src/math/Projection.js';
+
+        // State
+        const state = {
+            system: 'quantum',
+            geometry: 0,
+            coreType: 0,
+            rotation: { xy: 0, xz: 0, yz: 0, xw: 0, yw: 0, zw: 0 },
+            projectionDistance: 3,
+            pointSize: 4,
+            autoRotate: false,
+            useWasm: false,
+            wasmModule: null
+        };
+
+        // Canvas setup
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationId = null;
+        let lastTime = 0;
+        let frameCount = 0;
+        let fps = 0;
+
+        // Initialize WASM
+        async function initWasm() {
+            try {
+                document.getElementById('loadingText').textContent = 'Loading WASM Core...';
+                state.wasmModule = await Vib3Core();
+                state.useWasm = true;
+                document.getElementById('wasmStatus').textContent = 'WASM ✓';
+                console.log('WASM Core loaded successfully');
+            } catch (err) {
+                console.warn('WASM not available, using JS fallback:', err);
+                document.getElementById('wasmStatus').textContent = 'JS Fallback';
+            }
+            document.getElementById('loadingText').textContent = 'Initializing visualization...';
+        }
+
+        // Generate geometry using new src/geometry system
+        function generateGeometry(geometryIndex) {
+            const baseIndex = geometryIndex % 8;
+            const coreType = Math.floor(geometryIndex / 8);
+
+            let points = [];
+
+            switch (baseIndex) {
+                case 0: // Tetrahedron
+                    points = [
+                        new Vec4(1, 1, 1, 0),
+                        new Vec4(1, -1, -1, 0),
+                        new Vec4(-1, 1, -1, 0),
+                        new Vec4(-1, -1, 1, 0)
+                    ];
+                    break;
+
+                case 1: // Tesseract (Hypercube)
+                    for (let x = -1; x <= 1; x += 2) {
+                        for (let y = -1; y <= 1; y += 2) {
+                            for (let z = -1; z <= 1; z += 2) {
+                                for (let w = -1; w <= 1; w += 2) {
+                                    points.push(new Vec4(x, y, z, w));
+                                }
+                            }
+                        }
+                    }
+                    break;
+
+                case 2: // Sphere
+                    const sphereRes = 24;
+                    for (let i = 0; i < sphereRes; i++) {
+                        const phi = Math.acos(-1 + 2 * i / sphereRes);
+                        const theta = Math.sqrt(sphereRes * Math.PI) * phi;
+                        points.push(new Vec4(
+                            Math.cos(theta) * Math.sin(phi),
+                            Math.sin(theta) * Math.sin(phi),
+                            Math.cos(phi),
+                            Math.sin(phi * 2) * 0.3
+                        ));
+                    }
+                    break;
+
+                case 3: // Torus
+                    const torusRes = 20;
+                    for (let i = 0; i < torusRes; i++) {
+                        for (let j = 0; j < torusRes / 2; j++) {
+                            const u = (i / torusRes) * Math.PI * 2;
+                            const v = (j / (torusRes / 2)) * Math.PI * 2;
+                            const R = 1, r = 0.4;
+                            points.push(new Vec4(
+                                (R + r * Math.cos(v)) * Math.cos(u),
+                                (R + r * Math.cos(v)) * Math.sin(u),
+                                r * Math.sin(v),
+                                Math.sin(u) * Math.sin(v) * 0.3
+                            ));
+                        }
+                    }
+                    break;
+
+                case 4: // Klein Bottle
+                    const kleinRes = 20;
+                    for (let i = 0; i < kleinRes; i++) {
+                        for (let j = 0; j < kleinRes / 2; j++) {
+                            const u = (i / kleinRes) * Math.PI * 2;
+                            const v = (j / (kleinRes / 2)) * Math.PI * 2;
+                            const a = 2;
+                            points.push(new Vec4(
+                                (a + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.cos(u),
+                                (a + Math.cos(u / 2) * Math.sin(v) - Math.sin(u / 2) * Math.sin(2 * v)) * Math.sin(u),
+                                Math.sin(u / 2) * Math.sin(v) + Math.cos(u / 2) * Math.sin(2 * v),
+                                Math.cos(v) * 0.5
+                            ).scale(0.4));
+                        }
+                    }
+                    break;
+
+                case 5: // Fractal (Sierpinski)
+                    const fractalPoints = [
+                        new Vec4(0, 1, 0, 0),
+                        new Vec4(-1, -0.5, 0.5, 0),
+                        new Vec4(1, -0.5, 0.5, 0),
+                        new Vec4(0, -0.5, -1, 0),
+                        new Vec4(0, 0, 0, 1)
+                    ];
+                    // Subdivide
+                    for (let iter = 0; iter < 3; iter++) {
+                        const newPoints = [];
+                        for (const p of fractalPoints) {
+                            for (const q of fractalPoints) {
+                                if (p !== q) {
+                                    newPoints.push(p.clone().add(q).scale(0.5));
+                                }
+                            }
+                        }
+                        fractalPoints.push(...newPoints.slice(0, 20));
+                    }
+                    points = fractalPoints.slice(0, 50);
+                    break;
+
+                case 6: // Wave
+                    const waveRes = 15;
+                    for (let i = 0; i < waveRes; i++) {
+                        for (let j = 0; j < waveRes; j++) {
+                            const x = (i / waveRes - 0.5) * 2;
+                            const z = (j / waveRes - 0.5) * 2;
+                            const r = Math.sqrt(x * x + z * z);
+                            const y = Math.sin(r * Math.PI * 2) * 0.5;
+                            const w = Math.cos(r * Math.PI * 2) * 0.3;
+                            points.push(new Vec4(x, y, z, w));
+                        }
+                    }
+                    break;
+
+                case 7: // Crystal (Octahedron extended)
+                    points = [
+                        new Vec4(1, 0, 0, 0), new Vec4(-1, 0, 0, 0),
+                        new Vec4(0, 1, 0, 0), new Vec4(0, -1, 0, 0),
+                        new Vec4(0, 0, 1, 0), new Vec4(0, 0, -1, 0),
+                        new Vec4(0, 0, 0, 1), new Vec4(0, 0, 0, -1),
+                        new Vec4(0.5, 0.5, 0.5, 0.5), new Vec4(-0.5, -0.5, -0.5, -0.5),
+                        new Vec4(0.5, -0.5, 0.5, -0.5), new Vec4(-0.5, 0.5, -0.5, 0.5)
+                    ];
+                    break;
+            }
+
+            // Apply core warp (from src/geometry/warp/)
+            if (coreType === 1) {
+                // Hypersphere Core warp
+                points = points.map(p => {
+                    const len = p.length() || 1;
+                    const factor = Math.sin(len * Math.PI) / len;
+                    return new Vec4(
+                        p.x * factor,
+                        p.y * factor,
+                        p.z * factor,
+                        p.w * factor + 0.5
+                    );
+                });
+            } else if (coreType === 2) {
+                // Hypertetrahedron Core warp
+                points = points.map(p => {
+                    const offset = (p.x + p.y + p.z + p.w) * 0.25;
+                    return new Vec4(
+                        p.x + offset * 0.3,
+                        p.y + offset * 0.3,
+                        p.z + offset * 0.3,
+                        p.w + offset * 0.5
+                    );
+                });
+            }
+
+            document.getElementById('vertexCount').textContent = `${points.length} vertices`;
+            return points;
+        }
+
+        // Rotate point using new Rotor4D from src/math
+        function rotatePoint(point, rotation) {
+            // Create rotor from all 6 angles using the new math library
+            const rotor = Rotor4D.fromEuler6({
+                xy: rotation.xy,
+                xz: rotation.xz,
+                yz: rotation.yz,
+                xw: rotation.xw,
+                yw: rotation.yw,
+                zw: rotation.zw
+            });
+
+            return rotor.rotate(point);
+        }
+
+        // Project 4D to 2D using new Projection module
+        function projectTo2D(point, scale) {
+            const projected = Projection.perspective(point, state.projectionDistance);
+            return {
+                x: projected.x * scale,
+                y: projected.y * scale,
+                depth: point.w // Use W for depth coloring
+            };
+        }
+
+        // Get system color
+        function getSystemColor(system, depth = 0) {
+            const colors = {
+                quantum: { h: 150, s: 100, l: 50 },    // Green
+                faceted: { h: 330, s: 100, l: 60 },    // Pink
+                holographic: { h: 200, s: 100, l: 60 } // Blue
+            };
+            const c = colors[system] || colors.quantum;
+            const depthFactor = 0.5 + depth * 0.5;
+            return `hsla(${c.h}, ${c.s}%, ${c.l * depthFactor}%, ${0.7 + depth * 0.3})`;
+        }
+
+        // Render frame
+        function render() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const cx = width / 2;
+            const cy = height / 2;
+            const scale = Math.min(width, height) * 0.35;
+
+            // Clear
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, width, height);
+
+            // Generate geometry
+            const geometryIndex = state.coreType * 8 + state.geometry;
+            const points = generateGeometry(geometryIndex);
+
+            // Auto-rotate
+            if (state.autoRotate) {
+                state.rotation.xw += 0.008;
+                state.rotation.yw += 0.005;
+                state.rotation.zw += 0.003;
+                updateSliderDisplays();
+            }
+
+            // Transform and project points
+            const projected = points.map(p => {
+                const rotated = rotatePoint(p, state.rotation);
+                return {
+                    ...projectTo2D(rotated, scale),
+                    original: rotated
+                };
+            });
+
+            // Sort by depth for proper rendering
+            projected.sort((a, b) => a.depth - b.depth);
+
+            // Draw edges
+            ctx.strokeStyle = getSystemColor(state.system, 0.3);
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+
+            for (let i = 0; i < projected.length; i++) {
+                for (let j = i + 1; j < projected.length; j++) {
+                    const pi = projected[i].original;
+                    const pj = projected[j].original;
+                    const dist = Math.sqrt(
+                        (pi.x - pj.x) ** 2 + (pi.y - pj.y) ** 2 +
+                        (pi.z - pj.z) ** 2 + (pi.w - pj.w) ** 2
+                    );
+
+                    if (dist < 1.8) {
+                        ctx.moveTo(cx + projected[i].x, cy + projected[i].y);
+                        ctx.lineTo(cx + projected[j].x, cy + projected[j].y);
+                    }
+                }
+            }
+            ctx.stroke();
+
+            // Draw points
+            projected.forEach(p => {
+                const normalizedDepth = (p.depth + 2) / 4;
+                const size = state.pointSize * (0.5 + normalizedDepth * 0.8);
+
+                ctx.fillStyle = getSystemColor(state.system, normalizedDepth);
+                ctx.shadowColor = getSystemColor(state.system, 1);
+                ctx.shadowBlur = 10;
+
+                ctx.beginPath();
+                ctx.arc(cx + p.x, cy + p.y, size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.shadowBlur = 0;
+
+            // Update FPS
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastTime = now;
+                document.getElementById('fpsBadge').textContent = `${fps} FPS`;
+            }
+
+            // Update geometry info
+            document.getElementById('geoInfo').textContent = `Geometry ${geometryIndex}`;
+
+            animationId = requestAnimationFrame(render);
+        }
+
+        // Resize canvas
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth * window.devicePixelRatio;
+            canvas.height = container.clientHeight * window.devicePixelRatio;
+        }
+
+        // Update slider displays
+        function updateSliderDisplays() {
+            document.getElementById('xyVal').textContent = state.rotation.xy.toFixed(2);
+            document.getElementById('xzVal').textContent = state.rotation.xz.toFixed(2);
+            document.getElementById('yzVal').textContent = state.rotation.yz.toFixed(2);
+            document.getElementById('xwVal').textContent = state.rotation.xw.toFixed(2);
+            document.getElementById('ywVal').textContent = state.rotation.yw.toFixed(2);
+            document.getElementById('zwVal').textContent = state.rotation.zw.toFixed(2);
+        }
+
+        // Setup UI
+        function setupUI() {
+            // System tabs
+            document.querySelectorAll('.system-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.system-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    state.system = tab.dataset.system;
+                });
+            });
+
+            // Geometry grid
+            const grid = document.getElementById('geometryGrid');
+            const geoNames = ['Tet', 'Cube', 'Sph', 'Tor', 'Kln', 'Frc', 'Wav', 'Cry'];
+            for (let i = 0; i < 8; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'geo-btn' + (i === 0 ? ' active' : '');
+                btn.textContent = geoNames[i];
+                btn.dataset.geo = i;
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.geo-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.geometry = i;
+                });
+                grid.appendChild(btn);
+            }
+
+            // Core type
+            document.getElementById('coreType').addEventListener('change', (e) => {
+                state.coreType = parseInt(e.target.value);
+            });
+
+            // Rotation sliders
+            ['XY', 'XZ', 'YZ', 'XW', 'YW', 'ZW'].forEach(plane => {
+                const slider = document.getElementById(`rot${plane}`);
+                slider.addEventListener('input', () => {
+                    state.rotation[plane.toLowerCase()] = parseFloat(slider.value);
+                    document.getElementById(`${plane.toLowerCase()}Val`).textContent = slider.value;
+                });
+            });
+
+            // Projection distance
+            document.getElementById('projDist').addEventListener('input', (e) => {
+                state.projectionDistance = parseFloat(e.target.value);
+                document.getElementById('projVal').textContent = e.target.value;
+            });
+
+            // Point size
+            document.getElementById('pointSize').addEventListener('input', (e) => {
+                state.pointSize = parseFloat(e.target.value);
+                document.getElementById('sizeVal').textContent = e.target.value;
+            });
+
+            // Auto-rotate button
+            document.getElementById('autoRotateBtn').addEventListener('click', () => {
+                state.autoRotate = !state.autoRotate;
+                document.getElementById('autoRotateBtn').textContent =
+                    state.autoRotate ? '⏸ Stop' : '▶ Auto-Rotate';
+            });
+
+            // Reset button
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                state.rotation = { xy: 0, xz: 0, yz: 0, xw: 0, yw: 0, zw: 0 };
+                ['XY', 'XZ', 'YZ', 'XW', 'YW', 'ZW'].forEach(plane => {
+                    document.getElementById(`rot${plane}`).value = 0;
+                });
+                updateSliderDisplays();
+            });
+
+            // Fullscreen button
+            document.getElementById('fullscreenBtn').addEventListener('click', () => {
+                canvas.parentElement.requestFullscreen?.();
+            });
+
+            // Feature buttons
+            document.getElementById('cardBendBtn').addEventListener('click', function() {
+                this.classList.toggle('active');
+                alert('Card Bending: Uses CardBending.js from src/viewer/\nMaps mouse position to 3D CSS transforms + 4D rotation');
+            });
+
+            document.getElementById('audioBtn').addEventListener('click', function() {
+                this.classList.toggle('active');
+                alert('Audio Reactivity: Uses AudioReactivity.js from src/viewer/\nFFT analysis maps frequency bands to 6D rotation planes');
+            });
+
+            document.getElementById('gyroBtn').addEventListener('click', function() {
+                this.classList.toggle('active');
+                alert('Gyroscope: Uses ReactivityManager.js from src/viewer/\nDevice orientation maps to XW, YW, ZW rotation planes');
+            });
+
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                const link = document.createElement('a');
+                link.download = `vib3-${state.system}-geo${state.coreType * 8 + state.geometry}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // Initialize
+        async function init() {
+            await initWasm();
+
+            document.getElementById('loadingText').textContent = 'Setting up visualization...';
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            setupUI();
+
+            document.getElementById('loadingOverlay').classList.add('hidden');
+
+            lastTime = performance.now();
+            render();
+
+            console.log('VIB3+ Integrated System initialized');
+            console.log('- WASM Core:', state.useWasm ? 'Active' : 'JS Fallback');
+            console.log('- Using: src/math/Vec4.js, Rotor4D.js, Mat4x4.js, Projection.js');
+            console.log('- Geometry: 8 base × 3 cores = 24 variants');
+        }
+
+        init();
+    </script>
+</body>
+</html>

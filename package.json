@@ -1,19 +1,219 @@
 {
-  "name": "vib34d-xr-quaternion-sdk",
-  "version": "1.0.0",
-  "description": "4D Geometric Processing with XR Quaternion Integration - Advanced quaternion mathematics and spatial computing for OpenXR/WebXR",
+  "name": "@vib3/sdk",
+  "version": "1.9.0",
+  "description": "VIB3+ 4D Visualization SDK - Unified engine with 6D rotation, MCP agentic integration, and cross-platform support",
   "type": "module",
-  "main": "src/core/AdaptiveSDK.js",
+  "main": "src/core/VIB3Engine.js",
   "types": "./types/adaptive-sdk.d.ts",
+  "bin": {
+    "vib3": "./src/cli/index.js"
+  },
+  "sideEffects": [
+    "./src/geometry/builders/*.js"
+  ],
   "exports": {
     ".": {
       "types": "./types/adaptive-sdk.d.ts",
-      "default": "./src/core/AdaptiveSDK.js"
+      "import": "./src/core/VIB3Engine.js"
+    },
+    "./core": {
+      "import": "./src/core/VIB3Engine.js"
+    },
+    "./engine": {
+      "import": "./src/core/VIB3Engine.js"
+    },
+    "./parameters": {
+      "import": "./src/core/Parameters.js"
+    },
+    "./geometry": {
+      "import": "./src/geometry/index.js"
+    },
+    "./geometry/factory": {
+      "import": "./src/geometry/GeometryFactory.js"
+    },
+    "./geometry/generators": {
+      "import": "./src/geometry/generators/Tesseract.js"
+    },
+    "./geometry/generators/tesseract": {
+      "import": "./src/geometry/generators/Tesseract.js"
+    },
+    "./geometry/generators/tetrahedron": {
+      "import": "./src/geometry/generators/Tetrahedron.js"
+    },
+    "./geometry/generators/sphere": {
+      "import": "./src/geometry/generators/Sphere.js"
+    },
+    "./geometry/generators/torus": {
+      "import": "./src/geometry/generators/Torus.js"
+    },
+    "./geometry/generators/klein-bottle": {
+      "import": "./src/geometry/generators/KleinBottle.js"
+    },
+    "./geometry/generators/fractal": {
+      "import": "./src/geometry/generators/Fractal.js"
+    },
+    "./geometry/generators/wave": {
+      "import": "./src/geometry/generators/Wave.js"
+    },
+    "./geometry/generators/crystal": {
+      "import": "./src/geometry/generators/Crystal.js"
+    },
+    "./geometry/warp": {
+      "import": "./src/geometry/warp/index.js"
+    },
+    "./geometry/warp/hypersphere": {
+      "import": "./src/geometry/warp/HypersphereCore.js"
+    },
+    "./geometry/warp/hypertetra": {
+      "import": "./src/geometry/warp/HypertetraCore.js"
+    },
+    "./geometry/buffers": {
+      "import": "./src/geometry/buffers/index.js"
+    },
+    "./scene": {
+      "import": "./src/scene/index.js"
+    },
+    "./scene/node4d": {
+      "import": "./src/scene/Node4D.js"
+    },
+    "./scene/scene4d": {
+      "import": "./src/scene/Scene4D.js"
+    },
+    "./scene/resources": {
+      "import": "./src/scene/ResourceManager.js"
+    },
+    "./scene/pools": {
+      "import": "./src/scene/MemoryPool.js"
+    },
+    "./scene/disposable": {
+      "import": "./src/scene/Disposable.js"
+    },
+    "./render": {
+      "import": "./src/render/index.js"
+    },
+    "./render/state": {
+      "import": "./src/render/RenderState.js"
+    },
+    "./render/commands": {
+      "import": "./src/render/RenderCommand.js"
+    },
+    "./render/buffer": {
+      "import": "./src/render/CommandBuffer.js"
+    },
+    "./render/target": {
+      "import": "./src/render/RenderTarget.js"
+    },
+    "./render/shader": {
+      "import": "./src/render/ShaderProgram.js"
+    },
+    "./render/webgl": {
+      "import": "./src/render/backends/WebGLBackend.js"
+    },
+    "./wasm": {
+      "import": "./src/wasm/index.js"
+    },
+    "./wasm/loader": {
+      "import": "./src/wasm/WasmLoader.js"
+    },
+    "./types/render": {
+      "types": "./types/render/index.d.ts"
+    },
+    "./quantum": {
+      "import": "./src/quantum/QuantumEngine.js"
+    },
+    "./faceted": {
+      "import": "./src/faceted/FacetedSystem.js"
+    },
+    "./holographic": {
+      "import": "./src/holograms/RealHolographicSystem.js"
+    },
+    "./agent": {
+      "import": "./src/agent/index.js"
+    },
+    "./agent/telemetry": {
+      "import": "./src/agent/telemetry/index.js"
+    },
+    "./agent/mcp": {
+      "import": "./src/agent/mcp/index.js"
+    },
+    "./agent/cli": {
+      "import": "./src/agent/cli/index.js"
+    },
+    "./agent/exporters": {
+      "import": "./src/agent/telemetry/TelemetryExporters.js"
+    },
+    "./agent/streaming": {
+      "import": "./src/agent/telemetry/EventStream.js"
+    },
+    "./agent/instrumentation": {
+      "import": "./src/agent/telemetry/Instrumentation.js"
+    },
+    "./schemas": {
+      "import": "./src/schemas/index.js"
+    },
+    "./schemas/parameters": {
+      "import": "./src/schemas/parameters.schema.json",
+      "require": "./src/schemas/parameters.schema.json"
+    },
+    "./schemas/tool-response": {
+      "import": "./src/schemas/tool-response.schema.json",
+      "require": "./src/schemas/tool-response.schema.json"
+    },
+    "./schemas/error": {
+      "import": "./src/schemas/error.schema.json",
+      "require": "./src/schemas/error.schema.json"
+    },
+    "./cli": {
+      "node": "./src/cli/index.js"
+    },
+    "./gallery": {
+      "import": "./src/gallery/GallerySystem.js"
+    },
+    "./viewer": {
+      "import": "./src/viewer/index.js"
+    },
+    "./viewer/portal": {
+      "import": "./src/viewer/ViewerPortal.js"
+    },
+    "./viewer/reactivity": {
+      "import": "./src/viewer/ReactivityManager.js"
+    },
+    "./viewer/card-bending": {
+      "import": "./src/viewer/CardBending.js"
+    },
+    "./viewer/card-exporter": {
+      "import": "./src/viewer/TradingCardExporter.js"
+    },
+    "./viewer/audio": {
+      "import": "./src/viewer/AudioReactivity.js"
+    },
+    "./viewer/gallery-ui": {
+      "import": "./src/viewer/GalleryUI.js"
+    },
+    "./llm": {
+      "import": "./src/llm/LLMParameterInterface.js"
+    },
+    "./math": {
+      "import": "./src/math/index.js"
+    },
+    "./math/vec4": {
+      "import": "./src/math/Vec4.js"
+    },
+    "./math/rotor4d": {
+      "import": "./src/math/Rotor4D.js"
+    },
+    "./math/mat4x4": {
+      "import": "./src/math/Mat4x4.js"
+    },
+    "./math/projection": {
+      "import": "./src/math/Projection.js"
+    },
+    "./math/constants": {
+      "import": "./src/math/constants.js"
     },
     "./quaternion": "./src/ui/adaptive/renderers/ShaderQuaternionSynchronizer.js",
     "./sensors": "./src/ui/adaptive/SensoryInputBridge.js",
     "./polychora": "./src/core/PolychoraSystem.js",
-    "./geometry": "./src/geometry/GeometryLibrary.js",
     "./core/quaternion": {
       "types": "./src/core/quaternion/index.ts",
       "default": "./src/core/quaternion/index.ts"

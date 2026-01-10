@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIB3+ Engine Demo - 4D Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #252545;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --accent-cyan: #00ffff;
+            --accent-magenta: #ff00ff;
+            --accent-green: #00ff88;
+            --border-color: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent-cyan);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr 300px;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* Left Panel - Controls */
+        .controls-panel {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            color: var(--accent-cyan);
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* System Selector */
+        .system-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .system-btn {
+            padding: 12px 8px;
+            background: var(--bg-tertiary);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 11px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .system-btn:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .system-btn.active {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+
+        .system-btn.quantum { --system-color: var(--accent-green); }
+        .system-btn.faceted { --system-color: #ff4488; }
+        .system-btn.holographic { --system-color: #44aaff; }
+
+        .system-btn.active.quantum { background: var(--accent-green); }
+        .system-btn.active.faceted { background: #ff4488; }
+        .system-btn.active.holographic { background: #44aaff; }
+
+        /* Geometry Dropdown */
+        .geometry-select {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        /* Rotation Sliders */
+        .rotation-sliders {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-label {
+            width: 35px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        .slider-input {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            width: 45px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: right;
+            font-family: monospace;
+        }
+
+        /* 3D Space vs 4D Hyperspace labels */
+        .space-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            margin-top: 15px;
+        }
+
+        .space-label:first-child {
+            margin-top: 0;
+        }
+
+        .space-label.hyperspace {
+            color: var(--accent-magenta);
+        }
+
+        /* Center - Visualization */
+        .visualization-area {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #mainCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .overlay-btn {
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .overlay-btn:hover {
+            background: rgba(0, 255, 255, 0.2);
+            border-color: var(--accent-cyan);
+        }
+
+        /* Info Bar */
+        .info-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+        }
+
+        .fps-counter {
+            font-family: monospace;
+            color: var(--accent-green);
+        }
+
+        /* Right Panel - Features */
+        .features-panel {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-left: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+
+        /* Card Bending Controls */
+        .bend-presets {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .bend-preset-btn {
+            padding: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+
+        .bend-preset-btn:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .bend-preset-btn.active {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        /* Audio Controls */
+        .audio-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .audio-btn {
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .audio-btn:hover {
+            border-color: var(--accent-magenta);
+        }
+
+        .audio-btn.active {
+            border-color: var(--accent-magenta);
+            background: rgba(255, 0, 255, 0.1);
+        }
+
+        .audio-visualizer {
+            height: 60px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        /* Export Controls */
+        .export-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .export-btn {
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            border: none;
+            border-radius: 6px;
+            color: var(--bg-primary);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+        }
+
+        /* Gallery Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            width: 90%;
+            height: 90%;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            height: calc(100% - 60px);
+            overflow: auto;
+        }
+
+        /* Feature Info */
+        .feature-info {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 250px 1fr;
+            }
+            .features-panel {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            .controls-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">VIB3+ Engine</div>
+        <nav class="nav-links">
+            <a href="#" id="galleryLink">Gallery</a>
+            <a href="#" id="viewerLink">Viewer</a>
+            <a href="#" id="docsLink">Docs</a>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <!-- Left Panel - Controls -->
+        <aside class="controls-panel">
+            <div class="control-section">
+                <h3 class="section-title">System</h3>
+                <div class="system-selector">
+                    <button class="system-btn quantum active" data-system="quantum">Quantum</button>
+                    <button class="system-btn faceted" data-system="faceted">Faceted</button>
+                    <button class="system-btn holographic" data-system="holographic">Holographic</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3 class="section-title">Geometry (0-23)</h3>
+                <select class="geometry-select" id="geometrySelect">
+                    <optgroup label="Base Geometries (0-7)">
+                        <option value="0">0 - Tetrahedron</option>
+                        <option value="1">1 - Hypercube</option>
+                        <option value="2">2 - Sphere</option>
+                        <option value="3">3 - Torus</option>
+                        <option value="4">4 - Klein Bottle</option>
+                        <option value="5">5 - Fractal</option>
+                        <option value="6">6 - Wave</option>
+                        <option value="7">7 - Crystal</option>
+                    </optgroup>
+                    <optgroup label="Hypersphere Core (8-15)">
+                        <option value="8">8 - Tetra + Hypersphere</option>
+                        <option value="9">9 - Cube + Hypersphere</option>
+                        <option value="10">10 - Sphere + Hypersphere</option>
+                        <option value="11">11 - Torus + Hypersphere</option>
+                        <option value="12">12 - Klein + Hypersphere</option>
+                        <option value="13">13 - Fractal + Hypersphere</option>
+                        <option value="14">14 - Wave + Hypersphere</option>
+                        <option value="15">15 - Crystal + Hypersphere</option>
+                    </optgroup>
+                    <optgroup label="Hypertetra Core (16-23)">
+                        <option value="16">16 - Tetra + Hypertetra</option>
+                        <option value="17">17 - Cube + Hypertetra</option>
+                        <option value="18">18 - Sphere + Hypertetra</option>
+                        <option value="19">19 - Torus + Hypertetra</option>
+                        <option value="20">20 - Klein + Hypertetra</option>
+                        <option value="21">21 - Fractal + Hypertetra</option>
+                        <option value="22">22 - Wave + Hypertetra</option>
+                        <option value="23">23 - Crystal + Hypertetra</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="control-section">
+                <h3 class="section-title">6D Rotation</h3>
+                <div class="rotation-sliders">
+                    <div class="space-label">3D Space</div>
+                    <div class="slider-row">
+                        <span class="slider-label">XY</span>
+                        <input type="range" class="slider-input" id="rotXY" min="0" max="6.28" step="0.01" value="0">
+                        <span class="slider-value" id="rotXYVal">0.00</span>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">XZ</span>
+                        <input type="range" class="slider-input" id="rotXZ" min="0" max="6.28" step="0.01" value="0">
+                        <span class="slider-value" id="rotXZVal">0.00</span>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">YZ</span>
+                        <input type="range" class="slider-input" id="rotYZ" min="0" max="6.28" step="0.01" value="0">
+                        <span class="slider-value" id="rotYZVal">0.00</span>
+                    </div>
+
+                    <div class="space-label hyperspace">4D Hyperspace</div>
+                    <div class="slider-row">
+                        <span class="slider-label">XW</span>
+                        <input type="range" class="slider-input" id="rotXW" min="0" max="6.28" step="0.01" value="0">
+                        <span class="slider-value" id="rotXWVal">0.00</span>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">YW</span>
+                        <input type="range" class="slider-input" id="rotYW" min="0" max="6.28" step="0.01" value="0">
+                        <span class="slider-value" id="rotYWVal">0.00</span>
+                    </div>
+                    <div class="slider-row">
+                        <span class="slider-label">ZW</span>
+                        <input type="range" class="slider-input" id="rotZW" min="0" max="6.28" step="0.01" value="0">
+                        <span class="slider-value" id="rotZWVal">0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3 class="section-title">Variation</h3>
+                <div class="slider-row">
+                    <span class="slider-label">Slot</span>
+                    <input type="range" class="slider-input" id="variationSlot" min="0" max="99" step="1" value="0">
+                    <span class="slider-value" id="variationVal">0</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center - Visualization -->
+        <section class="visualization-area">
+            <div class="canvas-container">
+                <canvas id="mainCanvas"></canvas>
+                <div class="canvas-overlay">
+                    <button class="overlay-btn" id="fullscreenBtn">⛶ Fullscreen</button>
+                    <button class="overlay-btn" id="resetBtn">↺ Reset</button>
+                    <button class="overlay-btn" id="autoRotateBtn">▶ Auto-Rotate</button>
+                </div>
+            </div>
+            <div class="info-bar">
+                <div>
+                    <span id="systemInfo">Quantum</span> |
+                    <span id="geometryInfo">Geometry 0</span> |
+                    <span id="variationInfo">Variation 0</span>
+                </div>
+                <div class="fps-counter" id="fpsCounter">60 FPS</div>
+            </div>
+        </section>
+
+        <!-- Right Panel - Features -->
+        <aside class="features-panel">
+            <div class="control-section">
+                <h3 class="section-title">Card Bending</h3>
+                <div class="bend-presets">
+                    <button class="bend-preset-btn" data-preset="none">None</button>
+                    <button class="bend-preset-btn" data-preset="subtle">Subtle</button>
+                    <button class="bend-preset-btn active" data-preset="standard">Standard</button>
+                    <button class="bend-preset-btn" data-preset="dramatic">Dramatic</button>
+                    <button class="bend-preset-btn" data-preset="holographic">Holographic</button>
+                </div>
+                <div class="feature-info">
+                    Move mouse over canvas to bend the card effect in 3D.
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3 class="section-title">Audio Reactivity</h3>
+                <div class="audio-controls">
+                    <button class="audio-btn" id="micBtn">🎤 Microphone</button>
+                    <button class="audio-btn" id="fileBtn">📁 Audio File</button>
+                    <input type="file" id="audioFileInput" accept="audio/*" style="display: none;">
+                </div>
+                <canvas class="audio-visualizer" id="audioVisualizer"></canvas>
+                <div class="feature-info">
+                    Audio features map to 4D rotation planes for reactive visualization.
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3 class="section-title">Export</h3>
+                <div class="export-controls">
+                    <button class="export-btn" id="screenshotBtn">📷 Screenshot</button>
+                    <button class="export-btn" id="cardExportBtn">🃏 Export Card</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3 class="section-title">Keyboard Shortcuts</h3>
+                <div class="feature-info">
+                    <strong>F</strong> - Toggle Fullscreen<br>
+                    <strong>R</strong> - Reset Rotation<br>
+                    <strong>Space</strong> - Auto-Rotate<br>
+                    <strong>Ctrl+S</strong> - Screenshot<br>
+                    <strong>G</strong> - Open Gallery<br>
+                    <strong>Esc</strong> - Exit Fullscreen
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Gallery Modal -->
+    <div class="modal-overlay" id="galleryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Gallery - 100 Variations</h2>
+                <button class="modal-close" id="closeGallery">&times;</button>
+            </div>
+            <div class="modal-body" id="galleryContainer"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Demo initialization script
+        const state = {
+            system: 'quantum',
+            geometry: 0,
+            variation: 0,
+            rotation: { xy: 0, xz: 0, yz: 0, xw: 0, yw: 0, zw: 0 },
+            autoRotate: false,
+            bendPreset: 'standard',
+            audioActive: false
+        };
+
+        // Canvas setup
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth * window.devicePixelRatio;
+            canvas.height = container.clientHeight * window.devicePixelRatio;
+            canvas.style.width = container.clientWidth + 'px';
+            canvas.style.height = container.clientHeight + 'px';
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Simple 4D visualization demo
+        function render() {
+            ctx.fillStyle = '#0a0a0f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const scale = Math.min(canvas.width, canvas.height) * 0.3;
+
+            // Generate 4D points based on geometry
+            const points = generate4DGeometry(state.geometry);
+
+            // Apply 6D rotation
+            const rotated = points.map(p => rotate6D(p, state.rotation));
+
+            // Project to 3D then 2D
+            const projected = rotated.map(p => project4Dto2D(p, scale));
+
+            // Draw
+            ctx.strokeStyle = getSystemColor(state.system);
+            ctx.lineWidth = 2;
+            ctx.shadowColor = getSystemColor(state.system);
+            ctx.shadowBlur = 10;
+
+            // Draw edges
+            ctx.beginPath();
+            for (let i = 0; i < projected.length; i++) {
+                for (let j = i + 1; j < projected.length; j++) {
+                    const dist = Math.sqrt(
+                        (rotated[i][0] - rotated[j][0]) ** 2 +
+                        (rotated[i][1] - rotated[j][1]) ** 2 +
+                        (rotated[i][2] - rotated[j][2]) ** 2 +
+                        (rotated[i][3] - rotated[j][3]) ** 2
+                    );
+                    if (dist < 1.5) {
+                        ctx.moveTo(cx + projected[i][0], cy + projected[i][1]);
+                        ctx.lineTo(cx + projected[j][0], cy + projected[j][1]);
+                    }
+                }
+            }
+            ctx.stroke();
+
+            // Draw vertices
+            ctx.fillStyle = '#ffffff';
+            projected.forEach(([x, y]) => {
+                ctx.beginPath();
+                ctx.arc(cx + x, cy + y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Auto-rotate
+            if (state.autoRotate) {
+                state.rotation.xw += 0.01;
+                state.rotation.yw += 0.007;
+                updateSliders();
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        function generate4DGeometry(index) {
+            const baseIndex = index % 8;
+            const coreType = Math.floor(index / 8);
+
+            // Base geometry points
+            let points = [];
+            switch (baseIndex) {
+                case 0: // Tetrahedron
+                    points = [[1,1,1,0], [1,-1,-1,0], [-1,1,-1,0], [-1,-1,1,0]];
+                    break;
+                case 1: // Hypercube (tesseract)
+                    for (let x = -1; x <= 1; x += 2)
+                        for (let y = -1; y <= 1; y += 2)
+                            for (let z = -1; z <= 1; z += 2)
+                                for (let w = -1; w <= 1; w += 2)
+                                    points.push([x, y, z, w]);
+                    break;
+                case 2: // Sphere
+                    for (let i = 0; i < 20; i++) {
+                        const phi = Math.acos(-1 + 2 * i / 20);
+                        const theta = Math.sqrt(20 * Math.PI) * phi;
+                        points.push([
+                            Math.cos(theta) * Math.sin(phi),
+                            Math.sin(theta) * Math.sin(phi),
+                            Math.cos(phi),
+                            Math.sin(phi * 2) * 0.3
+                        ]);
+                    }
+                    break;
+                default:
+                    // Generate procedural points
+                    for (let i = 0; i < 16; i++) {
+                        const angle = (i / 16) * Math.PI * 2;
+                        points.push([
+                            Math.cos(angle),
+                            Math.sin(angle),
+                            Math.cos(angle * 2) * 0.5,
+                            Math.sin(angle * 2) * 0.5
+                        ]);
+                    }
+            }
+
+            // Apply core warp
+            if (coreType === 1) {
+                // Hypersphere warp
+                points = points.map(([x, y, z, w]) => {
+                    const r = Math.sqrt(x*x + y*y + z*z + w*w) || 1;
+                    const factor = Math.sin(r * Math.PI) / r;
+                    return [x * factor, y * factor, z * factor, w * factor + 0.5];
+                });
+            } else if (coreType === 2) {
+                // Hypertetrahedron warp
+                points = points.map(([x, y, z, w]) => {
+                    const offset = (x + y + z + w) * 0.25;
+                    return [x + offset * 0.3, y + offset * 0.3, z + offset * 0.3, w + offset * 0.5];
+                });
+            }
+
+            return points;
+        }
+
+        function rotate6D(p, rot) {
+            let [x, y, z, w] = p;
+
+            // XY rotation
+            let cos = Math.cos(rot.xy), sin = Math.sin(rot.xy);
+            [x, y] = [x * cos - y * sin, x * sin + y * cos];
+
+            // XZ rotation
+            cos = Math.cos(rot.xz); sin = Math.sin(rot.xz);
+            [x, z] = [x * cos - z * sin, x * sin + z * cos];
+
+            // YZ rotation
+            cos = Math.cos(rot.yz); sin = Math.sin(rot.yz);
+            [y, z] = [y * cos - z * sin, y * sin + z * cos];
+
+            // XW rotation
+            cos = Math.cos(rot.xw); sin = Math.sin(rot.xw);
+            [x, w] = [x * cos - w * sin, x * sin + w * cos];
+
+            // YW rotation
+            cos = Math.cos(rot.yw); sin = Math.sin(rot.yw);
+            [y, w] = [y * cos - w * sin, y * sin + w * cos];
+
+            // ZW rotation
+            cos = Math.cos(rot.zw); sin = Math.sin(rot.zw);
+            [z, w] = [z * cos - w * sin, z * sin + w * cos];
+
+            return [x, y, z, w];
+        }
+
+        function project4Dto2D(p, scale) {
+            const [x, y, z, w] = p;
+            const dist = 3;
+            const factor = dist / (dist - w);
+            return [x * factor * scale, y * factor * scale];
+        }
+
+        function getSystemColor(system) {
+            const colors = {
+                quantum: '#00ff88',
+                faceted: '#ff4488',
+                holographic: '#44aaff'
+            };
+            return colors[system] || '#ffffff';
+        }
+
+        function updateSliders() {
+            ['xy', 'xz', 'yz', 'xw', 'yw', 'zw'].forEach(plane => {
+                const slider = document.getElementById(`rot${plane.toUpperCase()}`);
+                const value = document.getElementById(`rot${plane.toUpperCase()}Val`);
+                if (slider && value) {
+                    slider.value = state.rotation[plane];
+                    value.textContent = state.rotation[plane].toFixed(2);
+                }
+            });
+        }
+
+        function updateInfo() {
+            document.getElementById('systemInfo').textContent = state.system.charAt(0).toUpperCase() + state.system.slice(1);
+            document.getElementById('geometryInfo').textContent = `Geometry ${state.geometry}`;
+            document.getElementById('variationInfo').textContent = `Variation ${state.variation}`;
+        }
+
+        // Event listeners
+        document.querySelectorAll('.system-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.system-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.system = btn.dataset.system;
+                updateInfo();
+            });
+        });
+
+        document.getElementById('geometrySelect').addEventListener('change', (e) => {
+            state.geometry = parseInt(e.target.value);
+            updateInfo();
+        });
+
+        ['xy', 'xz', 'yz', 'xw', 'yw', 'zw'].forEach(plane => {
+            const slider = document.getElementById(`rot${plane.toUpperCase()}`);
+            const value = document.getElementById(`rot${plane.toUpperCase()}Val`);
+            slider.addEventListener('input', () => {
+                state.rotation[plane] = parseFloat(slider.value);
+                value.textContent = state.rotation[plane].toFixed(2);
+            });
+        });
+
+        document.getElementById('variationSlot').addEventListener('input', (e) => {
+            state.variation = parseInt(e.target.value);
+            document.getElementById('variationVal').textContent = state.variation;
+            updateInfo();
+        });
+
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            canvas.parentElement.requestFullscreen?.();
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            state.rotation = { xy: 0, xz: 0, yz: 0, xw: 0, yw: 0, zw: 0 };
+            updateSliders();
+        });
+
+        document.getElementById('autoRotateBtn').addEventListener('click', (e) => {
+            state.autoRotate = !state.autoRotate;
+            e.target.textContent = state.autoRotate ? '⏸ Stop' : '▶ Auto-Rotate';
+        });
+
+        document.getElementById('screenshotBtn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `vib3-${state.system}-${state.geometry}-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        document.getElementById('galleryLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('galleryModal').style.display = 'flex';
+        });
+
+        document.getElementById('closeGallery').addEventListener('click', () => {
+            document.getElementById('galleryModal').style.display = 'none';
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            switch (e.key.toLowerCase()) {
+                case 'f':
+                    canvas.parentElement.requestFullscreen?.();
+                    break;
+                case 'r':
+                    state.rotation = { xy: 0, xz: 0, yz: 0, xw: 0, yw: 0, zw: 0 };
+                    updateSliders();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    state.autoRotate = !state.autoRotate;
+                    document.getElementById('autoRotateBtn').textContent = state.autoRotate ? '⏸ Stop' : '▶ Auto-Rotate';
+                    break;
+                case 'g':
+                    document.getElementById('galleryModal').style.display = 'flex';
+                    break;
+                case 'escape':
+                    document.getElementById('galleryModal').style.display = 'none';
+                    break;
+            }
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                document.getElementById('screenshotBtn').click();
+            }
+        });
+
+        // FPS counter
+        let frameCount = 0;
+        let lastTime = performance.now();
+        function updateFPS() {
+            frameCount++;
+            const now = performance.now();
+            if (now - lastTime >= 1000) {
+                document.getElementById('fpsCounter').textContent = `${frameCount} FPS`;
+                frameCount = 0;
+                lastTime = now;
+            }
+            requestAnimationFrame(updateFPS);
+        }
+
+        // Start
+        updateInfo();
+        render();
+        updateFPS();
+    </script>
+</body>
+</html>
