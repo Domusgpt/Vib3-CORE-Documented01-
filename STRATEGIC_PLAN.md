@@ -363,25 +363,64 @@ VIB3+ Parameter State
 
 ## Part 9: Immediate Action Items
 
-### Today
-1. [ ] Fix Faceted rendering (canvas ID issue)
-2. [ ] Add Core Type selector (3 buttons)
-3. [ ] Add Randomize buttons (3 variants)
+### Today - COMPLETED
+1. [x] Fix Faceted rendering (canvas ID issue) ✅
+2. [x] Add Core Type selector (3 buttons) ✅
+3. [x] Add Randomize buttons (3 variants) ✅
 
-### This Week
-4. [ ] Collapsible mobile panels
-5. [ ] Preset save/load UI
+### This Week - COMPLETED
+4. [x] Collapsible mobile panels ✅
+5. [x] Preset save/load UI ✅
 6. [ ] Parameter change telemetry
 
 ### Next Week
-7. [ ] Export modal with options
+7. [x] Export modal with options ✅ (GLSL/HLSL/Unity/Godot)
 8. [ ] Share URL generation
-9. [ ] Agent command set
+9. [ ] Agent command set (MCP tools)
 
 ### This Month
 10. [ ] Architecture consolidation
 11. [ ] Performance optimization
 12. [ ] Documentation site
+
+---
+
+## Part 10: Implemented Features (2026-01-10)
+
+### Core Type Selector
+- 3 buttons: Base, Hypersphere Core, Hypertetrahedron Core
+- Formula: `geometry = coreType * 8 + baseGeometry`
+- Provides 24 unique geometry variants (8 base × 3 cores)
+
+### Randomize Buttons
+- **All**: Randomizes system + all parameters
+- **Params**: Left panel only (rotations, visualization)
+- **Visual**: Right panel only (geometry, colors)
+
+### Shader Export System (`ShaderExporter.js`)
+- **GLSL**: Full WebGL/OpenGL shader with 6D rotation matrices
+- **HLSL**: Unreal Engine material function format
+- **Unity**: ShaderGraph Custom Function node
+- **Godot**: GDShader for Godot 4.x
+
+Each export includes:
+- Complete 6D rotation matrices (XY, XZ, YZ, XW, YW, ZW)
+- 8 base geometry SDFs
+- Hypersphere/Hypertetrahedron core wrappers
+- Current parameter values as comments
+
+### Preset System
+- Save presets to browser localStorage
+- Load by clicking preset name
+- Delete with X button
+- Import/Export as JSON files
+- Includes: system, parameters, coreType, baseGeometry
+
+### Mobile-Responsive Panels
+- Panels collapse to bottom 48px on mobile (<900px)
+- Tap/drag handle to expand
+- Touch swipe support
+- Two-panel layout on tablet, single on phone
 
 ---
 
