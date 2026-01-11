@@ -51,7 +51,8 @@ export class PolytopeInstanceBuffer {
 
     this.layout = createStd430Layout([
       { name: 'modelMatrices', type: 'mat4x4', count: this.maxInstances },
-      { name: 'rotors', type: 'vec4', count: this.maxInstances },
+      { name: 'rotorsA', type: 'vec4', count: this.maxInstances },
+      { name: 'rotorsB', type: 'vec4', count: this.maxInstances },
       { name: 'colors', type: 'vec4', count: this.maxInstances },
       { name: 'misc', type: 'vec4', count: this.maxInstances },
     ]);
@@ -86,8 +87,9 @@ export class PolytopeInstanceBuffer {
       elementCount: 1,
     });
 
-    const rotor = ensureLength(instance.rotor, 4);
-    writeField(this.layout, this.data, 'rotors', rotor, { elementIndex: index, elementCount: 1 });
+    const rotor = ensureLength(instance.rotor, 8);
+    writeField(this.layout, this.data, 'rotorsA', rotor.slice(0, 4), { elementIndex: index, elementCount: 1 });
+    writeField(this.layout, this.data, 'rotorsB', rotor.slice(4, 8), { elementIndex: index, elementCount: 1 });
 
     const color = ensureLength(instance.color, 4);
     writeField(this.layout, this.data, 'colors', color, { elementIndex: index, elementCount: 1 });
@@ -102,9 +104,14 @@ export class PolytopeInstanceBuffer {
     if (index < 0 || index >= this.maxInstances) {
       throw new Error(`Instance index ${index} is out of bounds for maxInstances=${this.maxInstances}.`);
     }
+    const rotorA = readField(this.layout, this.data, 'rotorsA', { elementIndex: index });
+    const rotorB = readField(this.layout, this.data, 'rotorsB', { elementIndex: index });
+    const rotor = new Float32Array(8);
+    rotor.set(rotorA, 0);
+    rotor.set(rotorB, 4);
     return {
       modelMatrix: readField(this.layout, this.data, 'modelMatrices', { elementIndex: index }),
-      rotor: readField(this.layout, this.data, 'rotors', { elementIndex: index }),
+      rotor,
       color: readField(this.layout, this.data, 'colors', { elementIndex: index }),
       misc: readField(this.layout, this.data, 'misc', { elementIndex: index }),
     };
