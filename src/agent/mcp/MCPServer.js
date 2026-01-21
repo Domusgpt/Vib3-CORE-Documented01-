@@ -95,6 +95,9 @@ export class MCPServer {
                 case 'reset_parameters':
                     result = this.resetParameters();
                     break;
+                case 'render_preview':
+                    result = await this.renderPreview(args);
+                    break;
                 case 'save_to_gallery':
                     result = this.saveToGallery(args);
                     break;
@@ -365,6 +368,41 @@ export class MCPServer {
         return {
             ...this.getState(),
             reset: true
+        };
+    }
+
+    /**
+     * Render preview frame
+     */
+    async renderPreview(args) {
+        const format = args.format || 'png';
+        const quality = args.quality ?? 0.92;
+        const includeState = args.include_state !== false;
+        let dataUrl = null;
+        let available = false;
+        let method = 'unavailable';
+
+        telemetry.recordEvent(EventType.RENDER_FRAME_START, { format });
+
+        if (this.engine && typeof this.engine.captureFrame === 'function') {
+            dataUrl = this.engine.captureFrame(format, quality);
+            available = true;
+            method = 'engine.captureFrame';
+        }
+
+        telemetry.recordEvent(EventType.RENDER_FRAME_END, { format, available });
+
+        return {
+            preview: {
+                available,
+                format,
+                quality,
+                method,
+                data_url: dataUrl,
+                note: available ? 'Preview captured.' : 'Preview capture not available; engine captureFrame missing.'
+            },
+            state_snapshot: includeState ? this.getState() : null,
+            suggested_next_actions: ['set_rotation', 'set_visual_parameters', 'save_to_gallery']
         };
     }
 

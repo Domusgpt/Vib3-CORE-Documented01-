@@ -154,6 +154,34 @@ export const toolDefinitions = {
         }
     },
 
+    render_preview: {
+        name: 'render_preview',
+        description: 'Captures a lightweight preview frame or reports preview readiness for agentic workflows.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                format: {
+                    type: 'string',
+                    enum: ['png', 'jpeg'],
+                    default: 'png',
+                    description: 'Requested preview image format'
+                },
+                quality: {
+                    type: 'number',
+                    minimum: 0.1,
+                    maximum: 1,
+                    default: 0.92,
+                    description: 'JPEG quality when format is jpeg'
+                },
+                include_state: {
+                    type: 'boolean',
+                    default: true,
+                    description: 'Include current state snapshot in the response'
+                }
+            }
+        }
+    },
+
     // Gallery Operations
     save_to_gallery: {
         name: 'save_to_gallery',
