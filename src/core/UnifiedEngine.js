@@ -117,7 +117,7 @@ export class VIB34DUnifiedEngine {
         // 1. FACETED SYSTEM: Simple 2D geometric patterns
         this.systems.set('faceted', {
             name: 'Faceted',
-            renderer: await this.createFacetedSystem(gl),
+            renderer: this.normalizeRenderer(await this.createFacetedSystem(gl)),
             active: true,
             priority: 1,
             memoryUsage: 0,
@@ -127,7 +127,7 @@ export class VIB34DUnifiedEngine {
         // 2. QUANTUM SYSTEM: Complex 3D lattice with enhanced effects  
         this.systems.set('quantum', {
             name: 'Quantum',
-            renderer: await this.createQuantumSystem(gl),
+            renderer: this.normalizeRenderer(await this.createQuantumSystem(gl)),
             active: false,
             priority: 2,
             memoryUsage: 0,
@@ -137,7 +137,7 @@ export class VIB34DUnifiedEngine {
         // 3. HOLOGRAPHIC SYSTEM: Audio-reactive visualization
         this.systems.set('holographic', {
             name: 'Holographic', 
-            renderer: await this.createHolographicSystem(gl),
+            renderer: this.normalizeRenderer(await this.createHolographicSystem(gl)),
             active: false,
             priority: 3,
             memoryUsage: 0,
@@ -147,7 +147,7 @@ export class VIB34DUnifiedEngine {
         // 4. POLYCHORA SYSTEM: True 4D polytope mathematics
         this.systems.set('polychora', {
             name: 'Polychora',
-            renderer: new EnhancedPolychoraSystem(gl, this.canvasManager),
+            renderer: this.normalizeRenderer(new EnhancedPolychoraSystem(gl, this.canvasManager)),
             active: false,
             priority: 0,
             memoryUsage: 0,
@@ -168,6 +168,25 @@ export class VIB34DUnifiedEngine {
         }
         
         console.log(`✅ Unified systems created: ${Array.from(this.systems.keys()).join(', ')}`);
+    }
+
+    normalizeRenderer(renderer) {
+        if (!renderer) {
+            return {
+                init: async () => {},
+                resize: () => {},
+                render: () => {},
+                dispose: () => {}
+            };
+        }
+
+        return {
+            ...renderer,
+            init: renderer.init ? renderer.init.bind(renderer) : async () => {},
+            resize: renderer.resize ? renderer.resize.bind(renderer) : () => {},
+            render: renderer.render ? renderer.render.bind(renderer) : () => {},
+            dispose: renderer.dispose ? renderer.dispose.bind(renderer) : () => {}
+        };
     }
     
     createSystemContainer(name) {
@@ -291,6 +310,10 @@ export class VIB34DUnifiedEngine {
                 
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
             },
+
+            resize(width, height, pixelRatio = 1) {
+                gl.viewport(0, 0, width * pixelRatio, height * pixelRatio);
+            },
             
             updateParameter(name, value) {
                 // Handle parameter updates
@@ -307,6 +330,10 @@ export class VIB34DUnifiedEngine {
     async createQuantumSystem(gl) {
         // Complex 3D lattice system - placeholder for now
         return {
+            init: async () => {},
+            resize: (width, height, pixelRatio = 1) => {
+                gl.viewport(0, 0, width * pixelRatio, height * pixelRatio);
+            },
             render: (timestamp, parameters = {}) => {
                 gl.clearColor(0.0, 0.1, 0.3, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -319,6 +346,10 @@ export class VIB34DUnifiedEngine {
     async createHolographicSystem(gl) {
         // Audio-reactive holographic system - placeholder for now
         return {
+            init: async () => {},
+            resize: (width, height, pixelRatio = 1) => {
+                gl.viewport(0, 0, width * pixelRatio, height * pixelRatio);
+            },
             render: (timestamp, parameters = {}) => {
                 gl.clearColor(0.2, 0.0, 0.2, 1.0);
                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);

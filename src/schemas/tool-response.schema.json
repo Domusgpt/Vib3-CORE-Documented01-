@@ -13,14 +13,19 @@
       "type": "string",
       "description": "The operation that was performed",
       "enum": [
-        "create_visualization",
-        "set_parameters",
-        "get_state",
-        "render_preview",
-        "search_geometries",
+        "create_4d_visualization",
+        "set_rotation",
+        "set_visual_parameters",
         "switch_system",
-        "randomize",
-        "reset",
+        "change_geometry",
+        "get_state",
+        "randomize_parameters",
+        "reset_parameters",
+        "save_to_gallery",
+        "load_from_gallery",
+        "search_geometries",
+        "get_parameter_schema",
+        "render_preview",
         "export_state",
         "import_state"
       ]
@@ -84,6 +89,36 @@
           "minimum": 0
         }
       }
+    },
+    "preview": {
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["png", "jpeg"]
+        },
+        "quality": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1
+        },
+        "method": {
+          "type": "string"
+        },
+        "data_url": {
+          "type": ["string", "null"]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "state_snapshot": {
+      "type": ["object", "null"],
+      "description": "Optional state snapshot attached to preview responses"
     },
     "suggested_next_actions": {
       "type": "array",
