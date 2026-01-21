@@ -10,6 +10,8 @@ import addFormats from 'ajv-formats';
 import parametersSchema from './parameters.schema.json' assert { type: 'json' };
 import toolResponseSchema from './tool-response.schema.json' assert { type: 'json' };
 import errorSchema from './error.schema.json' assert { type: 'json' };
+import extensionSchema from './extension.schema.json' assert { type: 'json' };
+import toolPackSchema from './tool-pack.schema.json' assert { type: 'json' };
 
 class SchemaRegistry {
     constructor() {
@@ -31,7 +33,9 @@ class SchemaRegistry {
         this.schemas = {
             parameters: parametersSchema,
             toolResponse: toolResponseSchema,
-            error: errorSchema
+            error: errorSchema,
+            extension: extensionSchema,
+            toolPack: toolPackSchema
         };
 
         // Compile validators
@@ -180,4 +184,5 @@ export const schemaRegistry = new SchemaRegistry();
 
 // Named exports
 export { parametersSchema, toolResponseSchema, errorSchema };
+export { extensionSchema, toolPackSchema };
 export default schemaRegistry;

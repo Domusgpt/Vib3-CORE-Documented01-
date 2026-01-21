@@ -17,6 +17,10 @@ export class RendererContract {
         throw new Error('RendererContract.render() must be implemented.');
     }
 
+    setActive(active) {
+        throw new Error('RendererContract.setActive() must be implemented.');
+    }
+
     dispose() {
         throw new Error('RendererContract.dispose() must be implemented.');
     }
