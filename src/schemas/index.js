@@ -27,6 +27,8 @@ class SchemaRegistry {
             console.warn('ajv-formats not available, some format validations disabled');
         }
 
+        this.dynamicValidators = new WeakMap();
+
         // Register schemas
         this.schemas = {
             parameters: parametersSchema,
@@ -54,6 +56,33 @@ class SchemaRegistry {
                 valid: false,
                 errors: [{ message: `Unknown schema: ${schemaName}` }]
             };
+        }
+
+        const valid = validator(data);
+        return {
+            valid,
+            errors: valid ? null : validator.errors
+        };
+    }
+
+    /**
+     * Validate data against a provided schema object
+     * @param {object} schema
+     * @param {object} data
+     * @returns {{ valid: boolean, errors: array|null }}
+     */
+    validateSchema(schema, data) {
+        if (!schema) {
+            return {
+                valid: false,
+                errors: [{ message: 'No schema provided for validation.' }]
+            };
+        }
+
+        let validator = this.dynamicValidators.get(schema);
+        if (!validator) {
+            validator = this.ajv.compile(schema);
+            this.dynamicValidators.set(schema, validator);
         }
 
         const valid = validator(data);
