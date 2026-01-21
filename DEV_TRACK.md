@@ -60,26 +60,33 @@ This document consolidates the ongoing development plan into a single, session-s
 ## Session log (stamped)
 Use the following format to stamp each session. Update the status, notes, and blockers as you go.
 
+### Session 000 — Repo + docs baseline review
+**Stamp:** 2026-01-20 23:51 UTC
+- **Focus:** Read current docs and scan codebase layout to understand baseline.
+- **Status:** COMPLETE
+- **Notes:** Reviewed top-level documentation and directory structure to align with the current architecture baseline.
+- **Blockers:** None.
+
 ### Session 001 — Platform baseline
-**Stamp:** PENDING
+**Stamp:** 2026-01-20 23:51 UTC
 - **Focus:** Tooling setup, dependency install, and baseline lint/test.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Enabled corepack, activated pnpm 9.4.0, and installed dependencies.
+- **Blockers:** None.
 
 ### Session 002 — Math foundation kickoff
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 00:13 UTC
 - **Focus:** Rotation plane utilities + projection helpers.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Added six-plane rotation utility helpers and projection singularity clamping with configurable epsilon.
+- **Blockers:** None.
 
 ### Session 003 — Stability testing
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 00:13 UTC
 - **Focus:** Drift/renormalization tests and precision reporting.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Added rotor drift/renormalization tests and captured baseline rotation/projection metrics.
+- **Blockers:** None.
 
 ### Session 004 — Renderer contract extraction
 **Stamp:** PENDING
