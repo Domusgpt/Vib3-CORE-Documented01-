@@ -1,4 +1,15 @@
-const ROTATION_PLANES = ['XY', 'XZ', 'YZ', 'XW', 'YW', 'ZW'];
+export const ROTATION_PLANES = ['XY', 'XZ', 'YZ', 'XW', 'YW', 'ZW'];
+
+export function normalizeRotationAngles(angles = {}) {
+    return {
+        XY: angles.XY ?? angles.xy ?? 0,
+        XZ: angles.XZ ?? angles.xz ?? 0,
+        YZ: angles.YZ ?? angles.yz ?? 0,
+        XW: angles.XW ?? angles.xw ?? 0,
+        YW: angles.YW ?? angles.yw ?? 0,
+        ZW: angles.ZW ?? angles.zw ?? 0,
+    };
+}
 
 export function identityMatrix4x4() {
     return [
@@ -98,6 +109,28 @@ export function composeRotationMatrices(steps = []) {
         (matrix, step) => multiplyMatrix4x4(matrix, createRotationMatrix4D(step.plane, step.angle)),
         identityMatrix4x4()
     );
+}
+
+export function createRotationMatricesFromAngles(angles = {}) {
+    const normalized = normalizeRotationAngles(angles);
+    const matrices = {};
+
+    ROTATION_PLANES.forEach((plane) => {
+        matrices[plane] = createRotationMatrix4D(plane, normalized[plane]);
+    });
+
+    return matrices;
+}
+
+export function composeRotationMatrixFromAngles(angles = {}, order = ROTATION_PLANES) {
+    const normalized = normalizeRotationAngles(angles);
+    return order.reduce((matrix, plane) => {
+        const angle = normalized[plane];
+        if (!angle) {
+            return matrix;
+        }
+        return multiplyMatrix4x4(matrix, createRotationMatrix4D(plane, angle));
+    }, identityMatrix4x4());
 }
 
 export function vectorLength4D(vector) {

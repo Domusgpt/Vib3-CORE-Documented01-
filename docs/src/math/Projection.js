@@ -16,6 +16,15 @@
 
 import { Vec4 } from './Vec4.js';
 
+const DEFAULT_EPSILON = 1e-5;
+
+function clampDenominator(value, epsilon) {
+    if (Math.abs(value) < epsilon) {
+        return value >= 0 ? epsilon : -epsilon;
+    }
+    return value;
+}
+
 export class Projection {
     /**
      * Perspective projection from 4D to 3D
@@ -29,16 +38,13 @@ export class Projection {
      * @param {number} d - Distance parameter (typically 1.5-5)
      * @returns {Vec4} Projected point (w=0)
      */
-    static perspective(v, d = 2) {
-        const denom = d - v.w;
-
-        // Handle singularity (point at projection plane)
-        if (Math.abs(denom) < 1e-10) {
-            const sign = denom >= 0 ? 1 : -1;
-            const scale = sign * 10000;
-            return new Vec4(v.x * scale, v.y * scale, v.z * scale, 0);
+    static perspective(v, d = 2, options = {}) {
+        if (typeof d === 'object') {
+            options = d;
+            d = options.d ?? 2;
         }
-
+        const epsilon = options.epsilon ?? DEFAULT_EPSILON;
+        const denom = clampDenominator(d - v.w, epsilon);
         const scale = 1 / denom;
         return new Vec4(v.x * scale, v.y * scale, v.z * scale, 0);
     }
@@ -56,14 +62,9 @@ export class Projection {
      * @param {Vec4} v - 4D point (ideally on unit hypersphere)
      * @returns {Vec4} Projected point (w=0)
      */
-    static stereographic(v) {
-        const denom = 1 - v.w;
-
-        // Handle singularity (point at north pole)
-        if (Math.abs(denom) < 1e-10) {
-            return new Vec4(v.x * 10000, v.y * 10000, v.z * 10000, 0);
-        }
-
+    static stereographic(v, options = {}) {
+        const epsilon = options.epsilon ?? DEFAULT_EPSILON;
+        const denom = clampDenominator(1 - v.w, epsilon);
         const scale = 1 / denom;
         return new Vec4(v.x * scale, v.y * scale, v.z * scale, 0);
     }
@@ -127,8 +128,8 @@ export class Projection {
      * @param {number} d
      * @returns {Vec4[]}
      */
-    static perspectiveArray(vectors, d = 2) {
-        return vectors.map(v => Projection.perspective(v, d));
+    static perspectiveArray(vectors, d = 2, options = {}) {
+        return vectors.map(v => Projection.perspective(v, d, options));
     }
 
     /**
@@ -136,8 +137,8 @@ export class Projection {
      * @param {Vec4[]} vectors
      * @returns {Vec4[]}
      */
-    static stereographicArray(vectors) {
-        return vectors.map(v => Projection.stereographic(v));
+    static stereographicArray(vectors, options = {}) {
+        return vectors.map(v => Projection.stereographic(v, options));
     }
 
     /**
@@ -157,9 +158,10 @@ export class Projection {
      * @param {Float32Array} [output] - Optional output buffer
      * @returns {Float32Array} Projected points (as vec3s: x,y,z,...)
      */
-    static perspectivePacked(packed, d = 2, output = null) {
+    static perspectivePacked(packed, d = 2, output = null, options = {}) {
         const count = packed.length / 4;
         const result = output || new Float32Array(count * 3);
+        const epsilon = options.epsilon ?? DEFAULT_EPSILON;
 
         for (let i = 0; i < count; i++) {
             const srcIdx = i * 4;
@@ -170,18 +172,11 @@ export class Projection {
             const z = packed[srcIdx + 2];
             const w = packed[srcIdx + 3];
 
-            const denom = d - w;
-            if (Math.abs(denom) < 1e-10) {
-                const sign = denom >= 0 ? 1 : -1;
-                result[dstIdx] = x * sign * 10000;
-                result[dstIdx + 1] = y * sign * 10000;
-                result[dstIdx + 2] = z * sign * 10000;
-            } else {
-                const scale = 1 / denom;
-                result[dstIdx] = x * scale;
-                result[dstIdx + 1] = y * scale;
-                result[dstIdx + 2] = z * scale;
-            }
+            const denom = clampDenominator(d - w, epsilon);
+            const scale = 1 / denom;
+            result[dstIdx] = x * scale;
+            result[dstIdx + 1] = y * scale;
+            result[dstIdx + 2] = z * scale;
         }
 
         return result;
@@ -197,9 +192,9 @@ export class Projection {
     static project(v, type, options = {}) {
         switch (type.toLowerCase()) {
             case 'perspective':
-                return Projection.perspective(v, options.d || 2);
+                return Projection.perspective(v, options.d || 2, options);
             case 'stereographic':
-                return Projection.stereographic(v);
+                return Projection.stereographic(v, options);
             case 'orthographic':
                 return Projection.orthographic(v);
             case 'oblique':
