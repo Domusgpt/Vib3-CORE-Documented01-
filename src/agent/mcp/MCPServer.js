@@ -40,6 +40,16 @@ export class MCPServer {
         this.initialized = false;
     }
 
+    buildResponse(operation, data, options = {}) {
+        return {
+            success: options.success ?? true,
+            operation,
+            timestamp: new Date().toISOString(),
+            duration_ms: options.duration_ms ?? 0,
+            ...data
+        };
+    }
+
     /**
      * Set the VIB3 engine instance
      */
@@ -61,7 +71,10 @@ export class MCPServer {
                 tool: toolName,
                 error: validation.error.code
             });
-            return { error: validation.error };
+            return this.buildResponse(toolName, { error: validation.error }, {
+                success: false,
+                duration_ms: performance.now() - startTime
+            });
         }
 
         // Record start
@@ -119,13 +132,7 @@ export class MCPServer {
                 success: true
             });
 
-            return {
-                success: true,
-                operation: toolName,
-                timestamp: new Date().toISOString(),
-                duration_ms: duration,
-                ...result
-            };
+            return this.buildResponse(toolName, result, { duration_ms: duration });
 
         } catch (error) {
             const duration = performance.now() - startTime;
@@ -135,7 +142,7 @@ export class MCPServer {
                 error: error.message
             });
 
-            return {
+            return this.buildResponse(toolName, {
                 error: {
                     type: 'SystemError',
                     code: 'TOOL_EXECUTION_FAILED',
@@ -143,7 +150,7 @@ export class MCPServer {
                     suggestion: 'Check engine initialization and parameters',
                     retry_possible: true
                 }
-            };
+            }, { success: false, duration_ms: duration });
         }
     }
 

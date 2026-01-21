@@ -22,7 +22,16 @@
         "randomize",
         "reset",
         "export_state",
-        "import_state"
+        "import_state",
+        "create_4d_visualization",
+        "set_rotation",
+        "set_visual_parameters",
+        "change_geometry",
+        "randomize_parameters",
+        "reset_parameters",
+        "save_to_gallery",
+        "load_from_gallery",
+        "get_parameter_schema"
       ]
     },
     "scene_id": {
@@ -88,19 +97,12 @@
     "suggested_next_actions": {
       "type": "array",
       "items": {
-        "type": "string",
-        "enum": [
-          "apply_rotation",
-          "set_material",
-          "render_preview",
-          "export_image",
-          "switch_system",
-          "change_geometry",
-          "adjust_visual_params",
-          "save_to_gallery"
-        ]
+        "type": "string"
       },
       "description": "Contextually relevant actions the agent might take next"
+    },
+    "error": {
+      "$ref": "https://vib3.dev/schemas/error.json"
     },
     "timestamp": {
       "type": "string",
@@ -113,5 +115,5 @@
     }
   },
   "required": ["success", "operation"],
-  "additionalProperties": false
+  "additionalProperties": true
 }
