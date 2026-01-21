@@ -4,7 +4,9 @@
  * Agent-friendly command-line interface with JSON output mode
  */
 
+import { performance } from 'node:perf_hooks';
 import { mcpServer, toolDefinitions } from '../agent/index.js';
+import { schemaRegistry } from '../schemas/index.js';
 
 /**
  * CLI Configuration
@@ -105,6 +107,24 @@ function output(data, isJson) {
             console.log(formatHumanReadable(data));
         }
     }
+}
+
+function wrapResponse(operation, data = {}, success = true, durationMs = null) {
+    return {
+        success,
+        operation,
+        timestamp: new Date().toISOString(),
+        duration_ms: durationMs ?? undefined,
+        ...data
+    };
+}
+
+function validateResponseEnvelope(response) {
+    const validation = schemaRegistry.validate('toolResponse', response);
+    if (!validation.valid) {
+        return { ...response, validation_errors: validation.errors };
+    }
+    return response;
 }
 
 /**
@@ -222,7 +242,7 @@ async function handleState(parsed) {
 /**
  * Handle 'set' command
  */
-async function handleSet(parsed) {
+async function handleSet(parsed, startTime) {
     const subcommand = parsed.subcommand;
 
     if (subcommand === 'rotation') {
@@ -249,7 +269,7 @@ async function handleSet(parsed) {
         return await mcpServer.handleToolCall('set_visual_parameters', args);
     }
 
-    return {
+    return wrapResponse('set_parameters', {
         error: {
             type: 'ValidationError',
             code: 'INVALID_SUBCOMMAND',
@@ -257,13 +277,13 @@ async function handleSet(parsed) {
             valid_options: ['rotation', 'visual'],
             suggestion: 'Use "set rotation" or "set visual"'
         }
-    };
+    }, false, performance.now() - startTime);
 }
 
 /**
  * Handle 'geometry' command
  */
-async function handleGeometry(parsed) {
+async function handleGeometry(parsed, startTime) {
     const subcommand = parsed.subcommand || 'list';
 
     if (subcommand === 'list') {
@@ -278,7 +298,7 @@ async function handleGeometry(parsed) {
         return await mcpServer.handleToolCall('change_geometry', { geometry_index: index });
     }
 
-    return {
+    return wrapResponse('change_geometry', {
         error: {
             type: 'ValidationError',
             code: 'INVALID_SUBCOMMAND',
@@ -286,17 +306,17 @@ async function handleGeometry(parsed) {
             valid_options: ['list', 'set', '<index>'],
             suggestion: 'Use "geometry list" or "geometry <index>"'
         }
-    };
+    }, false, performance.now() - startTime);
 }
 
 /**
  * Handle 'system' command
  */
-async function handleSystem(parsed) {
+async function handleSystem(parsed, startTime) {
     const system = parsed.subcommand || parsed.options.system;
 
     if (!system) {
-        return {
+        return wrapResponse('switch_system', {
             error: {
                 type: 'ValidationError',
                 code: 'MISSING_SYSTEM',
@@ -304,7 +324,7 @@ async function handleSystem(parsed) {
                 valid_options: ['quantum', 'faceted', 'holographic'],
                 suggestion: 'Use "system quantum", "system faceted", or "system holographic"'
             }
-        };
+        }, false, performance.now() - startTime);
     }
 
     return await mcpServer.handleToolCall('switch_system', { system });
@@ -331,16 +351,14 @@ async function handleReset(parsed) {
 /**
  * Handle 'tools' command
  */
-async function handleTools(parsed) {
+async function handleTools(parsed, startTime) {
     const includeSchemas = parsed.options.schemas === 'true' || parsed.options.full === 'true';
     const tools = mcpServer.listTools(includeSchemas);
 
-    return {
-        success: true,
-        operation: 'list_tools',
+    return wrapResponse('list_tools', {
         count: tools.length,
         tools
-    };
+    }, true, performance.now() - startTime);
 }
 
 /**
@@ -364,6 +382,8 @@ async function main() {
     // Route to command handler
     let result;
 
+    const startTime = performance.now();
+
     try {
         switch (parsed.command) {
             case 'create':
@@ -373,13 +393,13 @@ async function main() {
                 result = await handleState(parsed);
                 break;
             case 'set':
-                result = await handleSet(parsed);
+                result = await handleSet(parsed, startTime);
                 break;
             case 'geometry':
-                result = await handleGeometry(parsed);
+                result = await handleGeometry(parsed, startTime);
                 break;
             case 'system':
-                result = await handleSystem(parsed);
+                result = await handleSystem(parsed, startTime);
                 break;
             case 'randomize':
                 result = await handleRandomize(parsed);
@@ -388,10 +408,10 @@ async function main() {
                 result = await handleReset(parsed);
                 break;
             case 'tools':
-                result = await handleTools(parsed);
+                result = await handleTools(parsed, startTime);
                 break;
             default:
-                result = {
+                result = wrapResponse('get_state', {
                     error: {
                         type: 'NotFoundError',
                         code: 'UNKNOWN_COMMAND',
@@ -399,29 +419,29 @@ async function main() {
                         valid_options: ['create', 'state', 'set', 'geometry', 'system', 'randomize', 'reset', 'tools'],
                         suggestion: 'Run "vib3 --help" for available commands'
                     }
-                };
+                }, false, performance.now() - startTime);
         }
     } catch (error) {
-        result = {
+        result = wrapResponse(parsed.command || 'get_state', {
             error: {
                 type: 'SystemError',
                 code: 'EXECUTION_ERROR',
                 message: error.message,
                 suggestion: 'Check your command syntax and try again'
             }
-        };
+        }, false, performance.now() - startTime);
     }
 
-    // Output result
-    output(result, parsed.flags.json);
+    const finalResult = parsed.flags.verbose ? validateResponseEnvelope(result) : result;
+    output(finalResult, parsed.flags.json);
 
     // Exit with appropriate code
-    if (result.error) {
+    if (finalResult.error || finalResult.success === false) {
         const code = {
             'ValidationError': ExitCode.VALIDATION_ERROR,
             'NotFoundError': ExitCode.NOT_FOUND,
             'SystemError': ExitCode.ERROR
-        }[result.error.type] || ExitCode.ERROR;
+        }[finalResult.error?.type] || ExitCode.ERROR;
 
         process.exit(code);
     }
