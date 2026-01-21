@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-01-21T00:15:21.675Z",
+  "rotor_precision": {
+    "iterations": 4000,
+    "renorm_interval": 25,
+    "drift_without_renorm": 16.138401966966637,
+    "drift_with_renorm": 1.1102230246251565e-16,
+    "vector_length_drift": 0.000002392730911626728
+  },
+  "projection_clamp": {
+    "epsilon": 0.0001,
+    "perspective_sample": {
+      "x": 10000,
+      "y": 10000,
+      "z": 10000
+    },
+    "stereographic_sample": {
+      "x": 10000,
+      "y": 0,
+      "z": 0
+    }
+  }
+}
