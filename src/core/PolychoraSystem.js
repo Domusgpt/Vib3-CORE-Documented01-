@@ -738,25 +738,29 @@ export class PolychoraSystem {
     
     startRenderLoop() {
         const render = () => {
-            if (!this.isActive) return;
-            
-            // MVEP-STYLE AUDIO PROCESSING: Process audio directly in render loop
-            // This eliminates conflicts with holographic system and ensures proper audio reactivity
-            // Audio reactivity now handled directly in visualizer render loops
-            
-            // Step physics simulation if enabled
-            if (this.parameters.physicsEnabled && this.physicsEnabled) {
-                this.physics.step();
-                this.updatePhysicsVisuals();
-            }
-            
-            this.visualizers.forEach(visualizer => {
-                visualizer.render(this.parameters);
-            });
+            this.renderFrame();
             
             this.animationId = requestAnimationFrame(render);
         };
         render();
+    }
+
+    renderFrame() {
+        if (!this.isActive) return;
+
+        // MVEP-STYLE AUDIO PROCESSING: Process audio directly in render loop
+        // This eliminates conflicts with holographic system and ensures proper audio reactivity
+        // Audio reactivity now handled directly in visualizer render loops
+
+        // Step physics simulation if enabled
+        if (this.parameters.physicsEnabled && this.physicsEnabled) {
+            this.physics.step();
+            this.updatePhysicsVisuals();
+        }
+
+        this.visualizers.forEach(visualizer => {
+            visualizer.render(this.parameters);
+        });
     }
     
     /**
