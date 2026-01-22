@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vib3.dev/schemas/phase5-metrics.json",
+  "title": "Phase 5 Metrics Schema",
+  "type": "object",
+  "properties": {
+    "run_id": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "version": { "type": "string" },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "device": { "type": "string" },
+        "os": { "type": "string" },
+        "gpu": { "type": "string" },
+        "driver": { "type": "string" },
+        "runtime": { "type": "string" }
+      }
+    },
+    "performance": {
+      "type": "object",
+      "properties": {
+        "avg_fps": { "type": ["number", "null"] },
+        "p1_low_fps": { "type": ["number", "null"] },
+        "gpu_frame_time_ms": { "type": ["number", "null"] },
+        "cpu_frame_time_ms": { "type": ["number", "null"] },
+        "memory_mb": { "type": ["number", "null"] }
+      }
+    },
+    "stability": {
+      "type": "object",
+      "properties": {
+        "context_losses": { "type": "integer" },
+        "errors": { "type": "integer" },
+        "resource_leaks": { "type": "integer" }
+      }
+    },
+    "correctness": {
+      "type": "object",
+      "properties": {
+        "golden_hash_mismatches": { "type": "integer" },
+        "schema_validation_errors": { "type": "integer" }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "properties": {
+        "mcp_latency_ms": { "type": ["number", "null"] },
+        "telemetry_export_ms": { "type": ["number", "null"] },
+        "cli_success_rate": { "type": ["number", "null"] }
+      }
+    }
+  }
+}
