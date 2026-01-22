@@ -312,31 +312,32 @@ export class Vec4 {
      * Project 4D point to 3D using perspective projection
      * Projects from 4D to 3D by dividing by (d - w)
      * @param {number} d - Distance parameter (usually 2-5)
+     * @param {object} [options] - Projection options (epsilon, distance)
      * @returns {Vec4} Projected point (w component is 0)
      */
-    projectPerspective(d = 2) {
-        const denom = d - this.w;
-        if (Math.abs(denom) < 1e-10) {
-            // Point is at projection plane - return large values
-            const sign = denom >= 0 ? 1 : -1;
-            return new Vec4(this.x * sign * 1000, this.y * sign * 1000, this.z * sign * 1000, 0);
+    projectPerspective(d = 2, options = {}) {
+        if (typeof d === 'object') {
+            options = d;
+            d = options.distance ?? options.d ?? 2;
         }
-        const scale = 1 / denom;
+        const epsilon = options.epsilon ?? 1e-5;
+        const denom = d - this.w;
+        const clamped = Math.abs(denom) < epsilon ? (denom >= 0 ? epsilon : -epsilon) : denom;
+        const scale = 1 / clamped;
         return new Vec4(this.x * scale, this.y * scale, this.z * scale, 0);
     }
 
     /**
      * Project 4D point to 3D using stereographic projection
      * Maps 4D hypersphere to 3D space
+     * @param {object} [options] - Projection options (epsilon)
      * @returns {Vec4} Projected point (w component is 0)
      */
-    projectStereographic() {
+    projectStereographic(options = {}) {
+        const epsilon = options.epsilon ?? 1e-5;
         const denom = 1 - this.w;
-        if (Math.abs(denom) < 1e-10) {
-            // Point at north pole - return large values
-            return new Vec4(this.x * 1000, this.y * 1000, this.z * 1000, 0);
-        }
-        const scale = 1 / denom;
+        const clamped = Math.abs(denom) < epsilon ? (denom >= 0 ? epsilon : -epsilon) : denom;
+        const scale = 1 / clamped;
         return new Vec4(this.x * scale, this.y * scale, this.z * scale, 0);
     }
 

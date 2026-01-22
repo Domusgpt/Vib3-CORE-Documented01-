@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vib3.dev/schemas/extension.json",
+  "title": "VIB3+ Extension Manifest",
+  "description": "Manifest describing VIB3 extensions for partner marketplace distribution.",
+  "type": "object",
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "description": "Manifest schema version (semver)."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$",
+      "description": "Stable extension identifier."
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "description": "Extension version (semver)."
+    },
+    "vendor": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "support_email": { "type": "string", "format": "email" }
+      },
+      "required": ["name"]
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "renderers": { "type": "boolean", "default": false },
+        "geometry": { "type": "boolean", "default": false },
+        "ui": { "type": "boolean", "default": false },
+        "agent_tools": { "type": "boolean", "default": false },
+        "telemetry": { "type": "boolean", "default": false }
+      },
+      "additionalProperties": false
+    },
+    "entrypoints": {
+      "type": "object",
+      "properties": {
+        "runtime": { "type": "string" },
+        "ui": { "type": "string" },
+        "toolpack": { "type": "string" }
+      },
+      "required": ["runtime"],
+      "additionalProperties": false
+    },
+    "compatibility": {
+      "type": "object",
+      "properties": {
+        "core_version": { "type": "string" },
+        "renderer_contract": { "type": "string" },
+        "feature_flags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["core_version"]
+    },
+    "marketplace": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "categories": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "preview_images": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "required": ["manifest_version", "id", "name", "version", "vendor", "capabilities", "entrypoints", "compatibility"],
+  "additionalProperties": false
+}
