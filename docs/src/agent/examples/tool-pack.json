@@ -1,0 +1,29 @@
+{
+  "id": "vib3.holographic-pack.tools",
+  "name": "VIB3 Holographic Pack Tools",
+  "version": "0.1.0",
+  "description": "Tool pack for holographic visual presets, projection control, and preview workflows.",
+  "tools": [
+    {
+      "name": "set_rotation",
+      "description": "Apply curated 6D rotation presets."
+    },
+    {
+      "name": "set_visual_parameters",
+      "description": "Apply tuned holographic visual parameters."
+    },
+    {
+      "name": "switch_system",
+      "description": "Switch between holographic and quantum systems."
+    },
+    {
+      "name": "change_geometry",
+      "description": "Select polytope geometry variants."
+    }
+  ],
+  "capabilities": ["rotation", "visual-presets", "system-switch", "geometry"],
+  "marketplace": {
+    "listing_id": "vib3-holographic-pack",
+    "categories": ["visuals", "automation"]
+  }
+}

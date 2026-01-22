@@ -65,6 +65,11 @@ export {
     renderTargetPool
 } from './RenderTarget.js';
 
+// Resource registry
+export {
+    RenderResourceRegistry
+} from './RenderResourceRegistry.js';
+
 // Shader programs
 export {
     ShaderStage,

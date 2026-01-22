@@ -6,7 +6,7 @@ import { HolographicVisualizer } from './HolographicVisualizer.js';
 import { ExportSystem } from '../features/ExportSystem.js';
 
 export class HolographicSystem {
-    constructor() {
+    constructor(options = {}) {
         this.visualizers = [];
         this.currentVariant = 0;
         this.baseVariants = 30; // Original 30 variations
@@ -15,6 +15,8 @@ export class HolographicSystem {
         this.maxVariants = 10000; // Maximum allowed variations
         this.autoCycleActive = false;
         this.autoCycleInterval = null;
+        this.isActive = options.autoStart ?? true;
+        this.autoStart = options.autoStart ?? true;
         this.mouseX = 0.5;
         this.mouseY = 0.5;
         this.mouseIntensity = 0.0;
@@ -104,7 +106,9 @@ export class HolographicSystem {
         this.createVisualizers();
         this.setupInteractions();
         this.updateVariantDisplay();
-        this.startRenderLoop();
+        if (this.autoStart) {
+            this.startRenderLoop();
+        }
     }
     
     createVisualizers() {
@@ -624,19 +628,31 @@ export class HolographicSystem {
     
     startRenderLoop() {
         const render = () => {
-            // Update audio reactivity
-            this.updateAudio();
-            
-            // Render all visualizers
-            this.visualizers.forEach(visualizer => {
-                visualizer.render();
-            });
+            this.renderFrame();
             
             requestAnimationFrame(render);
         };
         
         render();
         console.log('🎬 Holographic render loop started');
+    }
+
+    setActive(active) {
+        this.isActive = active;
+    }
+
+    renderFrame() {
+        if (!this.isActive) {
+            return;
+        }
+
+        // Update audio reactivity
+        this.updateAudio();
+
+        // Render all visualizers
+        this.visualizers.forEach(visualizer => {
+            visualizer.render();
+        });
     }
     
     loadCustomVariation(customParams) {
