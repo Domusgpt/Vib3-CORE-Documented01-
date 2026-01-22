@@ -19,7 +19,7 @@ export function stereographicProject4D(vector, options = {}) {
 
 export function perspectiveProject4D(vector, options = {}) {
     const epsilon = options.epsilon ?? 1e-5;
-    const distance = options.distance ?? 2;
+    const distance = options.distance ?? options.d ?? 2;
     const [x, y, z, w] = vector;
     const denom = clampDenominator(distance - w, epsilon);
     return {

@@ -8,12 +8,13 @@ import { ParameterManager } from '../core/Parameters.js';
 import { GeometryLibrary } from '../geometry/GeometryLibrary.js';
 
 export class QuantumEngine {
-    constructor() {
+    constructor(options = {}) {
         console.log('🔮 Initializing VIB34D Quantum Engine...');
         
         this.visualizers = [];
         this.parameters = new ParameterManager();
         this.isActive = false;
+        this.autoStart = options.autoStart ?? true;
         
         // Conditional reactivity: Use built-in only if ReactivityManager not active
         this.useBuiltInReactivity = !window.reactivityManager;
@@ -45,7 +46,9 @@ export class QuantumEngine {
         this.createVisualizers();
         this.setupAudioReactivity();
         this.setupGestureVelocityReactivity(); // Additional gesture system
-        this.startRenderLoop();
+        if (this.autoStart) {
+            this.startRenderLoop();
+        }
         console.log('✨ Quantum Engine initialized with audio + gesture velocity reactivity');
     }
     
@@ -495,30 +498,7 @@ export class QuantumEngine {
         }
         
         const render = () => {
-            if (this.isActive) {
-                // MVEP-STYLE AUDIO PROCESSING: Use global audio data instead of internal processing
-                // This eliminates conflicts with holographic system and ensures consistent audio reactivity
-                // Audio reactivity now handled directly in visualizer render loops
-                
-                // CRITICAL FIX: Update visualizer parameters before rendering
-                const currentParams = this.parameters.getAllParameters();
-                
-                this.visualizers.forEach(visualizer => {
-                    if (visualizer.updateParameters && visualizer.render) {
-                        visualizer.updateParameters(currentParams);
-                        visualizer.render();
-                    }
-                });
-                
-                // Mobile debug: Log render activity periodically
-                if (window.mobileDebug && !this._renderActivityLogged) {
-                    window.mobileDebug.log(`🎬 Quantum Engine: Actively rendering ${this.visualizers?.length} visualizers`);
-                    this._renderActivityLogged = true;
-                }
-            } else if (window.mobileDebug && !this._inactiveWarningLogged) {
-                window.mobileDebug.log(`⚠️ Quantum Engine: Not rendering because isActive=false`);
-                this._inactiveWarningLogged = true;
-            }
+            this.renderFrame();
             
             requestAnimationFrame(render);
         };
@@ -528,6 +508,36 @@ export class QuantumEngine {
         
         if (window.mobileDebug) {
             window.mobileDebug.log(`✅ Quantum Engine: Render loop started, will render when isActive=true`);
+        }
+    }
+
+    /**
+     * Render a single frame
+     */
+    renderFrame() {
+        if (this.isActive) {
+            // MVEP-STYLE AUDIO PROCESSING: Use global audio data instead of internal processing
+            // This eliminates conflicts with holographic system and ensures consistent audio reactivity
+            // Audio reactivity now handled directly in visualizer render loops
+
+            // CRITICAL FIX: Update visualizer parameters before rendering
+            const currentParams = this.parameters.getAllParameters();
+
+            this.visualizers.forEach(visualizer => {
+                if (visualizer.updateParameters && visualizer.render) {
+                    visualizer.updateParameters(currentParams);
+                    visualizer.render();
+                }
+            });
+
+            // Mobile debug: Log render activity periodically
+            if (window.mobileDebug && !this._renderActivityLogged) {
+                window.mobileDebug.log(`🎬 Quantum Engine: Actively rendering ${this.visualizers?.length} visualizers`);
+                this._renderActivityLogged = true;
+            }
+        } else if (window.mobileDebug && !this._inactiveWarningLogged) {
+            window.mobileDebug.log(`⚠️ Quantum Engine: Not rendering because isActive=false`);
+            this._inactiveWarningLogged = true;
         }
     }
     
