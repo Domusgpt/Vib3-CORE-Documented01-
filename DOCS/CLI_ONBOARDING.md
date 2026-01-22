@@ -6,6 +6,7 @@ This guide aligns the current CLI surface (package scripts and telemetry helpers
 - **Node.js 18.19+** (project engine requirement)
 - **pnpm 9.4.0** (`corepack enable` then `corepack prepare pnpm@9.4.0 --activate`)
 - Optional: **Storybook** support is baked into `pnpm storybook` once dependencies are installed.
+- Optional: environment bootstrap script for Firebase, gcloud, Flutter, Android SDK, and GH CLI is in [`DOCS/ENV_SETUP.md`](DOCS/ENV_SETUP.md).
 
 ## Baseline setup
 ```bash

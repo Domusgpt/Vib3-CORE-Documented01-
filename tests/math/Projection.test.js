@@ -38,6 +38,12 @@ describe('Projection', () => {
             // Should return large values
             expect(Math.abs(p.x)).toBeGreaterThan(100);
         });
+
+        it('clamps singularity with configurable epsilon', () => {
+            const v = new Vec4(1, 1, 1, 2);
+            const p = Projection.perspective(v, 2, { epsilon: 1e-3 });
+            expect(p.x).toBeCloseTo(1000, 2);
+        });
     });
 
     describe('stereographic', () => {
@@ -60,6 +66,12 @@ describe('Projection', () => {
             const v = new Vec4(0.1, 0.1, 0.1, 0.9999);
             const p = Projection.stereographic(v);
             expect(isFinite(p.x)).toBe(true);
+        });
+
+        it('clamps stereographic singularity with epsilon', () => {
+            const v = new Vec4(1, 0, 0, 1);
+            const p = Projection.stereographic(v, { epsilon: 1e-3 });
+            expect(p.x).toBeCloseTo(1000, 2);
         });
 
         it('is conformal (preserves angles locally)', () => {

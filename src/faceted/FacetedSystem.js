@@ -29,10 +29,10 @@ export class FacetedSystem {
      * Initialize faceted system
      * Finds canvas by ID in DOM (matches reference architecture)
      */
-    initialize() {
+    initialize(canvasOverride = null) {
         // Faceted system uses 'content-canvas' as main canvas
         // (Reference system has 5 layers, we're using simplified version for now)
-        this.canvas = document.getElementById('content-canvas');
+        this.canvas = canvasOverride ?? document.getElementById('content-canvas');
         if (!this.canvas) {
             console.error('❌ Faceted canvas (content-canvas) not found in DOM');
             console.log('Looking for canvas IDs:', ['background-canvas', 'shadow-canvas', 'content-canvas', 'highlight-canvas', 'accent-canvas']);
@@ -356,7 +356,7 @@ export class FacetedSystem {
     /**
      * Render loop
      */
-    render() {
+    renderFrame() {
         if (!this.isActive || !this.gl || !this.program) return;
 
         this.time += 0.016 * this.parameters.speed;
@@ -403,7 +403,13 @@ export class FacetedSystem {
         this.gl.enableVertexAttribArray(posLocation);
         this.gl.vertexAttribPointer(posLocation, 2, this.gl.FLOAT, false, 0, 0);
         this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    }
 
+    /**
+     * Render loop
+     */
+    render() {
+        this.renderFrame();
         requestAnimationFrame(() => this.render());
     }
 
