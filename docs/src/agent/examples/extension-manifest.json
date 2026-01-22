@@ -1,0 +1,37 @@
+{
+  "manifest_version": "1.0.0",
+  "id": "vib3.holographic-visuals-pack",
+  "name": "VIB3 Holographic Visuals Pack",
+  "version": "0.1.0",
+  "vendor": {
+    "name": "VIB3 Labs",
+    "url": "https://vib3.dev",
+    "support_email": "support@vib3.dev"
+  },
+  "capabilities": {
+    "renderers": true,
+    "geometry": true,
+    "ui": true,
+    "agent_tools": true,
+    "telemetry": false
+  },
+  "entrypoints": {
+    "runtime": "./dist/holographic-runtime.js",
+    "ui": "./dist/holographic-ui.js",
+    "toolpack": "./dist/holographic-toolpack.json"
+  },
+  "compatibility": {
+    "core_version": ">=1.9.0",
+    "renderer_contract": "v1",
+    "feature_flags": ["toolpack", "ui-tokens", "holographic-system", "quantum-layers"]
+  },
+  "marketplace": {
+    "title": "VIB3 Holographic Visuals Pack",
+    "summary": "Holographic + quantum visual variants with 6D rotation, projection controls, and audio-reactive presets.",
+    "categories": ["visuals", "holographic", "4d"],
+    "tags": ["vib3", "holographic", "quantum", "6d-rotation", "4d"],
+    "preview_images": [
+      "https://cdn.vib3.dev/previews/holographic-pack-01.png"
+    ]
+  }
+}
