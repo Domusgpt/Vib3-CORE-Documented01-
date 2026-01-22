@@ -1,0 +1,33 @@
+{
+  "run_id": "",
+  "timestamp": "",
+  "version": "",
+  "environment": {
+    "device": "",
+    "os": "",
+    "gpu": "",
+    "driver": "",
+    "runtime": ""
+  },
+  "performance": {
+    "avg_fps": null,
+    "p1_low_fps": null,
+    "gpu_frame_time_ms": null,
+    "cpu_frame_time_ms": null,
+    "memory_mb": null
+  },
+  "stability": {
+    "context_losses": 0,
+    "errors": 0,
+    "resource_leaks": 0
+  },
+  "correctness": {
+    "golden_hash_mismatches": 0,
+    "schema_validation_errors": 0
+  },
+  "workflow": {
+    "mcp_latency_ms": null,
+    "telemetry_export_ms": null,
+    "cli_success_rate": null
+  }
+}

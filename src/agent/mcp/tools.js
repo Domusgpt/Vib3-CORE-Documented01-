@@ -154,6 +154,34 @@ export const toolDefinitions = {
         }
     },
 
+    render_preview: {
+        name: 'render_preview',
+        description: 'Captures a lightweight preview frame or reports preview readiness for agentic workflows.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                format: {
+                    type: 'string',
+                    enum: ['png', 'jpeg'],
+                    default: 'png',
+                    description: 'Requested preview image format'
+                },
+                quality: {
+                    type: 'number',
+                    minimum: 0.1,
+                    maximum: 1,
+                    default: 0.92,
+                    description: 'JPEG quality when format is jpeg'
+                },
+                include_state: {
+                    type: 'boolean',
+                    default: true,
+                    description: 'Include current state snapshot in the response'
+                }
+            }
+        }
+    },
+
     // Gallery Operations
     save_to_gallery: {
         name: 'save_to_gallery',
@@ -244,6 +272,84 @@ export function getTool(name) {
 /**
  * Validate tool input against schema
  */
+function normalizeAjvPath(path) {
+    if (!path) return null;
+    return path.replace(/^\//, '').replace(/\//g, '.');
+}
+
+function buildSchemaValidationError(errors = []) {
+    const error = errors[0];
+    if (!error) {
+        return schemaRegistry.createError(
+            'ValidationError',
+            'INVALID_INPUT',
+            'Tool input failed validation.'
+        );
+    }
+
+    const parameter = error.keyword === 'required'
+        ? error.params?.missingProperty
+        : normalizeAjvPath(error.instancePath);
+
+    switch (error.keyword) {
+        case 'required':
+            return schemaRegistry.createError(
+                'ValidationError',
+                'MISSING_REQUIRED_FIELD',
+                `Missing required field: ${error.params?.missingProperty}`,
+                {
+                    parameter: error.params?.missingProperty,
+                    suggestion: `Provide the '${error.params?.missingProperty}' parameter`
+                }
+            );
+        case 'enum':
+            return schemaRegistry.createError(
+                'ValidationError',
+                'INVALID_ENUM',
+                `Invalid value for ${parameter || 'parameter'}.`,
+                {
+                    parameter,
+                    valid_options: error.params?.allowedValues,
+                    suggestion: 'Use one of the allowed values.'
+                }
+            );
+        case 'minimum':
+        case 'maximum':
+            return schemaRegistry.createError(
+                'ValidationError',
+                'PARAMETER_OUT_OF_RANGE',
+                `Value for ${parameter || 'parameter'} is outside the allowed range.`,
+                {
+                    parameter,
+                    valid_range: {
+                        min: error.keyword === 'minimum' ? error.params?.limit : undefined,
+                        max: error.keyword === 'maximum' ? error.params?.limit : undefined
+                    },
+                    suggestion: 'Provide a value within the documented range.'
+                }
+            );
+        case 'type':
+            return schemaRegistry.createError(
+                'ValidationError',
+                'INVALID_TYPE',
+                `Invalid type for ${parameter || 'parameter'}.`,
+                {
+                    parameter,
+                    suggestion: 'Provide a value with the correct type.'
+                }
+            );
+        default:
+            return schemaRegistry.createError(
+                'ValidationError',
+                'INVALID_INPUT',
+                error.message || 'Tool input failed validation.',
+                {
+                    parameter
+                }
+            );
+    }
+}
+
 export function validateToolInput(toolName, input) {
     const tool = toolDefinitions[toolName];
     if (!tool) {
@@ -259,21 +365,12 @@ export function validateToolInput(toolName, input) {
         };
     }
 
-    // Basic validation - full validation would use AJV
-    const required = tool.inputSchema.required || [];
-    for (const field of required) {
-        if (!(field in input)) {
-            return {
-                valid: false,
-                error: {
-                    type: 'ValidationError',
-                    code: 'MISSING_REQUIRED_FIELD',
-                    message: `Missing required field: ${field}`,
-                    parameter: field,
-                    suggestion: `Provide the '${field}' parameter`
-                }
-            };
-        }
+    const validation = schemaRegistry.validateSchema(tool.inputSchema, input);
+    if (!validation.valid) {
+        return {
+            valid: false,
+            error: buildSchemaValidationError(validation.errors)
+        };
     }
 
     return { valid: true };
