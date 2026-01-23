@@ -10,6 +10,7 @@
 
 import { BlendMode, DepthFunc, CullFace, StencilOp } from '../RenderState.js';
 import { TextureFormat, FilterMode, WrapMode } from '../RenderTarget.js';
+import { RenderResourceRegistry } from '../RenderResourceRegistry.js';
 
 /**
  * WebGL blend factor mapping
@@ -113,6 +114,9 @@ export class WebGLBackend {
 
         /** @type {Map<object, WebGLVertexArrayObject>} */
         this._vaoCache = new Map();
+
+        /** @type {RenderResourceRegistry} */
+        this._resources = options.resourceRegistry || new RenderResourceRegistry();
 
         // WebGL constants
         this._initConstants();
@@ -496,6 +500,8 @@ export class WebGLBackend {
             return null;
         }
 
+        this._resources.register('program', program, () => gl.deleteProgram(program));
+
         // Cache uniform locations
         for (const uniform of shader.uniforms) {
             uniform.location = gl.getUniformLocation(program, uniform.name);
@@ -634,6 +640,8 @@ export class WebGLBackend {
         const glTexture = gl.createTexture();
         const target = texture._target || gl.TEXTURE_2D;
 
+        this._resources.register('texture', glTexture, () => gl.deleteTexture(glTexture));
+
         gl.bindTexture(target, glTexture);
 
         // Set parameters
@@ -677,6 +685,8 @@ export class WebGLBackend {
         const gl = this.gl;
         const glVAO = gl.createVertexArray();
         gl.bindVertexArray(glVAO);
+
+        this._resources.register('vao', glVAO, () => gl.deleteVertexArray(glVAO));
 
         // Set up attributes from VAO descriptor
         for (const attr of vao.attributes || []) {
@@ -749,6 +759,8 @@ export class WebGLBackend {
         const gl = this.gl;
         const framebuffer = gl.createFramebuffer();
 
+        this._resources.register('framebuffer', framebuffer, () => gl.deleteFramebuffer(framebuffer));
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
 
         // Color attachments
@@ -761,6 +773,7 @@ export class WebGLBackend {
 
             if (attachment.useTexture) {
                 const texture = gl.createTexture();
+                this._resources.register('texture', texture, () => gl.deleteTexture(texture));
                 gl.bindTexture(gl.TEXTURE_2D, texture);
                 gl.texImage2D(
                     gl.TEXTURE_2D, 0,
@@ -789,6 +802,7 @@ export class WebGLBackend {
                 target._colorTextures.push({ _handle: texture, _target: gl.TEXTURE_2D });
             } else {
                 const renderbuffer = gl.createRenderbuffer();
+                this._resources.register('renderbuffer', renderbuffer, () => gl.deleteRenderbuffer(renderbuffer));
                 gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
 
                 if (attachment.samples > 1) {
@@ -830,6 +844,7 @@ export class WebGLBackend {
 
             if (depthAttachment.useTexture) {
                 const texture = gl.createTexture();
+                this._resources.register('texture', texture, () => gl.deleteTexture(texture));
                 gl.bindTexture(gl.TEXTURE_2D, texture);
                 gl.texImage2D(
                     gl.TEXTURE_2D, 0,
@@ -854,6 +869,7 @@ export class WebGLBackend {
                 target._depthTexture = { _handle: texture, _target: gl.TEXTURE_2D };
             } else {
                 const renderbuffer = gl.createRenderbuffer();
+                this._resources.register('renderbuffer', renderbuffer, () => gl.deleteRenderbuffer(renderbuffer));
                 gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
 
                 if (depthAttachment.samples > 1) {
@@ -988,6 +1004,10 @@ export class WebGLBackend {
             gl.bufferData(target, descriptor.size, usage);
         }
 
+        this._resources.register('buffer', buffer, () => gl.deleteBuffer(buffer), {
+            bytes: descriptor.data?.byteLength || descriptor.size || 0
+        });
+
         return {
             _handle: buffer,
             _target: target,
@@ -1015,6 +1035,7 @@ export class WebGLBackend {
     deleteBuffer(buffer) {
         if (buffer?._handle) {
             this.gl.deleteBuffer(buffer._handle);
+            this._resources.release('buffer', buffer._handle);
             buffer._handle = null;
         }
     }
@@ -1024,7 +1045,7 @@ export class WebGLBackend {
      * @returns {object}
      */
     getStats() {
-        return { ...this._stats };
+        return { ...this._stats, resources: this._resources.getStats() };
     }
 
     /**
@@ -1043,24 +1064,9 @@ export class WebGLBackend {
      * Dispose all resources
      */
     dispose() {
-        const gl = this.gl;
-
-        // Delete shaders
-        for (const program of this._shaderCache.values()) {
-            gl.deleteProgram(program);
-        }
+        this._resources.disposeAll();
         this._shaderCache.clear();
-
-        // Delete framebuffers
-        for (const fb of this._framebufferCache.values()) {
-            gl.deleteFramebuffer(fb);
-        }
         this._framebufferCache.clear();
-
-        // Delete VAOs
-        for (const vao of this._vaoCache.values()) {
-            gl.deleteVertexArray(vao);
-        }
         this._vaoCache.clear();
 
         this._currentState = null;

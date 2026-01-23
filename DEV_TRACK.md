@@ -60,68 +60,89 @@ This document consolidates the ongoing development plan into a single, session-s
 ## Session log (stamped)
 Use the following format to stamp each session. Update the status, notes, and blockers as you go.
 
+### Session 000 — Repo + docs baseline review
+**Stamp:** 2026-01-20 23:51 UTC
+- **Focus:** Read current docs and scan codebase layout to understand baseline.
+- **Status:** COMPLETE
+- **Notes:** Reviewed top-level documentation and directory structure to align with the current architecture baseline.
+- **Blockers:** None.
+
 ### Session 001 — Platform baseline
-**Stamp:** PENDING
+**Stamp:** 2026-01-20 23:51 UTC
 - **Focus:** Tooling setup, dependency install, and baseline lint/test.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Enabled corepack, activated pnpm 9.4.0, and installed dependencies.
+- **Blockers:** None.
 
 ### Session 002 — Math foundation kickoff
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 00:13 UTC
 - **Focus:** Rotation plane utilities + projection helpers.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Added six-plane rotation utility helpers and projection singularity clamping with configurable epsilon.
+- **Blockers:** None.
 
 ### Session 003 — Stability testing
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 00:13 UTC
 - **Focus:** Drift/renormalization tests and precision reporting.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Added rotor drift/renormalization tests and captured baseline rotation/projection metrics.
+- **Blockers:** None.
 
 ### Session 004 — Renderer contract extraction
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 00:22 UTC
 - **Focus:** Shared renderer contract and resource manager skeleton.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Added renderer lifecycle manager plus contract adapters for Faceted, Quantum, Holographic, and Polychora systems.
+- **Blockers:** None.
 
 ### Session 005 — System integration
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 00:22 UTC
 - **Focus:** Adapt Faceted/Quantum/Holographic/Polychora to shared core.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Added renderFrame lifecycle hooks and optional auto-start controls to align systems with the shared renderer contract.
+- **Blockers:** None.
 
 ### Session 006 — Agentic tool definitions
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 18:30 UTC
 - **Focus:** MCP tool workflows + telemetry schema.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Standardized MCP tool responses with validation and consistent success/error metadata, and updated the tool-response schema.
+- **Blockers:** None.
 
 ### Session 007 — CLI JSON modes
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 22:22 UTC
 - **Focus:** Non-interactive CLI, JSON outputs, telemetry integration.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** COMPLETE
+- **Notes:** Normalized CLI responses with MCP envelopes plus optional schema validation in verbose mode.
+- **Blockers:** None.
 
 ### Session 008 — Cross-platform core
-**Stamp:** PENDING
+**Stamp:** 2026-01-21 22:33 UTC
 - **Focus:** WASM build path + shared core bindings plan.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** IN_PROGRESS
+- **Notes:** Added Phase 4 marketplace/extension plan and introduced extension/tool-pack schemas for partner integrations.
+- **Blockers:** None.
+
+### Session 008.1 — Repository manifest pass
+**Stamp:** 2026-01-22 01:05 UTC
+- **Focus:** Inventory and document repo structure for onboarding.
+- **Status:** COMPLETE
+- **Notes:** Added a repository manifest with top-level and depth-2 folder inventory to guide navigation and auditing.
+- **Blockers:** None.
+
+### Session 008.2 — Dev track analysis
+**Stamp:** 2026-01-22 01:22 UTC
+- **Focus:** Analyze current progress and define next steps for Phase 4.
+- **Status:** COMPLETE
+- **Notes:** Documented current status, gaps, and a recommended Phase 4+ execution plan in `DOCS/DEV_TRACK_ANALYSIS.md`.
+- **Blockers:** None.
 
 ### Session 009 — WebGPU prototype
-**Stamp:** PENDING
+**Stamp:** 2026-01-22 02:05 UTC
 - **Focus:** Feature-flagged WebGPU backend spike.
-- **Status:** PENDING
-- **Notes:**
-- **Blockers:**
+- **Status:** IN_PROGRESS
+- **Notes:** Added a minimal WebGPU backend scaffold with async render context creation and clear-pass rendering.
+- **Blockers:** None.
 
 ### Session 010 — Production hardening
 **Stamp:** PENDING

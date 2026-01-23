@@ -65,6 +65,11 @@ export {
     renderTargetPool
 } from './RenderTarget.js';
 
+// Resource registry
+export {
+    RenderResourceRegistry
+} from './RenderResourceRegistry.js';
+
 // Shader programs
 export {
     ShaderStage,
@@ -84,6 +89,12 @@ export {
     createWebGLBackend
 } from './backends/WebGLBackend.js';
 
+// WebGPU backend (experimental)
+export {
+    WebGPUBackend,
+    createWebGPUBackend
+} from './backends/WebGPUBackend.js';
+
 /**
  * Create a complete rendering context
  * @param {HTMLCanvasElement} canvas
@@ -91,6 +102,9 @@ export {
  * @returns {object} Rendering context with backend and helpers
  */
 export function createRenderContext(canvas, options = {}) {
+    if (options.backend === 'webgpu') {
+        return null;
+    }
     const { createWebGLBackend } = require('./backends/WebGLBackend.js');
     const backend = createWebGLBackend(canvas, options);
 
@@ -113,6 +127,36 @@ export function createRenderContext(canvas, options = {}) {
             backend.dispose();
         }
     };
+}
+
+/**
+ * Create a rendering context (async, supports WebGPU).
+ * @param {HTMLCanvasElement} canvas
+ * @param {object} [options]
+ * @returns {Promise<object|null>}
+ */
+export async function createRenderContextAsync(canvas, options = {}) {
+    if (options.backend === 'webgpu') {
+        const { createWebGPUBackend } = await import('./backends/WebGPUBackend.js');
+        const backend = await createWebGPUBackend(canvas, options);
+
+        if (!backend) {
+            return null;
+        }
+
+        return {
+            backend,
+            canvas,
+            device: backend.device,
+            context: backend.context,
+            format: backend.format,
+            dispose() {
+                backend.dispose();
+            }
+        };
+    }
+
+    return createRenderContext(canvas, options);
 }
 
 /**

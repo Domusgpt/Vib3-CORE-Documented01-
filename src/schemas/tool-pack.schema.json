@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vib3.dev/schemas/tool-pack.json",
+  "title": "VIB3+ Tool Pack Manifest",
+  "description": "Tool pack manifest describing grouped MCP tools for partner platforms.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+    },
+    "name": { "type": "string" },
+    "version": { "type": "string" },
+    "description": { "type": "string" },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "schema_ref": { "type": "string" }
+        },
+        "required": ["name"]
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "marketplace": {
+      "type": "object",
+      "properties": {
+        "listing_id": { "type": "string" },
+        "categories": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "required": ["id", "name", "version", "tools"],
+  "additionalProperties": false
+}
