@@ -144,9 +144,21 @@ Use the following format to stamp each session. Update the status, notes, and bl
 - **Notes:** Added a minimal WebGPU backend scaffold with async render context creation and clear-pass rendering.
 - **Blockers:** None.
 
-### Session 010 — Production hardening
-**Stamp:** PENDING
-- **Focus:** Licensing, export formats, XR benchmarks, golden snapshots.
-- **Status:** PENDING
+### Session 010 — Production hardening (documentation)
+**Stamp:** 2026-01-22 03:13 UTC
+- **Focus:** Licensing, export formats, XR benchmarks documentation drafts.
+- **Status:** COMPLETE
+- **Notes:** Created initial draft documents for Phase 5: LICENSING_TIERS.md, EXPORT_FORMATS.md, XR_BENCHMARKS.md. These are starting points requiring implementation expansion.
+- **Blockers:** None.
+
+### Session 011 — Phase 5 hardening implementation
+**Stamp:** 2026-01-23 22:04 UTC
+- **Focus:** Test baseline fixes, licensing implementation details, export golden snapshots, XR benchmark tooling.
+- **Status:** COMPLETE
 - **Notes:**
-- **Blockers:**
+  - Fixed rotation stability test precision tolerance (Float32 appropriate 5 decimal places vs 6)
+  - Expanded LICENSING_TIERS.md with key format, activation flow, token schema, offline validation, feature gating
+  - Expanded EXPORT_FORMATS.md with format specs, golden snapshot test implementation, CI integration
+  - Expanded XR_BENCHMARKS.md with metrics collection, benchmark runner, regression detection, performance overlay
+  - Added CLI `validate` command for pack/manifest/response validation
+- **Blockers:** None.
