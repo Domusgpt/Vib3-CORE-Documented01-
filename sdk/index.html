@@ -608,20 +608,22 @@
             document.getElementById('loadingText').textContent = 'Loading C++ WASM Core...';
 
             try {
-                // Load the Vib3Core WASM module from the wasm directory
-                const wasmPath = './wasm/vib3_core.js';
-                const wasmModule = await import(wasmPath);
+                // Load vib3_core.js via script tag (CommonJS/IIFE doesn't work with dynamic import())
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = './wasm/vib3_core.js';
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Failed to load vib3_core.js'));
+                    document.head.appendChild(script);
+                });
 
-                // Initialize the module - handle different export formats
-                // vib3_core.js exports as CommonJS: module.exports = Vib3Core
-                // When dynamically imported, try multiple access patterns
-                const Vib3CoreFactory = wasmModule.default || wasmModule.Vib3Core || wasmModule;
-
-                if (typeof Vib3CoreFactory !== 'function') {
-                    throw new Error('Vib3Core factory not found. Got: ' + typeof Vib3CoreFactory);
+                // Vib3Core is now a global function (set by the IIFE in vib3_core.js)
+                if (typeof Vib3Core !== 'function') {
+                    throw new Error('Vib3Core not found after script load. Got: ' + typeof Vib3Core);
                 }
 
-                wasmCore = await Vib3CoreFactory({
+                // Initialize the WASM module - Vib3Core() returns a Promise
+                wasmCore = await Vib3Core({
                     locateFile: (path) => './wasm/' + path
                 });
 
