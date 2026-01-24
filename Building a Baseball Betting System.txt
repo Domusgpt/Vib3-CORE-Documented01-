@@ -1,0 +1,272 @@
+﻿Geometric Alpha: A Comprehensive Architecture for Polytopal Projection Processing in Sports Derivatives Markets
+1. The Geometric Paradigm in Algorithmic Sports Trading
+The contemporary landscape of sports analytics is undergoing a fundamental phase transition. For decades, the dominant paradigm—sabermetrics—relied on the aggregation of discrete events into statistical averages. A player’s value was defined by a row in a database: a batting average, an on-base percentage, or an earned run average. While these metrics provided a massive leap forward from subjective scouting, they inherently flattened the complexity of the game. They reduced dynamic, four-dimensional interactions (three spatial dimensions plus time) into static scalars. As the market for sports betting has matured, the efficiency of odds-makers using these regression-based statistical models has increased, eroding the "alpha"—the excess returns available to the sophisticated bettor.
+To generate a sustainable edge against modern efficient markets, one must transcend statistical aggregation and embrace the native geometry of the sport. The user's proposed "polytopal projection processing simulator" represents the vanguard of this new frontier. It posits that the game of baseball is not merely a sequence of random variables but a series of geometric interactions between high-dimensional shapes. By modeling the "shape" of a pitcher’s arsenal, the "volume" of an umpire’s strike zone, and the "surface" of a defense’s coverage, we can uncover inefficiencies that purely statistical models overlook.
+This report serves as a foundational blueprint for constructing such a system. It is designed for the quantitative researcher who intends to build a production-grade betting engine months before the season commences. It details the theoretical underpinnings of geometric cognition in sports, the software architecture required to ingest and normalize massive datasets, the mathematical formulation of polytopal features, and the rigorous financial engineering required to manage risk through simultaneous convex optimization.
+1.1 The Theoretical Basis: From Statistics to Topology
+The core hypothesis of the polytopal approach is that the structure of data contains more signal than the magnitude of data. In traditional analysis, a pitcher’s effectiveness might be measured by his strikeout rate (a magnitude). In topological data analysis (TDA), effectiveness is measured by the "persistence" of the voids between his pitch clusters in high-dimensional space (a structure).
+1.1.1 The Concept of Polytopal Projection
+A "polytope" is the generalization of a polygon to N dimensions. In the context of baseball, every pitch thrown is a point in an N-dimensional phase space defined by velocity, spin rates, release coordinates, and acceleration vectors. A pitcher's "arsenal" is not a list of pitch types but a point cloud in this space. The "convex hull" of this point cloud forms a polytope that defines the pitcher's operational capability.
+"Projection" refers to the dimensionality reduction required to map these hyper-dimensional shapes onto the low-dimensional planes where the game is actually played—specifically, the 2D plane of the batter’s eye (the "commit point") and the 2D plane of the strike zone. The "simulator" aspect of the system involves running Monte Carlo iterations of these projected shapes interacting with one another. Does the polytope of the pitch trajectory intersect with the polytope of the bat path? Does the trajectory fall within the convex hull of the umpire’s called strike zone?
+1.1.2 Geometric Cognition and Market Inefficiency
+Research into "Geometric Cognition" suggests that human agents (batters and umpires) rely on heuristic models of symmetry and shape to make split-second decisions. A batter cannot calculate the physics of a 95 mph fastball in 400 milliseconds; instead, they rely on perceptual shortcuts—projecting the trajectory based on the first few frames of flight.
+Market inefficiencies arise when the physics of the ball diverges from the heuristic geometry perceived by the players. For example, a pitch that "tunnels" well (shares a trajectory with another pitch type for a long duration) creates a geometric illusion. Standard statistical models might undervalue a pitcher with average velocity but elite tunneling geometry. By explicitly modeling these shapes, the Polytopal Simulator identifies "Geometric Alpha"—value that exists in the disconnect between physical reality and perceptual heuristics.
+1.2 The System Mandate: Validation and Preparation
+The directive to "prepare now months before the season" necessitates a robust backtesting infrastructure. A live betting system cannot be debugged in real-time with real capital; it must be validated against historical data. This requires a "Time Machine" architecture—a system capable of reconstructing the state of the world (both performance metrics and market odds) as they appeared at any specific moment in the past.
+The integration of APIs (Application Programming Interfaces) is central to this. The system must act as a bridge between the "Performance Layer" (what happened on the field) and the "Market Layer" (how the books priced it). The disparity between the two is the edge. The following chapters detail how to construct this bridge using Python, leveraging libraries such as pybaseball for performance data, The-Odds-API for market data, and scipy.spatial / cvxpy for the mathematical heavy lifting.
+2. Data Infrastructure: The Foundation of the Simulator
+A computational system is strictly bounded by the fidelity, granularity, and synchronization of its data. For a geometric simulator, aggregated box scores are insufficient. The system requires granular, frame-by-frame telemetry of the ball and the players. Furthermore, to validate a betting strategy, one requires precise historical odds to calculate the Closing Line Value (CLV) and simulate the liquidity of markets.
+2.1 The Performance Data Layer: pybaseball
+The primary ingestion engine for on-field events is the pybaseball library, a Python wrapper that scrapes and consolidates data from Baseball Savant (Statcast) and FanGraphs.
+2.1.1 Statcast Telemetry
+The geometric simulator relies on the statcast endpoint. Unlike traditional stats APIs that return "Result: Strikeout," Statcast returns the physics of the event.
+* Kinematic Vectors: To model a trajectory, we need the initial conditions of the flight. pybaseball provides vx0, vy0, vz0 (velocity components at 50 feet), ax0, ay0, az0 (acceleration components), and release_pos_x, release_pos_z.
+* Spin Physics: release_spin_rate and release_spin_direction (often inferred or provided as axes) are critical for calculating the Magnus force, which curves the trajectory manifold.
+* The "Ghost" Data Problem: A common issue in raw Statcast data is "ghost pitches"—rows where critical kinematic variables are null due to sensor error. In a geometric system, dropping these rows creates "holes" in the pitcher's polytope, distorting the volume calculation.
+   * Geometric Imputation Strategy: Instead of filling nulls with the league average, the system must use a K-Nearest Neighbors (KNN) imputer based on the remaining dimensions. If a fastball's spin rate is missing, we impute it from the spin rates of the K nearest fastballs thrown by that specific pitcher with similar velocity and release point. This preserves the local geometric structure of the player's arsenal.
+2.1.2 Temporal Granularity and Caching
+Pulling pitch-by-pitch data for multiple seasons involves millions of rows. Repeatedly querying the statcast() API is inefficient and risks rate-limiting.
+* Parquet Storage: The system should serialize fetched data into Apache Parquet format. Parquet is a columnar storage format that is highly optimized for the vector-heavy read operations required by TDA. Unlike CSV, it preserves data types (float32 vs float64), which is crucial for the precision required in polytopal intersection calculations.
+* Partitioning: Data should be partitioned by game_date or player_id. This allows the simulator to load specific "epochs" of history (e.g., "The 2022 Season") into memory without scanning the entire dataset.
+2.2 The Market Data Layer: The-Odds-API
+To "beat standard sports analysis odds," the system must know exactly what those odds were. The-Odds-API provides the necessary historical and live betting lines.
+2.2.1 Market Taxonomy
+The simulator must model three distinct market types, each responding to different geometric features:
+1. Moneyline (h2h): The binary probability of winning. This is the output of the global simulation.
+2. Totals (totals): The total runs scored. This market is highly sensitive to the Umpire Polytope. A convex hull of called strikes that is 10% larger than average significantly suppresses run scoring, creating value on the "Under."
+3. Spreads (spreads): The handicap market. This requires modeling the variance of the run distribution, not just the mean.
+2.2.2 The Synchronization Challenge: merge_asof
+A critical failure point in sports betting backtesters is "Look-ahead Bias"—using odds that were not actually available at the time the bet would have been placed.
+* The Problem: pybaseball timestamps pitches to the second. The-Odds-API timestamps line updates whenever the bookmaker changes them. These timestamps almost never match exactly.
+* The Solution: The pandas.merge_asof function is the architectural linchpin here. It performs a "fuzzy" left-join based on the nearest timestamp.
+   * Implementation: The system must sort both the pitch dataframe and the odds dataframe by time. It then merges the Game Start Time from the performance data with the most recent previous timestamp from the odds data. This ensures that the simulation uses the "Closing Line" (the final odds before the game started) or a specific "Opening Line," strictly enforcing causality.
+2.3 Environmental Context: Weather and Stadiums
+Ball flight is an aerodynamic phenomenon. The manifold of the pitch trajectory changes based on air density.
+* mlb-statsapi: This library provides game-level context, including venue ID and weather data.
+* Geometric Impact: A "fly ball" trajectory that results in a Home Run in the thin air of Coors Field (Denver) might be a fly out in the dense air of Oracle Park (San Francisco). The "Polytopal Simulator" must normalize all trajectories to a "neutral" environment (Vacuum or Sea Level) to assess raw player skill, and then re-project them into the specific environment of the upcoming game to predict outcomes.
+Data Layer
+	Source Library
+	Geometric Feature
+	Storage Strategy
+	Performance
+	pybaseball
+	Kinematic Vectors, Release Points
+	Parquet (Partitioned by Season)
+	Market
+	The-Odds-API
+	Price, Implied Probability, Juice
+	SQL (Relational lookup)
+	Environment
+	mlb-statsapi
+	Air Density, Wind Vector, Stadium Geometry
+	JSON (Static configuration)
+	3. Polytopal Feature Engineering: The Core Simulator
+This section describes the mathematical heart of the system: transforming raw data into "Geometric Alpha." We move beyond simple averages (e.g., "Strike Percentage") to second-order insights derived from shape analysis.
+3.1 Pitch Tunneling: Manifold Intersection Analysis
+"Tunneling" is the ability of a pitcher to make two different pitches travel along the same trajectory for as long as possible before diverging. This disrupts the batter's geometric projection of the ball's path.
+3.1.1 The Math of the Tunnel
+We model the pitch trajectory as a parametric curve P(t) in 3D space.
+* The Decision Point: Batters must commit to a swing approximately 23.8 feet (0.15-0.175 seconds) before the ball reaches the plate. This is the "Point of No Return".
+* Euclidean Divergence: For any two pitch types A and B (e.g., Fastball and Slider), we calculate the Euclidean distance between their trajectories at the Decision Point (t_{dec}). We then calculate the distance at the Plate (t_{plate}).
+* Tunnel Score: The ratio \frac{D_{plate}}{D_{tunnel}} defines the "deception" of the pair. A high ratio implies the pitches were virtually identical at the decision point but ended up far apart.
+3.1.2 Polytopal Arsenal Representation
+Instead of analyzing pairs in isolation, we view the pitcher's entire arsenal as a graph.
+* Nodes: Pitch types (FF, SL, CH, CU).
+* Edges: The Tunnel Score between them.
+* Insight: A pitcher whose arsenal graph is "highly connected" (strong tunneling between all pitch types) presents a "single geometric front" to the batter. This is a predictor of soft contact (weakly hit balls) that regression models often miss, identifying undervalued pitchers in the "Strikeouts" or "Earned Runs" prop markets.
+3.2 Umpire Zones: Convex Hull Analysis
+The strike zone is defined by the rulebook as a rectangle. In practice, it is a complex, amorphous polygon defined by the umpire's psychology and viewing angle.
+3.2.1 Constructing the Hull
+Using scipy.spatial.ConvexHull , we construct the geometry of the called strike zone.
+* Input: The set of points \{(p_x, p_z)\} for all pitches called a strike by a specific umpire over a trailing window (e.g., last 5 games).
+* Computation: The algorithm computes the smallest convex set containing these points. This yields the hull.volume (which in 2D is the Area) and the hull.vertices (the perimeter).
+3.2.2 Second-Order Insights: Area and Centroid Drift
+* The Expansion Factor: We calculate the ratio of the Umpire Hull Area to the Rulebook Area.
+   * Insight: If \lambda_{zone} > 1.1, the umpire is expanding the zone by 10%. This insight is directly actionable in the Totals (Under) market. A larger zone forces batters to swing at marginal pitches, leading to weaker contact and fewer runs.
+* Centroid Drift: We calculate the centroid (geometric center) of the hull.
+   * Insight: An umpire with a centroid shifted low (z < 2.5) favors "sinkerball" pitchers who live at the bottom of the zone. The system should boost the win probability of a ground-ball pitcher when paired with a low-centroid umpire.
+3.3 Defensive Efficiency: Voronoi Tessellations
+Defense is spatial coverage. A fielder's value is the area of the field they can effectively control.
+3.3.1 Voronoi Diagrams
+We use scipy.spatial.Voronoi to partition the baseball field into regions based on the starting position of the 7 defensive fielders.
+* Tessellation: Each fielder F_i is assigned a cell V_i consisting of all points closer to them than to any other fielder.
+* Reaction Time Integration: We can weight the distance metric by the fielder's "Sprint Speed" (available in Statcast). A fast centerfielder generates a larger Voronoi cell than a slow one.
+3.3.2 Spray Chart Overlay
+The system overlays the opposing batter's Spray Chart (the density distribution of their batted balls) onto the defense's Voronoi diagram.
+* The Inefficiency Metric: We calculate the integral of the batter's hit density that falls near the edges (vertices) of the Voronoi cells. These are the "seams" of the defense—the points equidistant from two fielders, where confusion or lack of range leads to hits.
+* Actionable Signal: If a batter's spray chart aligns heavily with the Voronoi edges of the specific defensive alignment they are facing, the system identifies value on the Batter Hits (Over) prop bet.
+3.4 Dimensionality Reduction: The "Shape of Skill"
+To validate the quality of a pitcher's "stuff," we project their 8-dimensional pitch metrics into a lower-dimensional space using TDA-compatible techniques.
+3.4.1 PCA vs. Manifold Learning
+* PCA (Principal Component Analysis): Useful for determining the "Variance Explained" by velocity vs. movement. However, PCA assumes linear relationships.
+* t-SNE / UMAP: These non-linear techniques preserve local topology.
+   * Insight: When visualizing a pitcher's arsenal with UMAP, distinct clusters represent distinct pitch types. If a pitcher's "Slider" cluster has a "dumbbell" shape (two connected lobes), it indicates inconsistency or two different slider variations being thrown under one label. This "topological instability" is a precursor to poor performance, offering a signal to Fade (bet against) the pitcher.
+4. The Predictive Engine: From Geometry to Probability
+Once the geometric features (Tunnel Scores, Hull Areas, Voronoi Edge Densities) are computed, they must be translated into probabilities.
+4.1 Target Variable Engineering
+We do not predict "Wins" directly. Wins are noisy. We predict Delta Run Expectancy (\Delta RE).
+* RE24 Matrix: This matrix defines the expected runs scored from any base-out state (e.g., Runners on 1st and 3rd, 1 Out).
+* The Target: The model predicts the \Delta RE generated by each pitch. Summing the predicted \Delta RE for all matchups in a game gives the total projected run differential, which translates directly to a Moneyline and Spread price.
+4.2 Machine Learning Architecture
+Given the non-linear nature of geometric features, tree-based gradient boosting models are superior to linear regression.
+* XGBoost / LightGBM: These models handle the interactions between features effectively (e.g., "High Tunnel Score" plus "Low Umpire Centroid" = High Strikeout Probability).
+* Feature Sets:
+   * Geometric: Tunnel Score, Arsenal Hull Volume, Release Point Variance.
+   * Contextual: Inning, Score, Handedness match.
+   * Environmental: Temperature, Wind Vector.
+4.3 GPU Acceleration for Simulation
+To "prepare months before," the system must run millions of simulations.
+* RAPIDS (cuML): Standard scikit-learn on CPU is too slow for iterating through millions of historical pitches during backtesting. The system should utilize NVIDIA's RAPIDS suite. cuML provides GPU-accelerated versions of Random Forests and t-SNE, allowing the simulator to re-train models on years of data in minutes rather than hours.
+* Convex Hulls on GPU: scipy's QuickHull is CPU-bound. For real-time updates, custom CUDA kernels or libraries like cudf can be used to filter points before passing them to the CPU hull algorithm, or implementing a GPU-native hull algorithm like "CudaChain".
+5. Financial Engineering: Risk Management and Execution
+Having a predictive edge is useless without a money management strategy. A system that wins 55% of bets but wagers recklessly will eventually go bankrupt due to variance.
+5.1 The Simultaneous Kelly Criterion
+The Kelly Criterion is the mathematically optimal strategy for maximizing the logarithm of wealth.
+where b is the net odds, p is win probability, and q is loss probability. However, this formula applies to serial bets (one after another). On a Tuesday night in MLB, there are 15 games happening simultaneously. Applying the single-bet Kelly formula to 15 concurrent bets creates massive over-exposure (often recommending betting >100% of the bankroll).
+5.2 Convex Optimization with cvxpy
+The solution is to treat the night's betting slate as a portfolio optimization problem.
+5.2.1 The Mathematical Formulation
+We wish to find the vector of bet fractions \mathbf{f} = [f_1, f_2,..., f_n] that maximizes the expected growth rate G(\mathbf{f}):
+Subject to:
+5.2.2 Implementation
+We use cvxpy, a Python-embedded modeling language for convex optimization.
+* Solver: We interface cvxpy with the ECOS or SCS solver. These solvers are designed to handle the exponential cone constraints inherent in logarithmic maximization.
+* Covariance: The optimization can also account for correlation. If we bet on the Yankees to Win and the Yankees Game Total Over, these outcomes are correlated. The solver reduces the stake on both to account for the shared risk.
+5.3 The Controlled Environment (Paper Trading)
+To satisfy the requirement of a "test of validation," the system must operate in a "Sandbox."
+* Mock Execution Engine: Instead of sending API calls to a sportsbook, the system writes bet orders to a local SQL database orders_table.
+* CLV Logging: At game time, the system records the Closing Line from The-Odds-API.
+* Settlement: The next day, the system queries pybaseball for the game result, calculates PnL (Profit and Loss), and updates the virtual bankroll.
+* Validation Metric: The key metric is not just ROI, but CLV%. If the system bet the Dodgers at -120 and the line closed at -135, the system generated 15 points of CLV. Consistently generating positive CLV proves the model's validity even if short-term luck results in a loss.
+6. Operational Workflow: Building the Polytopal Simulator
+This section provides a chronological roadmap for the user to "prepare now."
+Phase 1: The Scraper (Months 1-2)
+* Objective: Build the Data Lake.
+* Action: Write scripts using pybaseball.statcast() to download 2021-2025 data. Partition by season.
+* Action: Build the merge_asof logic to align this data with historical odds CSVs (available from sources like Sports-Statistics.com or The-Odds-API historical endpoint).
+Phase 2: The Geometric Engine (Month 3)
+* Objective: Code the Feature Engineering.
+* Action: Implement TunnelScore class using vectorized numpy operations.
+* Action: Implement UmpireHull class using scipy.spatial.ConvexHull.
+* Action: Run TDA algorithms (persistence homology) on pitcher arsenals to generate "Arsenal Stability" scores.
+Phase 3: The Backtester (Month 4)
+* Objective: Validate the Model.
+* Action: Split data into Train (2021-2023) and Test (2024).
+* Action: Train XGBoost models on the Geometric Features.
+* Action: Run the "Time Machine" simulation on 2024 data. For every day in the 2024 season:
+   1. Load features available prior to that day.
+   2. Predict probabilities.
+   3. Fetch historical odds for that day.
+   4. Run cvxpy optimizer to determine bets.
+   5. Log results.
+Phase 4: The Production Bot (Month 5 / Season Start)
+* Objective: Live Operations.
+* Action: Set up a Cron job or Daemon.
+   * 10:00 AM: Scrape probable pitchers and umpire assignments.
+   * 10:05 AM: Compute geometric features (Hulls, Tunnels).
+   * 10:10 AM: Run Predictive Model.
+   * 10:15 AM: Poll The-Odds-API for opening lines.
+   * 10:20 AM: Solve Kelly Optimization.
+   * 10:25 AM: Place virtual bets in the sandbox (or real bets via API if confident).
+7. Conclusion
+The construction of a "Polytopal Projection Processing Simulator" is an ambitious synthesis of computational geometry, machine learning, and quantitative finance. By treating baseball not as a spreadsheet of statistics but as a dynamic system of interacting shapes, this architecture targets the structural inefficiencies of the betting market.
+The "Geometric Alpha" derived from Pitch Tunneling (manifold intersection), Umpire Zones (convex hull expansion), and Defensive Coverage (Voronoi tessellation) provides a signal that is orthogonal to standard regression models. When coupled with the rigorous money management of Simultaneous Kelly Optimization via cvxpy, this system offers a robust framework for validating an edge against the market. The infrastructure detailed here—leveraging pybaseball for granular physics data and The-Odds-API for market synchronization—provides the necessary tooling to transform this theoretical concept into a functional, automated trading engine.
+Appendix A: Python Implementation Patterns
+A.1 Vectorized Pitch Tunneling
+import numpy as np
+import pandas as pd
+
+def calculate_tunnel_scores(df_pitches):
+   """
+   Vectorized calculation of Tunnel Scores for a DataFrame of pitches.
+   Assumes df_pitches is sorted by game_pk and inning/at_bat.
+   """
+   # 1. Trajectory Projection (Simplified Kinematics)
+   # Project position at Decision Point (0.175s) and Plate (0.4s)
+   t_decision = 0.175
+   t_plate = 0.400
+   
+   # Extract kinematic coefficients
+   vx0 = df_pitches['vx0'].values
+   vy0 = df_pitches['vy0'].values
+   vz0 = df_pitches['vz0'].values
+   ax = df_pitches['ax'].values
+   ay = df_pitches['ay'].values
+   az = df_pitches['az'].values
+   
+   # Physics Engine: x(t) = x0 + vx0*t + 0.5*ax*t^2
+   def project_pos(t, v0, a0, p0):
+       return p0 + v0 * t + 0.5 * a0 * t**2
+   
+   # Calculate positions (Nx3 matrices)
+   pos_decision_x = project_pos(t_decision, vx0, ax, df_pitches['release_pos_x'].values)
+   pos_decision_z = project_pos(t_decision, vz0, az, df_pitches['release_pos_z'].values)
+   
+   pos_plate_x = df_pitches['plate_x'].values
+   pos_plate_z = df_pitches['plate_z'].values
+   
+   # 2. Shift vectors to compare Pitch[i] with Pitch[i-1]
+   # This aligns the previous pitch's metrics with the current row
+   prev_pos_dec_x = np.roll(pos_decision_x, 1)
+   prev_pos_dec_z = np.roll(pos_decision_z, 1)
+   prev_pos_plate_x = np.roll(pos_plate_x, 1)
+   prev_pos_plate_z = np.roll(pos_plate_z, 1)
+   
+   # 3. Euclidean Distances
+   dist_tunnel = np.sqrt((pos_decision_x - prev_pos_dec_x)**2 + 
+                         (pos_decision_z - prev_pos_dec_z)**2)
+   dist_plate = np.sqrt((pos_plate_x - prev_pos_plate_x)**2 + 
+                        (pos_plate_z - prev_pos_plate_z)**2)
+   
+   # 4. Tunnel Score (Plate Distance / Tunnel Distance)
+   # Add epsilon to avoid division by zero
+   tunnel_score = dist_plate / (dist_tunnel + 1e-6)
+   
+   return tunnel_score
+
+A.2 Simultaneous Kelly Solver (CVXPY)
+import cvxpy as cp
+import numpy as np
+
+def solve_simultaneous_kelly(opportunities, bankroll):
+   """
+   opportunities: List of dicts {'odds': decimal, 'prob': float, 'id': str}
+   """
+   n = len(opportunities)
+   if n == 0: return {}
+   
+   # Extract vectors
+   odds = np.array([o['odds'] for o in opportunities])
+   probs = np.array([o['prob'] for o in opportunities])
+   net_odds = odds - 1.0
+   
+   # Variable: Fraction of bankroll to bet on each opportunity
+   f = cp.Variable(n)
+   
+   # Objective: Maximize Expected Log Growth
+   # Approximation for independent events:
+   # E ~= sum( p_i * log(1 + f_i * b_i) + (1-p_i) * log(1 - f_i) )
+   # Note: Full matrix form is needed for correlation, this is the diagonal approx.
+   growth = probs @ cp.log(1 + cp.multiply(f, net_odds)) + \
+            (1 - probs) @ cp.log(1 - f)
+            
+   # Constraints
+   constraints =
+   
+   # Solve
+   problem = cp.Problem(cp.Maximize(growth), constraints)
+   try:
+       problem.solve(solver=cp.ECOS)
+   except:
+       problem.solve(solver=cp.SCS)
+       
+   # Extract results
+   bet_fractions = f.value
+   results = {}
+   for i, opp in enumerate(opportunities):
+       results[opp['id']] = max(0.0, bet_fractions[i]) * bankroll
+       
+   return results
+
+Works cited
+1. Memorable Configurations of Numbers of Cognitive and Strategic Relevance, https://laetusinpraesens.org/docs20s/numbmnem.php 2. pybaseball/README.md at master - GitHub, https://github.com/jldbc/pybaseball/blob/master/README.md 3. Introducing pybaseball: an Open Source Package for Baseball Data Analysis, https://jamesrledoux.com/projects/open-source/introducing-pybaseball/ 4. pybaseball 2.0.0 - PyPI, https://pypi.org/project/pybaseball/2.0.0/ 5. The Odds API: Sports Odds API, https://the-odds-api.com/ 6. List of API Betting Markets - The Odds API, https://the-odds-api.com/sports-odds-data/betting-markets.html 7. Pandas Merging Techniques: merge_asof for Time-Based Data - Kaggle, https://www.kaggle.com/discussions/general/452816 8. pandas.merge_asof() function in Python - GeeksforGeeks, https://www.geeksforgeeks.org/python/pandas-merge_asof-function-in-python/ 9. python-mlb-statsapi - PyPI, https://pypi.org/project/python-mlb-statsapi/ 10. All Functions · toddrob99/MLB-StatsAPI Wiki - GitHub, https://github.com/toddrob99/MLB-StatsAPI/wiki/All-Functions 11. Jensen-holm/MLBTunnelScoreBot: The MLB-Tunnel-Bot is a X bot that finds the best pitch tunneling scores from the day before and tweets about them. - GitHub, https://github.com/Jensen-holm/MLBTunnelScoreBot/ 12. ConvexHull — SciPy v1.17.0 Manual, https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.ConvexHull.html 13. scipy.spatial.ConvexHull — SciPy v1.1.0 Reference Guide, https://docs.scipy.org/doc//scipy-1.1.0/reference/generated/scipy.spatial.ConvexHull.html 14. Reverse-Engineering Umpire Strike Zones with Trackman Data | by Robbie Dudzinski, https://medium.com/@robbiedudz34/reverse-engineering-umpire-strike-zones-with-trackman-data-1dbffd486e9c 15. [WSC17] Using Voronoi Diagrams to Optimize Offensive Schemes - Online Technical Discussion Groups—Wolfram Community, https://community.wolfram.com/groups/-/m/t/1140010 16. football-crunching/notebooks/using voronoi diagrams.ipynb at master - GitHub, https://github.com/rjtavares/football-crunching/blob/master/notebooks/using%20voronoi%20diagrams.ipynb 17. Convex hull in higher dimensions, finding the vertices of a polytope - Stack Overflow, https://stackoverflow.com/questions/27889591/convex-hull-in-higher-dimensions-finding-the-vertices-of-a-polytope 18. THESIS APPLICATIONS OF TOPOLOGICAL DATA ANALYSIS TO NATURAL LANGUAGE PROCESSING AND COMPUTER VISION - Mountain Scholar, https://mountainscholar.org/bitstreams/ba0d38af-0796-4802-be4f-62d01061c4e9/download 19. Separating Intent from Execution: A Probabilistic Approach to Pitch Location Accuracy, https://arxiv.org/html/2508.19184v1 20. Pybaseball Stats Explained : r/Sabermetrics - Reddit, https://www.reddit.com/r/Sabermetrics/comments/1icnl68/pybaseball_stats_explained/ 21. Modelling Batter Decision Value. Introduction | by Thomas Nestico - Medium, https://medium.com/@thomasjamesnestico/modelling-batter-decision-value-dac74c55e20a 22. Exploring Factors Influencing On-Base Percentage in Modern Baseball - Lund University Publications, https://lup.lub.lu.se/student-papers/record/9175631/file/9175632.pdf 23. Welcome to cuML's documentation! - RAPIDS Docs, https://docs.rapids.ai/api/cuml/stable/ 24. rapidsai/cuml: cuML - RAPIDS Machine Learning Library - GitHub, https://github.com/rapidsai/cuml 25. CudaChain: A Practical GPU-accelerated 2D Convex Hull Algorithm - arXiv, https://arxiv.org/pdf/1508.05488 26. How to implement Kelly criterion with multiple out comes into python? - Reddit, https://www.reddit.com/r/learnpython/comments/1ngcfl9/how_to_implement_kelly_criterion_with_multiple/ 27. The Kelly Criterion — Hands-On Mathematical Optimization with AMPL in Python, https://ampl.com/mo-book/notebooks/06/kelly-criterion.html 28. Portfolio Optimization - Riskfolio-Lib 7.2 - Read the Docs, https://riskfolio-lib.readthedocs.io/en/latest/portfolio.html 29. Where do you get your historical sports betting data from? : r/datasets - Reddit, https://www.reddit.com/r/datasets/comments/12pi7pi/where_do_you_get_your_historical_sports_betting/ 30. MLB Historical Odds & Scores Datasets - Sports Statistics, https://sports-statistics.com/sports-data/mlb-historical-odds-scores-datasets/
