@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirigami Hyper-Computer - Epitaxial 600-Cell Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #app {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            position: relative;
+            background: #000;
+            overflow: hidden;
+        }
+
+        #kirigami-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+        }
+
+        #overlay h1 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
+            margin-bottom: 5px;
+        }
+
+        #overlay .subtitle {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        #stats {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.75rem;
+            color: #666;
+            font-family: monospace;
+        }
+
+        #controls {
+            background: #111;
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid #222;
+        }
+
+        .control-section {
+            margin-bottom: 25px;
+        }
+
+        .control-section h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #666;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #222;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #8a2be2;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .control-group .value {
+            font-size: 0.7rem;
+            color: #666;
+            text-align: right;
+            margin-top: 3px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #222;
+            border: 1px solid #333;
+            color: #888;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #333;
+            color: #fff;
+            border-color: #8a2be2;
+        }
+
+        button.active {
+            background: #8a2be2;
+            color: #fff;
+            border-color: #8a2be2;
+        }
+
+        .layer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .layer-button {
+            padding: 10px;
+            text-align: center;
+            font-size: 0.7rem;
+        }
+
+        .layer-button.layer-0 { border-color: #000; }
+        .layer-button.layer-1 { border-color: #fff; }
+        .layer-button.layer-2 { border-color: #f0f; }
+        .layer-button.layer-3 { border-color: #0ff; }
+        .layer-button.layer-4 { border-color: #8a2be2; }
+        .layer-button.layer-5 { border-color: #ffd700; }
+
+        #variant-display {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        #variant-display .number {
+            font-size: 2rem;
+            font-weight: 200;
+            color: #8a2be2;
+        }
+
+        #variant-display .name {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .info-box {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .info-box strong {
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="canvas-container">
+            <canvas id="kirigami-canvas"></canvas>
+            <div id="overlay">
+                <h1>Kirigami Hyper-Computer</h1>
+                <div class="subtitle">Epitaxial 600-Cell Engine | Hexastack Architecture</div>
+            </div>
+            <div id="stats"></div>
+        </div>
+
+        <div id="controls">
+            <div id="variant-display">
+                <div class="number">01</div>
+                <div class="name">600-CELL DEPLOYED</div>
+            </div>
+
+            <div class="control-section">
+                <h3>Variant</h3>
+                <div class="button-group">
+                    <button id="prev-variant">Prev</button>
+                    <button id="next-variant">Next</button>
+                    <button id="random-variant">Random</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>4D Rotation</h3>
+                <div class="control-group">
+                    <label>XY Plane</label>
+                    <input type="range" id="rot4dXY" min="-6.28" max="6.28" step="0.01" value="0">
+                    <div class="value">0.00</div>
+                </div>
+                <div class="control-group">
+                    <label>XZ Plane</label>
+                    <input type="range" id="rot4dXZ" min="-6.28" max="6.28" step="0.01" value="0">
+                    <div class="value">0.00</div>
+                </div>
+                <div class="control-group">
+                    <label>YZ Plane</label>
+                    <input type="range" id="rot4dYZ" min="-6.28" max="6.28" step="0.01" value="0">
+                    <div class="value">0.00</div>
+                </div>
+                <div class="control-group">
+                    <label>XW Hyperplane</label>
+                    <input type="range" id="rot4dXW" min="-2" max="2" step="0.01" value="0">
+                    <div class="value">0.00</div>
+                </div>
+                <div class="control-group">
+                    <label>YW Hyperplane</label>
+                    <input type="range" id="rot4dYW" min="-2" max="2" step="0.01" value="0">
+                    <div class="value">0.00</div>
+                </div>
+                <div class="control-group">
+                    <label>ZW Hyperplane</label>
+                    <input type="range" id="rot4dZW" min="-2" max="2" step="0.01" value="0">
+                    <div class="value">0.00</div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Parameters</h3>
+                <div class="control-group">
+                    <label>Dimension (3D-4D)</label>
+                    <input type="range" id="dimension" min="3.0" max="4.5" step="0.1" value="4.0">
+                    <div class="value">4.0</div>
+                </div>
+                <div class="control-group">
+                    <label>Coherence</label>
+                    <input type="range" id="coherence" min="0" max="1" step="0.01" value="0.5">
+                    <div class="value">0.50</div>
+                </div>
+                <div class="control-group">
+                    <label>Speed</label>
+                    <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1.0">
+                    <div class="value">1.0</div>
+                </div>
+                <div class="control-group">
+                    <label>Chaos</label>
+                    <input type="range" id="chaos" min="0" max="1" step="0.01" value="0.2">
+                    <div class="value">0.20</div>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Kirigami States</h3>
+                <div class="button-group">
+                    <button id="state-deployed">Deployed</button>
+                    <button id="state-folded">Folded</button>
+                    <button id="state-grounded">Grounded</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Computational Focus</h3>
+                <div class="button-group">
+                    <button id="focus-all" class="active">All</button>
+                    <button id="focus-alpha">Alpha</button>
+                    <button id="focus-beta">Beta</button>
+                    <button id="focus-gamma">Gamma</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Layers</h3>
+                <div class="layer-grid">
+                    <button class="layer-button layer-0">0: Luma</button>
+                    <button class="layer-button layer-1">1: Inverse</button>
+                    <button class="layer-button layer-2">2: Magenta</button>
+                    <button class="layer-button layer-3">3: Cyan</button>
+                    <button class="layer-button layer-4">4: Violet</button>
+                    <button class="layer-button layer-5">5: Pilot</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>Audio</h3>
+                <div class="button-group">
+                    <button id="toggle-audio">Enable Audio</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>About</h3>
+                <div class="info-box">
+                    <strong>Hexastack Architecture</strong><br>
+                    6 layers of 24-cells forming a 600-cell polytope.<br><br>
+                    <strong>Kirigami Logic</strong><br>
+                    Trinary states: Deployed (1.0), Folded (0.5), Grounded (0.0)<br><br>
+                    <strong>Exclusion Blending</strong><br>
+                    Multipass rendering for Moiré interference patterns.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { KirigamiHyperComputer } from './src/holograms/kirigami/index.js';
+
+        // Initialize the HHC
+        const hcc = new KirigamiHyperComputer({
+            canvasId: 'kirigami-canvas',
+            scale: 1,
+            audioReactive: false
+        });
+
+        // Stats display
+        const statsEl = document.getElementById('stats');
+        const variantNumEl = document.querySelector('#variant-display .number');
+        const variantNameEl = document.querySelector('#variant-display .name');
+
+        // Set up render callback
+        hcc.onRender = (data) => {
+            const stats = data.stats;
+            statsEl.innerHTML = `
+                Layers: ${stats.layerCount} |
+                Vertices: ${stats.vertexCount} |
+                Coherence: ${stats.coherence.toFixed(2)} |
+                Focus: ${stats.computationalFocus} |
+                FPS: ${(1 / data.deltaTime).toFixed(0)}
+            `;
+        };
+
+        // Initialize
+        async function init() {
+            const success = await hcc.initialize();
+            if (success) {
+                hcc.start();
+                console.log('Kirigami Hyper-Computer started');
+            } else {
+                console.error('Failed to initialize HHC');
+            }
+        }
+
+        // Control bindings
+        function setupControls() {
+            // Rotation sliders
+            const rotationParams = ['rot4dXY', 'rot4dXZ', 'rot4dYZ', 'rot4dXW', 'rot4dYW', 'rot4dZW'];
+            rotationParams.forEach(param => {
+                const slider = document.getElementById(param);
+                if (slider) {
+                    slider.addEventListener('input', () => {
+                        const value = parseFloat(slider.value);
+                        hcc.updateParameter(param, value);
+                        slider.nextElementSibling.textContent = value.toFixed(2);
+                    });
+                }
+            });
+
+            // Other parameter sliders
+            const paramSliders = ['dimension', 'coherence', 'speed', 'chaos'];
+            paramSliders.forEach(param => {
+                const slider = document.getElementById(param);
+                if (slider) {
+                    slider.addEventListener('input', () => {
+                        const value = parseFloat(slider.value);
+                        hcc.updateParameter(param, value);
+                        slider.nextElementSibling.textContent = value.toFixed(2);
+                    });
+                }
+            });
+
+            // Variant controls
+            document.getElementById('prev-variant')?.addEventListener('click', () => {
+                hcc.setVariant((hcc.currentVariant - 1 + hcc.variantNames.length) % hcc.variantNames.length);
+                updateVariantDisplay();
+            });
+
+            document.getElementById('next-variant')?.addEventListener('click', () => {
+                hcc.setVariant((hcc.currentVariant + 1) % hcc.variantNames.length);
+                updateVariantDisplay();
+            });
+
+            document.getElementById('random-variant')?.addEventListener('click', () => {
+                hcc.setVariant(Math.floor(Math.random() * hcc.variantNames.length));
+                updateVariantDisplay();
+            });
+
+            // Kirigami state buttons
+            document.getElementById('state-deployed')?.addEventListener('click', () => {
+                hcc.hexastack.setAllStates(2, false); // DEPLOYED
+            });
+
+            document.getElementById('state-folded')?.addEventListener('click', () => {
+                hcc.hexastack.setAllStates(1, false); // FOLDED
+            });
+
+            document.getElementById('state-grounded')?.addEventListener('click', () => {
+                hcc.hexastack.setAllStates(0, false); // GROUNDED
+            });
+
+            // Computational focus buttons
+            const focusButtons = ['all', 'alpha', 'beta', 'gamma'];
+            focusButtons.forEach(focus => {
+                const btn = document.getElementById(`focus-${focus}`);
+                btn?.addEventListener('click', () => {
+                    // Update active state
+                    document.querySelectorAll('[id^="focus-"]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    hcc.hexastack.setComputationalFocus(focus);
+                });
+            });
+
+            // Audio toggle
+            document.getElementById('toggle-audio')?.addEventListener('click', async (e) => {
+                if (!hcc.audioEnabled) {
+                    await hcc.initAudio();
+                    e.target.textContent = 'Disable Audio';
+                    e.target.classList.add('active');
+                } else {
+                    hcc.audioEnabled = false;
+                    e.target.textContent = 'Enable Audio';
+                    e.target.classList.remove('active');
+                }
+            });
+        }
+
+        function updateVariantDisplay() {
+            const info = hcc.getCurrentVariantInfo();
+            variantNumEl.textContent = String(info.variant + 1).padStart(2, '0');
+            variantNameEl.textContent = info.name;
+        }
+
+        // Handle resize
+        function handleResize() {
+            const container = document.getElementById('canvas-container');
+            const canvas = document.getElementById('kirigami-canvas');
+            canvas.width = container.clientWidth * window.devicePixelRatio;
+            canvas.height = container.clientHeight * window.devicePixelRatio;
+            canvas.style.width = container.clientWidth + 'px';
+            canvas.style.height = container.clientHeight + 'px';
+        }
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        // Start
+        setupControls();
+        init();
+    </script>
+</body>
+</html>
