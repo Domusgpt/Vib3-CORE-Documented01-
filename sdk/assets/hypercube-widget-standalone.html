@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Hypercube Widget - VIB3+ Standalone Asset</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a12;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: system-ui, sans-serif;
+        }
+        .widget {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            width: 400px;
+        }
+        .widget-header {
+            color: #0ff;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .badge {
+            background: rgba(0, 255, 136, 0.2);
+            color: #0f8;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+        canvas {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border-radius: 8px;
+        }
+        .controls {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .control {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .control label {
+            display: block;
+            color: #888;
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+        .control input {
+            width: 100%;
+        }
+        .control .value {
+            color: #0ff;
+            font-size: 11px;
+            text-align: right;
+        }
+        .full-controls {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="widget">
+        <div class="widget-header">
+            <span>4D HYPERCUBE</span>
+            <span class="badge">VIB3+ STANDALONE</span>
+        </div>
+        <canvas id="canvas"></canvas>
+        <div class="controls">
+            <div class="control">
+                <label>XY (3D)</label>
+                <input type="range" id="xy" min="-3.14" max="3.14" step="0.01" value="0">
+                <div class="value" id="xyVal">0.00</div>
+            </div>
+            <div class="control">
+                <label>XZ (3D)</label>
+                <input type="range" id="xz" min="-3.14" max="3.14" step="0.01" value="0">
+                <div class="value" id="xzVal">0.00</div>
+            </div>
+            <div class="control">
+                <label>YZ (3D)</label>
+                <input type="range" id="yz" min="-3.14" max="3.14" step="0.01" value="0">
+                <div class="value" id="yzVal">0.00</div>
+            </div>
+        </div>
+        <div class="controls full-controls">
+            <div class="control">
+                <label>XW (4D)</label>
+                <input type="range" id="xw" min="-2" max="2" step="0.01" value="0">
+                <div class="value" id="xwVal">0.00</div>
+            </div>
+            <div class="control">
+                <label>YW (4D)</label>
+                <input type="range" id="yw" min="-2" max="2" step="0.01" value="0">
+                <div class="value" id="ywVal">0.00</div>
+            </div>
+            <div class="control">
+                <label>ZW (4D)</label>
+                <input type="range" id="zw" min="-2" max="2" step="0.01" value="0">
+                <div class="value" id="zwVal">0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================
+        // STANDALONE VIB3+ ASSET
+        // All math embedded - no external dependencies
+        // Full 6D rotation support (XY, XZ, YZ, XW, YW, ZW)
+        // =====================================================
+
+        // Rotor4D class (4D rotation using geometric algebra)
+        class Rotor4D {
+            constructor(s = 1, xy = 0, xz = 0, yz = 0, xw = 0, yw = 0, zw = 0, xyzw = 0) {
+                this.s = s;
+                this.xy = xy;
+                this.xz = xz;
+                this.yz = yz;
+                this.xw = xw;
+                this.yw = yw;
+                this.zw = zw;
+                this.xyzw = xyzw;
+            }
+
+            static identity() {
+                return new Rotor4D(1, 0, 0, 0, 0, 0, 0, 0);
+            }
+
+            static fromPlaneAngle(plane, angle) {
+                const halfAngle = angle / 2;
+                const c = Math.cos(halfAngle);
+                const s = Math.sin(halfAngle);
+                const r = new Rotor4D();
+                r.s = c;
+                switch (plane) {
+                    case 'XY': r.xy = -s; break;
+                    case 'XZ': r.xz = -s; break;
+                    case 'YZ': r.yz = -s; break;
+                    case 'XW': r.xw = -s; break;
+                    case 'YW': r.yw = -s; break;
+                    case 'ZW': r.zw = -s; break;
+                }
+                return r;
+            }
+
+            multiply(r) {
+                const a = this, b = r;
+                return new Rotor4D(
+                    a.s*b.s - a.xy*b.xy - a.xz*b.xz - a.yz*b.yz - a.xw*b.xw - a.yw*b.yw - a.zw*b.zw - a.xyzw*b.xyzw,
+                    a.s*b.xy + a.xy*b.s + a.xz*b.yz - a.yz*b.xz + a.xw*b.yw - a.yw*b.xw - a.zw*b.xyzw - a.xyzw*b.zw,
+                    a.s*b.xz - a.xy*b.yz + a.xz*b.s + a.yz*b.xy + a.xw*b.zw + a.yw*b.xyzw - a.zw*b.xw + a.xyzw*b.yw,
+                    a.s*b.yz + a.xy*b.xz - a.xz*b.xy + a.yz*b.s - a.xw*b.xyzw + a.yw*b.zw - a.zw*b.yw - a.xyzw*b.xw,
+                    a.s*b.xw - a.xy*b.yw - a.xz*b.zw + a.yz*b.xyzw + a.xw*b.s + a.yw*b.xy + a.zw*b.xz - a.xyzw*b.yz,
+                    a.s*b.yw + a.xy*b.xw - a.xz*b.xyzw - a.yz*b.zw - a.xw*b.xy + a.yw*b.s + a.zw*b.yz + a.xyzw*b.xz,
+                    a.s*b.zw + a.xy*b.xyzw + a.xz*b.xw + a.yz*b.yw - a.xw*b.xz - a.yw*b.yz + a.zw*b.s - a.xyzw*b.xy,
+                    a.s*b.xyzw + a.xy*b.zw - a.xz*b.yw + a.yz*b.xw + a.xw*b.yz - a.yw*b.xz + a.zw*b.xy + a.xyzw*b.s
+                );
+            }
+
+            rotate(v) {
+                const x = v.x, y = v.y, z = v.z, w = v.w;
+                const s = this.s, xy = this.xy, xz = this.xz, yz = this.yz;
+                const xw = this.xw, yw = this.yw, zw = this.zw;
+
+                // Simplified rotation formula
+                const s2 = s*s, xy2 = xy*xy, xz2 = xz*xz, yz2 = yz*yz;
+                const xw2 = xw*xw, yw2 = yw*yw, zw2 = zw*zw;
+
+                return {
+                    x: x*(s2 + xy2 + xz2 - yz2 + xw2 - yw2 - zw2) +
+                       2*(y*(s*xy + xz*yz + xw*yw) + z*(s*xz - xy*yz + xw*zw) + w*(s*xw - xy*yw - xz*zw)),
+                    y: y*(s2 - xy2 + xz2 + yz2 - xw2 + yw2 - zw2) +
+                       2*(x*(-s*xy + xz*yz + xw*yw) + z*(s*yz + xy*xz + yw*zw) + w*(s*yw + xy*xw - yz*zw)),
+                    z: z*(s2 - xy2 - xz2 + yz2 - xw2 - yw2 + zw2) +
+                       2*(x*(-s*xz - xy*yz + xw*zw) + y*(-s*yz + xy*xz + yw*zw) + w*(s*zw + xz*xw + yz*yw)),
+                    w: w*(s2 + xy2 - xz2 - yz2 - xw2 - yw2 - zw2) +
+                       2*(x*(-s*xw + xy*yw + xz*zw) + y*(-s*yw - xy*xw + yz*zw) + z*(-s*zw - xz*xw - yz*yw))
+                };
+            }
+        }
+
+        // Vec4 class
+        class Vec4 {
+            constructor(x = 0, y = 0, z = 0, w = 0) {
+                this.x = x; this.y = y; this.z = z; this.w = w;
+            }
+        }
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // High DPI
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = 400 * dpr;
+        canvas.height = 300 * dpr;
+        ctx.scale(dpr, dpr);
+
+        // Hypercube vertices (16 vertices at ±1 in each dimension)
+        const vertices = [];
+        for (let i = 0; i < 16; i++) {
+            vertices.push(new Vec4(
+                (i & 1) ? 1 : -1,
+                (i & 2) ? 1 : -1,
+                (i & 4) ? 1 : -1,
+                (i & 8) ? 1 : -1
+            ));
+        }
+
+        // Edges (connect vertices that differ in exactly one coordinate)
+        const edges = [];
+        for (let i = 0; i < 16; i++) {
+            for (let j = i + 1; j < 16; j++) {
+                const diff = i ^ j;
+                if (diff && !(diff & (diff - 1))) {
+                    edges.push([i, j]);
+                }
+            }
+        }
+
+        console.log('VIB3+ Hypercube: ' + vertices.length + ' vertices, ' + edges.length + ' edges');
+
+        // 6D rotation parameters
+        let rotXY = 0, rotXZ = 0, rotYZ = 0;
+        let rotXW = 0, rotYW = 0, rotZW = 0;
+
+        function project(v, rotor) {
+            const rotated = rotor.rotate(v);
+            const wDist = 3;
+            const scale4D = 1 / (wDist - rotated.w * 0.5);
+            const x3 = rotated.x * scale4D;
+            const y3 = rotated.y * scale4D;
+            const z3 = rotated.z * scale4D;
+            const zDist = 4;
+            const scale3D = 1 / (zDist - z3 * 0.5);
+            return {
+                x: 200 + x3 * scale3D * 80,
+                y: 150 - y3 * scale3D * 80,
+                depth: rotated.w + z3
+            };
+        }
+
+        function render() {
+            // Create 6D rotation using all 6 planes
+            const r1 = Rotor4D.fromPlaneAngle('XY', rotXY + performance.now() * 0.0003);
+            const r2 = Rotor4D.fromPlaneAngle('XZ', rotXZ);
+            const r3 = Rotor4D.fromPlaneAngle('YZ', rotYZ);
+            const r4 = Rotor4D.fromPlaneAngle('XW', rotXW);
+            const r5 = Rotor4D.fromPlaneAngle('YW', rotYW);
+            const r6 = Rotor4D.fromPlaneAngle('ZW', rotZW);
+            const rotor = r1.multiply(r2).multiply(r3).multiply(r4).multiply(r5).multiply(r6);
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 400, 300);
+
+            const projected = vertices.map(v => project(v, rotor));
+
+            // Draw edges
+            edges.forEach(([i, j]) => {
+                const p1 = projected[i];
+                const p2 = projected[j];
+                const avgDepth = (p1.depth + p2.depth) / 2;
+                const opacity = Math.max(0.2, Math.min(1, 0.5 + avgDepth * 0.2));
+                const hue = 180 + avgDepth * 20;
+
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = `hsla(${hue}, 80%, 60%, ${opacity})`;
+                ctx.lineWidth = Math.max(0.5, 2 - avgDepth * 0.3);
+                ctx.stroke();
+            });
+
+            // Draw vertices
+            projected.forEach(p => {
+                const size = Math.max(2, 4 - p.depth * 0.5);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                ctx.fillStyle = `hsla(60, 100%, 70%, ${0.5 + p.depth * 0.2})`;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(render);
+        }
+
+        // 6D Rotation slider handlers
+        ['xy', 'xz', 'yz', 'xw', 'yw', 'zw'].forEach(plane => {
+            const el = document.getElementById(plane);
+            const valEl = document.getElementById(plane + 'Val');
+            if (el) {
+                el.addEventListener('input', e => {
+                    const val = parseFloat(e.target.value);
+                    valEl.textContent = val.toFixed(2);
+                    switch(plane) {
+                        case 'xy': rotXY = val; break;
+                        case 'xz': rotXZ = val; break;
+                        case 'yz': rotYZ = val; break;
+                        case 'xw': rotXW = val; break;
+                        case 'yw': rotYW = val; break;
+                        case 'zw': rotZW = val; break;
+                    }
+                });
+            }
+        });
+
+        render();
+        console.log('VIB3+ 4D Hypercube Widget - STANDALONE VERSION');
+        console.log('Full 6D Rotation: XY, XZ, YZ, XW, YW, ZW');
+    </script>
+</body>
+</html>

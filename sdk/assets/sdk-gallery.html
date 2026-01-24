@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIB3+ SDK Gallery - All 6D Rotation Demos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0a12 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            font-family: system-ui, sans-serif;
+            color: #fff;
+            padding: 40px 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 200;
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+            color: #0ff;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 255, 255, 0.2);
+        }
+        .card canvas {
+            width: 100%;
+            height: 250px;
+            display: block;
+        }
+        .card-info {
+            padding: 20px;
+        }
+        .card-title {
+            color: #0ff;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .card-desc {
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .badge-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .badge {
+            background: rgba(0, 255, 136, 0.2);
+            color: #0f8;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+        .badge.purple {
+            background: rgba(136, 0, 255, 0.2);
+            color: #b4f;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>VIB3+ SDK GALLERY</h1>
+    <p class="subtitle">REAL 6D ROTATION DEMONSTRATIONS</p>
+
+    <div class="gallery">
+        <div class="card">
+            <canvas id="hypercube"></canvas>
+            <div class="card-info">
+                <div class="card-title">4D Hypercube (Tesseract)</div>
+                <div class="card-desc">16 vertices, 32 edges. Classic 4D geometry with full Rotor4D rotation through all 6 planes.</div>
+                <div class="badge-row">
+                    <span class="badge">Geometry 1</span>
+                    <span class="badge purple">XW + ZW</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <canvas id="torus"></canvas>
+            <div class="card-info">
+                <div class="card-title">Clifford Torus</div>
+                <div class="card-desc">4D torus living in the 3-sphere. Flat surface embedded in 4D space.</div>
+                <div class="badge-row">
+                    <span class="badge">Geometry 3</span>
+                    <span class="badge purple">XY + XW + ZW</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <canvas id="hypertetra"></canvas>
+            <div class="card-info">
+                <div class="card-title">5-Cell (Hypertetrahedron)</div>
+                <div class="card-desc">5 vertices, 10 edges. Simplest regular 4D polytope, analog of the tetrahedron.</div>
+                <div class="badge-row">
+                    <span class="badge">Geometry 16</span>
+                    <span class="badge purple">YW + ZW</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <canvas id="hypersphere"></canvas>
+            <div class="card-info">
+                <div class="card-title">3-Sphere Points</div>
+                <div class="card-desc">Random points on the 4D sphere (3-sphere). Hypersphere visualization.</div>
+                <div class="badge-row">
+                    <span class="badge">Geometry 8</span>
+                    <span class="badge purple">All 6 Planes</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <canvas id="cell16"></canvas>
+            <div class="card-info">
+                <div class="card-title">16-Cell (Hexadecachoron)</div>
+                <div class="card-desc">8 vertices, 24 edges. 4D analog of octahedron. Dual of the tesseract.</div>
+                <div class="badge-row">
+                    <span class="badge">Geometry 7</span>
+                    <span class="badge purple">XZ + YW</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <canvas id="duocylinder"></canvas>
+            <div class="card-info">
+                <div class="card-title">Duocylinder Cross-Section</div>
+                <div class="card-desc">Two perpendicular tori in 4D. The Cartesian product of two circles.</div>
+                <div class="badge-row">
+                    <span class="badge">Geometry 4</span>
+                    <span class="badge purple">XW + YW + ZW</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        VIB3+ SDK v1.0 | Rotor4D 6D Rotation Engine | All code embedded - no external dependencies
+    </div>
+
+    <script>
+        // =====================================================
+        // STANDALONE VIB3+ SDK GALLERY
+        // All math embedded - demonstrates real Rotor4D rotations
+        // =====================================================
+
+        // Rotor4D class (4D rotation using geometric algebra)
+        class Rotor4D {
+            constructor(s = 1, xy = 0, xz = 0, yz = 0, xw = 0, yw = 0, zw = 0, xyzw = 0) {
+                this.s = s; this.xy = xy; this.xz = xz; this.yz = yz;
+                this.xw = xw; this.yw = yw; this.zw = zw; this.xyzw = xyzw;
+            }
+
+            static identity() { return new Rotor4D(1, 0, 0, 0, 0, 0, 0, 0); }
+
+            static fromPlaneAngle(plane, angle) {
+                const halfAngle = angle / 2;
+                const c = Math.cos(halfAngle), s = Math.sin(halfAngle);
+                const r = new Rotor4D();
+                r.s = c;
+                switch (plane) {
+                    case 'XY': r.xy = -s; break;
+                    case 'XZ': r.xz = -s; break;
+                    case 'YZ': r.yz = -s; break;
+                    case 'XW': r.xw = -s; break;
+                    case 'YW': r.yw = -s; break;
+                    case 'ZW': r.zw = -s; break;
+                }
+                return r;
+            }
+
+            multiply(r) {
+                const a = this, b = r;
+                return new Rotor4D(
+                    a.s*b.s - a.xy*b.xy - a.xz*b.xz - a.yz*b.yz - a.xw*b.xw - a.yw*b.yw - a.zw*b.zw - a.xyzw*b.xyzw,
+                    a.s*b.xy + a.xy*b.s + a.xz*b.yz - a.yz*b.xz + a.xw*b.yw - a.yw*b.xw - a.zw*b.xyzw - a.xyzw*b.zw,
+                    a.s*b.xz - a.xy*b.yz + a.xz*b.s + a.yz*b.xy + a.xw*b.zw + a.yw*b.xyzw - a.zw*b.xw + a.xyzw*b.yw,
+                    a.s*b.yz + a.xy*b.xz - a.xz*b.xy + a.yz*b.s - a.xw*b.xyzw + a.yw*b.zw - a.zw*b.yw - a.xyzw*b.xw,
+                    a.s*b.xw - a.xy*b.yw - a.xz*b.zw + a.yz*b.xyzw + a.xw*b.s + a.yw*b.xy + a.zw*b.xz - a.xyzw*b.yz,
+                    a.s*b.yw + a.xy*b.xw - a.xz*b.xyzw - a.yz*b.zw - a.xw*b.xy + a.yw*b.s + a.zw*b.yz + a.xyzw*b.xz,
+                    a.s*b.zw + a.xy*b.xyzw + a.xz*b.xw + a.yz*b.yw - a.xw*b.xz - a.yw*b.yz + a.zw*b.s - a.xyzw*b.xy,
+                    a.s*b.xyzw + a.xy*b.zw - a.xz*b.yw + a.yz*b.xw + a.xw*b.yz - a.yw*b.xz + a.zw*b.xy + a.xyzw*b.s
+                );
+            }
+
+            rotate(v) {
+                const x = v.x, y = v.y, z = v.z, w = v.w;
+                const s = this.s, xy = this.xy, xz = this.xz, yz = this.yz;
+                const xw = this.xw, yw = this.yw, zw = this.zw;
+                const s2 = s*s, xy2 = xy*xy, xz2 = xz*xz, yz2 = yz*yz;
+                const xw2 = xw*xw, yw2 = yw*yw, zw2 = zw*zw;
+
+                return {
+                    x: x*(s2 + xy2 + xz2 - yz2 + xw2 - yw2 - zw2) +
+                       2*(y*(s*xy + xz*yz + xw*yw) + z*(s*xz - xy*yz + xw*zw) + w*(s*xw - xy*yw - xz*zw)),
+                    y: y*(s2 - xy2 + xz2 + yz2 - xw2 + yw2 - zw2) +
+                       2*(x*(-s*xy + xz*yz + xw*yw) + z*(s*yz + xy*xz + yw*zw) + w*(s*yw + xy*xw - yz*zw)),
+                    z: z*(s2 - xy2 - xz2 + yz2 - xw2 - yw2 + zw2) +
+                       2*(x*(-s*xz - xy*yz + xw*zw) + y*(-s*yz + xy*xz + yw*zw) + w*(s*zw + xz*xw + yz*yw)),
+                    w: w*(s2 + xy2 - xz2 - yz2 - xw2 - yw2 - zw2) +
+                       2*(x*(-s*xw + xy*yw + xz*zw) + y*(-s*yw - xy*xw + yz*zw) + z*(-s*zw - xz*xw - yz*yw))
+                };
+            }
+        }
+
+        class Vec4 {
+            constructor(x = 0, y = 0, z = 0, w = 0) {
+                this.x = x; this.y = y; this.z = z; this.w = w;
+            }
+        }
+
+        // Geometry generators
+        function generateHypercube() {
+            const vertices = [];
+            for (let i = 0; i < 16; i++) {
+                vertices.push(new Vec4(
+                    (i & 1) ? 1 : -1, (i & 2) ? 1 : -1,
+                    (i & 4) ? 1 : -1, (i & 8) ? 1 : -1
+                ));
+            }
+            const edges = [];
+            for (let i = 0; i < 16; i++) {
+                for (let j = i + 1; j < 16; j++) {
+                    const diff = i ^ j;
+                    if (diff && !(diff & (diff - 1))) edges.push([i, j]);
+                }
+            }
+            return { vertices, edges };
+        }
+
+        function generateTorus(R = 1.5, r = 0.6, segments = 20) {
+            const vertices = [];
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const u = (i / segments) * Math.PI * 2;
+                    const v = (j / segments) * Math.PI * 2;
+                    vertices.push(new Vec4(
+                        R * Math.cos(u), R * Math.sin(u),
+                        r * Math.cos(v), r * Math.sin(v)
+                    ));
+                }
+            }
+            const edges = [];
+            for (let i = 0; i < segments; i++) {
+                for (let j = 0; j < segments; j++) {
+                    const curr = i * segments + j;
+                    edges.push([curr, ((i + 1) % segments) * segments + j]);
+                    edges.push([curr, i * segments + ((j + 1) % segments)]);
+                }
+            }
+            return { vertices, edges };
+        }
+
+        function generate5Cell() {
+            const phi = (1 + Math.sqrt(5)) / 4;
+            const vertices = [
+                new Vec4(1, 1, 1, -1/Math.sqrt(5)),
+                new Vec4(1, -1, -1, -1/Math.sqrt(5)),
+                new Vec4(-1, 1, -1, -1/Math.sqrt(5)),
+                new Vec4(-1, -1, 1, -1/Math.sqrt(5)),
+                new Vec4(0, 0, 0, Math.sqrt(5) - 1/Math.sqrt(5))
+            ];
+            const edges = [];
+            for (let i = 0; i < 5; i++) {
+                for (let j = i + 1; j < 5; j++) {
+                    edges.push([i, j]);
+                }
+            }
+            return { vertices, edges };
+        }
+
+        function generate3Sphere(n = 100) {
+            const vertices = [];
+            for (let i = 0; i < n; i++) {
+                // Random point on 3-sphere using Gaussian distribution
+                let x = 0, y = 0, z = 0, w = 0, len = 0;
+                do {
+                    x = (Math.random() - 0.5) * 2;
+                    y = (Math.random() - 0.5) * 2;
+                    z = (Math.random() - 0.5) * 2;
+                    w = (Math.random() - 0.5) * 2;
+                    len = Math.sqrt(x*x + y*y + z*z + w*w);
+                } while (len < 0.001);
+                vertices.push(new Vec4(x/len, y/len, z/len, w/len));
+            }
+            return { vertices, edges: [] };
+        }
+
+        function generate16Cell() {
+            const vertices = [
+                new Vec4(1, 0, 0, 0), new Vec4(-1, 0, 0, 0),
+                new Vec4(0, 1, 0, 0), new Vec4(0, -1, 0, 0),
+                new Vec4(0, 0, 1, 0), new Vec4(0, 0, -1, 0),
+                new Vec4(0, 0, 0, 1), new Vec4(0, 0, 0, -1)
+            ];
+            const edges = [];
+            for (let i = 0; i < 8; i++) {
+                for (let j = i + 1; j < 8; j++) {
+                    if (Math.floor(i/2) !== Math.floor(j/2)) {
+                        edges.push([i, j]);
+                    }
+                }
+            }
+            return { vertices, edges };
+        }
+
+        function generateDuocylinder(n = 16) {
+            const vertices = [];
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    const u = (i / n) * Math.PI * 2;
+                    const v = (j / n) * Math.PI * 2;
+                    vertices.push(new Vec4(
+                        Math.cos(u), Math.sin(u),
+                        Math.cos(v), Math.sin(v)
+                    ));
+                }
+            }
+            const edges = [];
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    const curr = i * n + j;
+                    edges.push([curr, ((i + 1) % n) * n + j]);
+                    edges.push([curr, i * n + ((j + 1) % n)]);
+                }
+            }
+            return { vertices, edges };
+        }
+
+        // Rendering
+        function setupCanvas(id) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            return { canvas, ctx, width: rect.width, height: rect.height };
+        }
+
+        function project(v, rotor, width, height) {
+            const rotated = rotor.rotate(v);
+            const wDist = 3.5;
+            const scale4D = 1 / (wDist - rotated.w * 0.4);
+            const x3 = rotated.x * scale4D;
+            const y3 = rotated.y * scale4D;
+            const z3 = rotated.z * scale4D;
+            const zDist = 4;
+            const scale3D = 1 / (zDist - z3 * 0.4);
+            return {
+                x: width/2 + x3 * scale3D * Math.min(width, height) * 0.35,
+                y: height/2 - y3 * scale3D * Math.min(width, height) * 0.35,
+                depth: rotated.w + z3
+            };
+        }
+
+        function renderGeometry(id, geometry, getRotor, hueBase) {
+            const { ctx, width, height } = setupCanvas(id);
+            const { vertices, edges } = geometry;
+
+            function render() {
+                const t = performance.now() * 0.0001;
+                const rotor = getRotor(t);
+
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, width, height);
+
+                const projected = vertices.map(v => project(v, rotor, width, height));
+
+                // Draw edges
+                edges.forEach(([i, j]) => {
+                    const p1 = projected[i];
+                    const p2 = projected[j];
+                    const avgDepth = (p1.depth + p2.depth) / 2;
+                    const opacity = Math.max(0.1, Math.min(0.8, 0.4 + avgDepth * 0.15));
+                    const hue = (hueBase + avgDepth * 30 + t * 20) % 360;
+
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.strokeStyle = `hsla(${hue}, 70%, 55%, ${opacity})`;
+                    ctx.lineWidth = Math.max(0.5, 1.5 - avgDepth * 0.2);
+                    ctx.stroke();
+                });
+
+                // Draw vertices
+                projected.forEach(p => {
+                    const size = Math.max(1.5, 3 - p.depth * 0.4);
+                    const opacity = Math.max(0.3, Math.min(1, 0.6 + p.depth * 0.2));
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${hueBase + 60}, 100%, 75%, ${opacity})`;
+                    ctx.fill();
+                });
+
+                requestAnimationFrame(render);
+            }
+            render();
+        }
+
+        // Initialize all demos
+        renderGeometry('hypercube', generateHypercube(), t => {
+            const r1 = Rotor4D.fromPlaneAngle('XW', t * 0.8);
+            const r2 = Rotor4D.fromPlaneAngle('ZW', t * 0.5);
+            const r3 = Rotor4D.fromPlaneAngle('XY', t * 0.3);
+            return r1.multiply(r2).multiply(r3);
+        }, 180);
+
+        renderGeometry('torus', generateTorus(), t => {
+            const r1 = Rotor4D.fromPlaneAngle('XY', t * 0.7);
+            const r2 = Rotor4D.fromPlaneAngle('XW', t * 1.1);
+            const r3 = Rotor4D.fromPlaneAngle('ZW', t * 0.5);
+            return r1.multiply(r2).multiply(r3);
+        }, 160);
+
+        renderGeometry('hypertetra', generate5Cell(), t => {
+            const r1 = Rotor4D.fromPlaneAngle('YW', t * 0.9);
+            const r2 = Rotor4D.fromPlaneAngle('ZW', t * 0.6);
+            const r3 = Rotor4D.fromPlaneAngle('XZ', t * 0.4);
+            return r1.multiply(r2).multiply(r3);
+        }, 280);
+
+        renderGeometry('hypersphere', generate3Sphere(), t => {
+            const r1 = Rotor4D.fromPlaneAngle('XY', t * 0.5);
+            const r2 = Rotor4D.fromPlaneAngle('XZ', t * 0.3);
+            const r3 = Rotor4D.fromPlaneAngle('YZ', t * 0.4);
+            const r4 = Rotor4D.fromPlaneAngle('XW', t * 0.6);
+            const r5 = Rotor4D.fromPlaneAngle('YW', t * 0.7);
+            const r6 = Rotor4D.fromPlaneAngle('ZW', t * 0.8);
+            return r1.multiply(r2).multiply(r3).multiply(r4).multiply(r5).multiply(r6);
+        }, 200);
+
+        renderGeometry('cell16', generate16Cell(), t => {
+            const r1 = Rotor4D.fromPlaneAngle('XZ', t * 0.8);
+            const r2 = Rotor4D.fromPlaneAngle('YW', t * 0.6);
+            const r3 = Rotor4D.fromPlaneAngle('XY', t * 0.4);
+            return r1.multiply(r2).multiply(r3);
+        }, 120);
+
+        renderGeometry('duocylinder', generateDuocylinder(), t => {
+            const r1 = Rotor4D.fromPlaneAngle('XW', t * 0.7);
+            const r2 = Rotor4D.fromPlaneAngle('YW', t * 0.5);
+            const r3 = Rotor4D.fromPlaneAngle('ZW', t * 0.9);
+            return r1.multiply(r2).multiply(r3);
+        }, 300);
+
+        console.log('VIB3+ SDK Gallery - 6 Geometries with Real 6D Rotation');
+    </script>
+</body>
+</html>
