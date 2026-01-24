@@ -438,30 +438,31 @@ export class Rotor4D {
 
         // 4x4 rotation matrix in column-major order
         // Each column is a transformed basis vector
+        // FIX: Corrected signs - diagonal elements need negative bivector² for planes containing that axis
         return new Float32Array([
-            // Column 0 (transformed X axis)
-            s2 + xy2 + xz2 - yz2 + xw2 - yw2 - zw2 - xyzw2,
-            sxy + xzyz + xwyw + zwxyzw,
-            sxz - xyyz + xwzw - ywxyzw,
-            sxw - xyyw - xzzw + yzxyzw,
-
-            // Column 1 (transformed Y axis)
-            -sxy + xzyz + xwyw - zwxyzw,
-            s2 - xy2 + xz2 + yz2 - xw2 + yw2 - zw2 - xyzw2,
-            syz + xyxz + ywzw + xwxyzw,
-            syw + xyxw - yzzw - xzxyzw,
-
-            // Column 2 (transformed Z axis)
+            // Column 0 (transformed X axis) - X in planes XY, XZ, XW (negative), not in YZ, YW, ZW (positive)
+            s2 - xy2 - xz2 + yz2 - xw2 + yw2 + zw2 - xyzw2,
+            -sxy + xzyz + xwyw - zwxyzw,  // FIX: negated sxy for correct rotation direction
             -sxz - xyyz + xwzw + ywxyzw,
-            -syz + xyxz + ywzw - xwxyzw,
-            s2 - xy2 - xz2 + yz2 - xw2 - yw2 + zw2 - xyzw2,
-            szw + xzxw + yzyw + xyxyzw,
+            -sxw + xyyw + xzzw - yzxyzw,
 
-            // Column 3 (transformed W axis)
-            -sxw - xyyw - xzzw - yzxyzw,
-            -syw + xyxw - yzzw + xzxyzw,
-            -szw + xzxw + yzyw - xyxyzw,
-            s2 - xy2 - xz2 - yz2 + xw2 + yw2 + zw2 - xyzw2
+            // Column 1 (transformed Y axis) - Y in planes XY, YZ, YW (negative), not in XZ, XW, ZW (positive)
+            sxy + xzyz + xwyw + zwxyzw,
+            s2 - xy2 + xz2 - yz2 + xw2 - yw2 + zw2 - xyzw2,
+            -syz + xyxz + ywzw - xwxyzw,
+            -syw - xyxw + yzzw + xzxyzw,
+
+            // Column 2 (transformed Z axis) - Z in planes XZ, YZ, ZW (negative), not in XY, XW, YW (positive)
+            sxz - xyyz + xwzw - ywxyzw,
+            syz + xyxz + ywzw + xwxyzw,
+            s2 + xy2 - xz2 - yz2 + xw2 + yw2 - zw2 - xyzw2,
+            -szw - xzxw - yzyw + xyxyzw,
+
+            // Column 3 (transformed W axis) - W in planes XW, YW, ZW (negative), not in XY, XZ, YZ (positive)
+            sxw - xyyw - xzzw + yzxyzw,
+            syw + xyxw - yzzw - xzxyzw,
+            szw + xzxw + yzyw - xyxyzw,
+            s2 + xy2 + xz2 + yz2 - xw2 - yw2 - zw2 - xyzw2
         ]);
     }
 
