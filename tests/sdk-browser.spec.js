@@ -6,19 +6,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { createServer } from 'http';
-import { readFileSync, existsSync, mkdirSync } from 'fs';
-import { join, extname } from 'path';
-
-const MIME_TYPES = {
-    '.html': 'text/html',
-    '.js': 'application/javascript',
-    '.mjs': 'application/javascript',
-    '.css': 'text/css',
-    '.wasm': 'application/wasm',
-    '.json': 'application/json',
-    '.png': 'image/png'
-};
+import { existsSync, mkdirSync } from 'fs';
 
 // Create test results directory
 const RESULTS_DIR = './test-results';
@@ -26,45 +14,8 @@ if (!existsSync(RESULTS_DIR)) {
     mkdirSync(RESULTS_DIR, { recursive: true });
 }
 
-// Simple static server for testing
-let server;
+// Server is managed by playwright.config.js webServer
 const PORT = 3457;
-
-test.beforeAll(async () => {
-    server = createServer((req, res) => {
-        let filePath = join('./sdk', req.url === '/' ? 'index.html' : req.url);
-        filePath = filePath.split('?')[0];
-
-        if (!existsSync(filePath)) {
-            res.writeHead(404);
-            res.end('Not found: ' + filePath);
-            return;
-        }
-
-        const ext = extname(filePath);
-        const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-        try {
-            const content = readFileSync(filePath);
-            res.writeHead(200, {
-                'Content-Type': contentType,
-                'Cross-Origin-Opener-Policy': 'same-origin',
-                'Cross-Origin-Embedder-Policy': 'require-corp'
-            });
-            res.end(content);
-        } catch (err) {
-            res.writeHead(500);
-            res.end('Error: ' + err.message);
-        }
-    });
-
-    await new Promise(resolve => server.listen(PORT, resolve));
-    console.log(`Test server running at http://localhost:${PORT}/`);
-});
-
-test.afterAll(async () => {
-    if (server) server.close();
-});
 
 test.describe('VIB3+ SDK Tests', () => {
 
@@ -78,8 +29,12 @@ test.describe('VIB3+ SDK Tests', () => {
         console.log(`HTTP Status: ${response.status()}`);
         expect(response.ok()).toBeTruthy();
 
-        await page.screenshot({ path: `${RESULTS_DIR}/01-page-load.png` });
-        console.log('Screenshot saved: test-results/01-page-load.png');
+        try {
+            await page.screenshot({ path: `${RESULTS_DIR}/01-page-load.png` });
+            console.log('Screenshot saved: test-results/01-page-load.png');
+        } catch (e) {
+            console.log('Screenshot skipped (env limitation)');
+        }
     });
 
     test('TEST 2: WASM Core initialization', async ({ page }) => {
@@ -124,8 +79,12 @@ test.describe('VIB3+ SDK Tests', () => {
         console.log(`Page Errors: ${errors.length}`);
         errors.forEach(e => console.log(`  - ${e}`));
 
-        await page.screenshot({ path: `${RESULTS_DIR}/02-wasm-init.png` });
-        console.log('Screenshot saved: test-results/02-wasm-init.png');
+        try {
+            await page.screenshot({ path: `${RESULTS_DIR}/02-wasm-init.png` });
+            console.log('Screenshot saved: test-results/02-wasm-init.png');
+        } catch (e) {
+            console.log('Screenshot skipped (env limitation)');
+        }
 
         // Log all console output
         console.log('\nFull Console Log:');
@@ -162,8 +121,12 @@ test.describe('VIB3+ SDK Tests', () => {
             console.log(`  - #${c.id}: ${c.width}x${c.height}, ${c.webglVersion}`);
         });
 
-        await page.screenshot({ path: `${RESULTS_DIR}/03-canvas-webgl.png` });
-        console.log('Screenshot saved: test-results/03-canvas-webgl.png');
+        try {
+            await page.screenshot({ path: `${RESULTS_DIR}/03-canvas-webgl.png` });
+            console.log('Screenshot saved: test-results/03-canvas-webgl.png');
+        } catch (e) {
+            console.log('Screenshot skipped (env limitation)');
+        }
     });
 
     test('TEST 4: UI Controls present', async ({ page }) => {
@@ -195,8 +158,12 @@ test.describe('VIB3+ SDK Tests', () => {
         console.log(`Selects: ${controls.selects.length}`);
         controls.selects.forEach(s => console.log(`  - #${s}`));
 
-        await page.screenshot({ path: `${RESULTS_DIR}/04-ui-controls.png` });
-        console.log('Screenshot saved: test-results/04-ui-controls.png');
+        try {
+            await page.screenshot({ path: `${RESULTS_DIR}/04-ui-controls.png` });
+            console.log('Screenshot saved: test-results/04-ui-controls.png');
+        } catch (e) {
+            console.log('Screenshot skipped (env limitation)');
+        }
     });
 
 });
