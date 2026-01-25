@@ -5,6 +5,7 @@ import { join, extname } from 'path';
 const MIME = {
     '.html': 'text/html',
     '.js': 'application/javascript',
+    '.mjs': 'application/javascript',
     '.css': 'text/css',
     '.wasm': 'application/wasm',
     '.json': 'application/json',
@@ -19,6 +20,11 @@ createServer((req, res) => {
         res.end();
         return;
     }
-    res.writeHead(200, { 'Content-Type': MIME[extname(p)] || 'application/octet-stream' });
+    // Headers required for WASM with SharedArrayBuffer
+    res.writeHead(200, {
+        'Content-Type': MIME[extname(p)] || 'application/octet-stream',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp'
+    });
     res.end(readFileSync(p));
 }).listen(3457, () => console.log('Server ready on http://localhost:3457'));

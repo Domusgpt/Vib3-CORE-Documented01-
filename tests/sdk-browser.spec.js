@@ -45,15 +45,30 @@ test.describe('VIB3+ SDK Tests', () => {
         const errors = [];
         const logs = [];
 
+        // Capture logs BEFORE navigation
         page.on('console', msg => {
-            logs.push({ type: msg.type(), text: msg.text() });
+            const text = msg.text();
+            logs.push({ type: msg.type(), text });
+            // Print WASM-related logs immediately
+            if (text.includes('WASM') || text.includes('wasm') || text.includes('Vib3')) {
+                console.log(`[${msg.type()}] ${text}`);
+            }
         });
-        page.on('pageerror', err => errors.push(err.message));
+        page.on('pageerror', err => {
+            errors.push(err.message);
+            console.log(`[PAGE ERROR] ${err.message}`);
+        });
 
         await page.goto(`http://localhost:${PORT}/`);
 
-        // Wait for WASM to attempt loading
-        await page.waitForTimeout(8000);
+        // Wait for WASM to initialize by polling for window.Vib3Core
+        // Using waitForFunction instead of fixed timeout to avoid browser crashes
+        const wasmLoaded = await page.waitForFunction(
+            () => typeof window.Vib3Core !== 'undefined',
+            { timeout: 10000 }
+        ).then(() => true).catch(() => false);
+
+        console.log(`WASM Loaded: ${wasmLoaded}`);
 
         // Check loading status
         const loadingText = await page.locator('#loadingText').textContent().catch(() => 'N/A');
@@ -69,6 +84,10 @@ test.describe('VIB3+ SDK Tests', () => {
         });
         console.log(`window.Vib3Core: ${vib3Status.hasVib3Core} (${vib3Status.coreType})`);
         console.log(`window.Vib3Math: ${vib3Status.hasVib3Math}`);
+
+        // Assertions for WASM loading
+        expect(vib3Status.hasVib3Core).toBeTruthy();
+        expect(vib3Status.hasVib3Math).toBeTruthy();
 
         // Print console errors
         const consoleErrors = logs.filter(l => l.type === 'error');
