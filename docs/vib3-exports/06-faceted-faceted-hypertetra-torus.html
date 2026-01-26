@@ -55,7 +55,7 @@
     <script>
     // VIB3+ Exported Visualization
     // System: faceted
-    // Generated: 2026-01-26T06:10:32.510Z
+    // Generated: 2026-01-26T22:37:57.876Z
 
     const CONFIG = {
         system: 'faceted',
@@ -109,209 +109,158 @@ attribute vec2 a_position;
 void main() {
     gl_Position = vec4(a_position, 0.0, 1.0);
 }`);
-    const fs = createShader(gl.FRAGMENT_SHADER, `
-            precision highp float;
-            uniform float u_time;
-            uniform vec2 u_resolution;
-            uniform float u_geometry;  // 0-23
+    const fs = createShader(gl.FRAGMENT_SHADER, `precision highp float;
 
-            // 6D Rotation uniforms
-            uniform float u_rot4dXY;
-            uniform float u_rot4dXZ;
-            uniform float u_rot4dYZ;
-            uniform float u_rot4dXW;
-            uniform float u_rot4dYW;
-            uniform float u_rot4dZW;
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform vec2 u_mouse;
+uniform float u_geometry;
+uniform float u_gridDensity;
+uniform float u_morphFactor;
+uniform float u_chaos;
+uniform float u_speed;
+uniform float u_hue;
+uniform float u_intensity;
+uniform float u_saturation;
+uniform float u_dimension;
+uniform float u_rot4dXW;
+uniform float u_rot4dYW;
+uniform float u_rot4dZW;
+uniform float u_mouseIntensity;
+uniform float u_clickIntensity;
+uniform float u_bass;
+uniform float u_mid;
+uniform float u_high;
 
-            uniform float u_dimension;
-            uniform float u_gridDensity;
-            uniform float u_morphFactor;
-            uniform float u_chaos;
-            uniform float u_hue;
-            uniform float u_intensity;
+// 4D rotation matrices
+mat4 rotateXW(float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    return mat4(c, 0.0, 0.0, -s, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, s, 0.0, 0.0, c);
+}
 
-            // Audio reactivity (added for export)
-            uniform float u_bass;
-            uniform float u_mid;
-            uniform float u_high;
+mat4 rotateYW(float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    return mat4(1.0, 0.0, 0.0, 0.0, 0.0, c, 0.0, -s, 0.0, 0.0, 1.0, 0.0, 0.0, s, 0.0, c);
+}
 
-            // 6 Rotation matrices for complete 4D rotation
-            mat4 rotateXY(float angle) {
-                float c = cos(angle);
-                float s = sin(angle);
-                return mat4(
-                    c, -s, 0, 0,
-                    s, c, 0, 0,
-                    0, 0, 1, 0,
-                    0, 0, 0, 1
-                );
-            }
+mat4 rotateZW(float theta) {
+    float c = cos(theta);
+    float s = sin(theta);
+    return mat4(1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, c, -s, 0.0, 0.0, s, c);
+}
 
-            mat4 rotateXZ(float angle) {
-                float c = cos(angle);
-                float s = sin(angle);
-                return mat4(
-                    c, 0, -s, 0,
-                    0, 1, 0, 0,
-                    s, 0, c, 0,
-                    0, 0, 0, 1
-                );
-            }
+vec3 project4Dto3D(vec4 p) {
+    float w = 2.5 / (2.5 + p.w);
+    return vec3(p.x * w, p.y * w, p.z * w);
+}
 
-            mat4 rotateYZ(float angle) {
-                float c = cos(angle);
-                float s = sin(angle);
-                return mat4(
-                    1, 0, 0, 0,
-                    0, c, -s, 0,
-                    0, s, c, 0,
-                    0, 0, 0, 1
-                );
-            }
+// EXACT geometry functions from original VIB3+ Faceted system
+float geometryFunction(vec4 p) {
+    int geomType = int(mod(u_geometry, 8.0));
+    float density = u_gridDensity * 0.08;
 
-            mat4 rotateXW(float angle) {
-                float c = cos(angle);
-                float s = sin(angle);
-                return mat4(
-                    c, 0, 0, -s,
-                    0, 1, 0, 0,
-                    0, 0, 1, 0,
-                    s, 0, 0, c
-                );
-            }
+    if (geomType == 0) {
+        // Tetrahedron lattice
+        vec4 pos = fract(p * density);
+        vec4 dist = min(pos, 1.0 - pos);
+        return min(min(dist.x, dist.y), min(dist.z, dist.w)) * u_morphFactor;
+    }
+    else if (geomType == 1) {
+        // Hypercube lattice
+        vec4 pos = fract(p * density);
+        vec4 dist = min(pos, 1.0 - pos);
+        float minDist = min(min(dist.x, dist.y), min(dist.z, dist.w));
+        return minDist * u_morphFactor;
+    }
+    else if (geomType == 2) {
+        // Sphere lattice
+        float r = length(p);
+        float spheres = abs(fract(r * density) - 0.5) * 2.0;
+        float theta = atan(p.y, p.x);
+        float harmonics = sin(theta * 3.0) * 0.2;
+        return (spheres + harmonics) * u_morphFactor;
+    }
+    else if (geomType == 3) {
+        // Torus lattice
+        float r1 = length(p.xy) - 2.0;
+        float torus = length(vec2(r1, p.z)) - 0.8;
+        float lattice = sin(p.x * density) * sin(p.y * density);
+        return (torus + lattice * 0.3) * u_morphFactor;
+    }
+    else if (geomType == 4) {
+        // Klein bottle lattice
+        float u = atan(p.y, p.x);
+        float v = atan(p.w, p.z);
+        float dist = length(p) - 2.0;
+        float lattice = sin(u * density) * sin(v * density);
+        return (dist + lattice * 0.4) * u_morphFactor;
+    }
+    else if (geomType == 5) {
+        // Fractal lattice
+        vec4 pos = fract(p * density);
+        pos = abs(pos * 2.0 - 1.0);
+        float dist = length(max(abs(pos) - 1.0, 0.0));
+        return dist * u_morphFactor;
+    }
+    else if (geomType == 6) {
+        // Wave lattice
+        float time = u_time * 0.001 * u_speed;
+        float wave1 = sin(p.x * density + time);
+        float wave2 = sin(p.y * density + time * 1.3);
+        float wave3 = sin(p.z * density * 0.8 + time * 0.7);
+        float interference = wave1 * wave2 * wave3;
+        return interference * u_morphFactor;
+    }
+    else {
+        // Crystal lattice (geomType == 7)
+        vec4 pos = fract(p * density) - 0.5;
+        float cube = max(max(abs(pos.x), abs(pos.y)), max(abs(pos.z), abs(pos.w)));
+        return cube * u_morphFactor;
+    }
+}
 
-            mat4 rotateYW(float angle) {
-                float c = cos(angle);
-                float s = sin(angle);
-                return mat4(
-                    1, 0, 0, 0,
-                    0, c, 0, -s,
-                    0, 0, 1, 0,
-                    0, s, 0, c
-                );
-            }
+void main() {
+    vec2 uv = (gl_FragCoord.xy - u_resolution.xy * 0.5) / min(u_resolution.x, u_resolution.y);
 
-            mat4 rotateZW(float angle) {
-                float c = cos(angle);
-                float s = sin(angle);
-                return mat4(
-                    1, 0, 0, 0,
-                    0, 1, 0, 0,
-                    0, 0, c, -s,
-                    0, 0, s, c
-                );
-            }
+    // 4D position with time animation
+    float timeSpeed = u_time * 0.0001 * u_speed;
+    vec4 pos = vec4(uv * 3.0, sin(timeSpeed * 3.0), cos(timeSpeed * 2.0));
+    pos.xy += (u_mouse - 0.5) * u_mouseIntensity * 2.0;
 
-            // Apply all 6 rotations
-            vec4 apply6DRotation(vec4 pos) {
-                pos = rotateXY(u_rot4dXY + u_time * 0.05) * pos;
-                pos = rotateXZ(u_rot4dXZ + u_time * 0.06) * pos;
-                pos = rotateYZ(u_rot4dYZ + u_time * 0.04) * pos;
-                pos = rotateXW(u_rot4dXW + u_time * 0.07 + u_bass * 0.3) * pos;
-                pos = rotateYW(u_rot4dYW + u_time * 0.08 + u_mid * 0.2) * pos;
-                pos = rotateZW(u_rot4dZW + u_time * 0.09 + u_high * 0.25) * pos;
-                return pos;
-            }
+    // Apply 4D rotations with audio reactivity
+    pos = rotateXW(u_rot4dXW + u_bass * 0.3) * pos;
+    pos = rotateYW(u_rot4dYW + u_mid * 0.2) * pos;
+    pos = rotateZW(u_rot4dZW + u_high * 0.25) * pos;
 
-            // Base geometry SDFs (0-7)
-            float baseGeometry(vec4 p, float type) {
-                if (type < 0.5) {
-                    // Tetrahedron
-                    return max(max(max(abs(p.x + p.y) - p.z, abs(p.x - p.y) - p.z),
-                                   abs(p.x + p.y) + p.z), abs(p.x - p.y) + p.z) / sqrt(3.0);
-                } else if (type < 1.5) {
-                    // Hypercube
-                    vec4 q = abs(p) - 0.8;
-                    return length(max(q, 0.0)) + min(max(max(max(q.x, q.y), q.z), q.w), 0.0);
-                } else if (type < 2.5) {
-                    // Sphere
-                    return length(p) - 1.0;
-                } else if (type < 3.5) {
-                    // Torus
-                    vec2 t = vec2(length(p.xy) - 0.8, p.z);
-                    return length(t) - 0.3;
-                } else if (type < 4.5) {
-                    // Klein Bottle (simplified)
-                    float r = length(p.xy);
-                    return abs(r - 0.7) - 0.2 + sin(atan(p.y, p.x) * 3.0 + p.z * 5.0) * 0.1;
-                } else if (type < 5.5) {
-                    // Fractal (Mandelbulb approximation)
-                    return length(p) - 0.8 + sin(p.x * 5.0) * sin(p.y * 5.0) * sin(p.z * 5.0) * 0.2;
-                } else if (type < 6.5) {
-                    // Wave
-                    return abs(p.z - sin(p.x * 5.0 + u_time) * cos(p.y * 5.0 + u_time) * 0.3) - 0.1;
-                } else {
-                    // Crystal
-                    vec4 q = abs(p);
-                    return max(max(max(q.x, q.y), q.z), q.w) - 0.8;
-                }
-            }
+    // Calculate geometry value
+    float value = geometryFunction(pos);
 
-            // Hypersphere Core wrapper (8-15)
-            float hypersphereCore(vec4 p, float baseType) {
-                float baseShape = baseGeometry(p, baseType);
-                float sphereField = length(p) - 1.2;
-                return max(baseShape, sphereField);  // Intersection
-            }
+    // Apply chaos
+    float noise = sin(pos.x * 7.0) * cos(pos.y * 11.0) * sin(pos.z * 13.0);
+    value += noise * (u_chaos + u_high * 0.2);
 
-            // Hypertetrahedron Core wrapper (16-23)
-            float hypertetrahedronCore(vec4 p, float baseType) {
-                float baseShape = baseGeometry(p, baseType);
-                float tetraField = max(max(max(
-                    abs(p.x + p.y) - p.z - p.w,
-                    abs(p.x - p.y) - p.z + p.w),
-                    abs(p.x + p.y) + p.z - p.w),
-                    abs(p.x - p.y) + p.z + p.w) / sqrt(4.0);
-                return max(baseShape, tetraField);  // Intersection
-            }
+    // Color based on geometry value and hue
+    float geometryIntensity = 1.0 - clamp(abs(value), 0.0, 1.0);
+    geometryIntensity += u_clickIntensity * 0.3;
 
-            // Main geometry dispatcher (0-23)
-            float geometry(vec4 p, float type) {
-                if (type < 8.0) {
-                    // Base geometries (0-7)
-                    return baseGeometry(p, type);
-                } else if (type < 16.0) {
-                    // Hypersphere Core (8-15)
-                    return hypersphereCore(p, type - 8.0);
-                } else {
-                    // Hypertetrahedron Core (16-23)
-                    return hypertetrahedronCore(p, type - 16.0);
-                }
-            }
+    float finalIntensity = geometryIntensity * u_intensity;
+    float hue = u_hue / 360.0 + value * 0.1 + u_mid * 0.1;
 
-            void main() {
-                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
-                uv *= 2.0 / (u_gridDensity + u_bass * 5.0);
+    // Create color with saturation control
+    vec3 baseColor = vec3(
+        sin(hue * 6.28318 + 0.0) * 0.5 + 0.5,
+        sin(hue * 6.28318 + 2.0943) * 0.5 + 0.5,
+        sin(hue * 6.28318 + 4.1887) * 0.5 + 0.5
+    );
 
-                // Create 4D point
-                vec4 pos = vec4(uv, sin(u_time * 0.3) * 0.5, cos(u_time * 0.2) * 0.5);
+    // Apply saturation
+    float gray = (baseColor.r + baseColor.g + baseColor.b) / 3.0;
+    vec3 color = mix(vec3(gray), baseColor, u_saturation) * finalIntensity;
 
-                // Apply full 6D rotation
-                pos = apply6DRotation(pos);
-
-                // Apply morphing
-                pos *= u_morphFactor + u_mid * 0.3;
-                pos += vec4(sin(u_time * 0.1), cos(u_time * 0.15), sin(u_time * 0.12), cos(u_time * 0.18)) * (u_chaos + u_high * 0.2);
-
-                // Get distance
-                float dist = geometry(pos, u_geometry);
-
-                // Faceted rendering (sharp edges)
-                float edge = smoothstep(0.02, 0.0, abs(dist));
-                float fill = smoothstep(0.1, 0.0, dist) * 0.3;
-
-                // Color based on hue and distance
-                float hueVal = u_hue / 360.0 + dist * 0.2 + u_time * 0.05 + u_mid * 0.15;
-                vec3 color = vec3(
-                    0.5 + 0.5 * cos(hueVal * 6.28),
-                    0.5 + 0.5 * cos((hueVal + 0.33) * 6.28),
-                    0.5 + 0.5 * cos((hueVal + 0.67) * 6.28)
-                );
-
-                float alpha = (edge + fill) * u_intensity;
-                gl_FragColor = vec4(color * alpha, alpha);
-            }
-        `);
+    gl_FragColor = vec4(color, finalIntensity * 0.9);
+}`);
 
     const program = gl.createProgram();
     gl.attachShader(program, vs);
