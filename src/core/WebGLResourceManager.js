@@ -10,36 +10,88 @@ class WebGLResourceManager {
       renderbuffers: new Set(),
       vertexArrays: new Set()
     };
+    this.resourceRegistry = new Map();
+  }
+
+  getTypeSet(type) {
+    return this.resources[type] || null;
+  }
+
+  getTypeRegistry(type) {
+    if (!this.resourceRegistry.has(type)) {
+      this.resourceRegistry.set(type, new Map());
+    }
+    return this.resourceRegistry.get(type);
+  }
+
+  registerResource(type, id, resource, bytes = 0) {
+    const registry = this.getTypeRegistry(type);
+    const key = id ?? resource;
+    registry.set(key, { resource, bytes });
+    const typeSet = this.getTypeSet(type);
+    if (typeSet) {
+      typeSet.add(resource);
+    }
+    return resource;
+  }
+
+  releaseResource(type, id) {
+    const registry = this.getTypeRegistry(type);
+    const entry = registry.get(id);
+    if (!entry) {
+      return false;
+    }
+
+    const resource = entry.resource;
+    switch (type) {
+      case 'textures':
+        this.deleteTexture(resource);
+        break;
+      case 'buffers':
+        this.deleteBuffer(resource);
+        break;
+      case 'programs':
+        this.deleteProgram(resource);
+        break;
+      case 'framebuffers':
+        this.deleteFramebuffer(resource);
+        break;
+      case 'renderbuffers':
+        this.deleteRenderbuffer(resource);
+        break;
+      case 'vertexArrays':
+        this.deleteVertexArray(resource);
+        break;
+      default:
+        break;
+    }
+
+    registry.delete(id);
+    return true;
   }
 
   trackTexture(texture) {
-    this.resources.textures.add(texture);
-    return texture;
+    return this.registerResource('textures', texture, texture);
   }
 
   trackBuffer(buffer) {
-    this.resources.buffers.add(buffer);
-    return buffer;
+    return this.registerResource('buffers', buffer, buffer);
   }
 
   trackProgram(program) {
-    this.resources.programs.add(program);
-    return program;
+    return this.registerResource('programs', program, program);
   }
 
   trackFramebuffer(framebuffer) {
-    this.resources.framebuffers.add(framebuffer);
-    return framebuffer;
+    return this.registerResource('framebuffers', framebuffer, framebuffer);
   }
 
   trackRenderbuffer(renderbuffer) {
-    this.resources.renderbuffers.add(renderbuffer);
-    return renderbuffer;
+    return this.registerResource('renderbuffers', renderbuffer, renderbuffer);
   }
 
   trackVertexArray(vertexArray) {
-    this.resources.vertexArrays.add(vertexArray);
-    return vertexArray;
+    return this.registerResource('vertexArrays', vertexArray, vertexArray);
   }
 
   createTexture() {
@@ -132,9 +184,19 @@ class WebGLResourceManager {
 
     // Clear all sets
     Object.values(this.resources).forEach(set => set.clear());
+    this.resourceRegistry.clear();
   }
 
   getResourceCount() {
+    const bytes = {};
+    let totalBytes = 0;
+
+    this.resourceRegistry.forEach((registry, type) => {
+      const typeBytes = Array.from(registry.values()).reduce((sum, entry) => sum + entry.bytes, 0);
+      bytes[type] = typeBytes;
+      totalBytes += typeBytes;
+    });
+
     return {
       textures: this.resources.textures.size,
       buffers: this.resources.buffers.size,
@@ -142,7 +204,9 @@ class WebGLResourceManager {
       framebuffers: this.resources.framebuffers.size,
       renderbuffers: this.resources.renderbuffers.size,
       vertexArrays: this.resources.vertexArrays.size,
-      total: Object.values(this.resources).reduce((sum, set) => sum + set.size, 0)
+      total: Object.values(this.resources).reduce((sum, set) => sum + set.size, 0),
+      bytes,
+      totalBytes
     };
   }
 }
