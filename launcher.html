@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIB3+ Engine - Visualization Systems</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 200;
+            background: linear-gradient(90deg, #8a2be2, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #888;
+            font-weight: 300;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .card {
+            background: rgba(20, 20, 30, 0.8);
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            border-radius: 16px;
+            padding: 30px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent, #8a2be2), var(--accent2, #00ffff));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(138, 43, 226, 0.6);
+            box-shadow: 0 20px 40px rgba(138, 43, 226, 0.2);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .card p {
+            color: #888;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .card .tag {
+            display: inline-block;
+            background: rgba(138, 43, 226, 0.2);
+            color: #b388ff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-top: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card.featured {
+            --accent: #ffd700;
+            --accent2: #ff6b00;
+            border-color: rgba(255, 215, 0, 0.3);
+        }
+
+        .card.featured:hover {
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 20px 40px rgba(255, 215, 0, 0.15);
+        }
+
+        .card.featured .tag {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #666;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #222;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #555;
+            font-size: 0.85rem;
+            border-top: 1px solid #222;
+        }
+
+        footer a {
+            color: #8a2be2;
+            text-decoration: none;
+        }
+
+        .badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ffd700;
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>VIB3+ Engine</h1>
+            <p class="subtitle">4D Visualization Systems | Holographic Hyper-Computer</p>
+        </header>
+
+        <h3 class="section-title">Featured</h3>
+        <div class="grid">
+            <a href="./index-kirigami.html" class="card featured">
+                <span class="badge">New</span>
+                <span class="card-icon">🔮</span>
+                <h2>Kirigami Hyper-Computer</h2>
+                <p>Epitaxial 600-Cell Engine with Hexastack Architecture. 6-layer 4D polytope visualization with exclusion blending and Moiré interference patterns.</p>
+                <span class="tag">HHC • 600-Cell • 4D</span>
+            </a>
+        </div>
+
+        <h3 class="section-title">Core Visualization Systems</h3>
+        <div class="grid">
+            <a href="./vib3-engine.html" class="card" style="--accent: #ff00ff; --accent2: #8a2be2;">
+                <span class="card-icon">⚛️</span>
+                <h2>Main VIB3+ Engine</h2>
+                <p>Full-featured visualization with Quantum, Faceted, and Holographic systems. 24 geometries, 6D rotation, gallery system.</p>
+                <span class="tag">Quantum • Faceted • Holographic</span>
+            </a>
+
+            <a href="./integrated-demo/index.html" class="card" style="--accent: #00ffff; --accent2: #00ff88;">
+                <span class="card-icon">🌐</span>
+                <h2>Integrated Demo</h2>
+                <p>Combined showcase of all visualization systems with unified controls and seamless switching between modes.</p>
+                <span class="tag">All Systems • Unified UI</span>
+            </a>
+
+            <a href="./demo/index.html" class="card" style="--accent: #ff6b6b; --accent2: #ffd93d;">
+                <span class="card-icon">🎨</span>
+                <h2>Demo</h2>
+                <p>Interactive demonstration of the VIB3+ visualization capabilities with simplified controls.</p>
+                <span class="tag">Interactive • Demo</span>
+            </a>
+        </div>
+
+        <h3 class="section-title">SDK Examples</h3>
+        <div class="grid">
+            <a href="./sdk/index.html" class="card" style="--accent: #4ecdc4; --accent2: #44a08d;">
+                <span class="card-icon">📦</span>
+                <h2>SDK Portal</h2>
+                <p>Developer SDK with clean API for embedding VIB3+ visualizations in your own projects.</p>
+                <span class="tag">SDK • API</span>
+            </a>
+
+            <a href="./sdk/examples/basic-demo.html" class="card" style="--accent: #667eea; --accent2: #764ba2;">
+                <span class="card-icon">🚀</span>
+                <h2>Basic Demo</h2>
+                <p>Simple SDK usage example showing how to quickly integrate VIB3+ visualizations.</p>
+                <span class="tag">Tutorial • Quick Start</span>
+            </a>
+
+            <a href="./sdk/examples/export-demo.html" class="card" style="--accent: #f093fb; --accent2: #f5576c;">
+                <span class="card-icon">💾</span>
+                <h2>Export Demo</h2>
+                <p>Demonstrates PNG, SVG, and animation frame export capabilities.</p>
+                <span class="tag">Export • PNG • SVG</span>
+            </a>
+
+            <a href="./sdk/examples/minimal.html" class="card" style="--accent: #a8edea; --accent2: #fed6e3;">
+                <span class="card-icon">✨</span>
+                <h2>Minimal Example</h2>
+                <p>Bare minimum code needed to get a VIB3+ visualization running.</p>
+                <span class="tag">Minimal • Starter</span>
+            </a>
+        </div>
+
+        <h3 class="section-title">Standalone Examples</h3>
+        <div class="grid">
+            <a href="./examples/vib3-demo-standalone.html" class="card" style="--accent: #fa709a; --accent2: #fee140;">
+                <span class="card-icon">🎭</span>
+                <h2>Standalone Demo</h2>
+                <p>Self-contained visualization that works without external dependencies.</p>
+                <span class="tag">Standalone • No Deps</span>
+            </a>
+
+            <a href="./examples/vib3-real-demo.html" class="card" style="--accent: #a18cd1; --accent2: #fbc2eb;">
+                <span class="card-icon">🌈</span>
+                <h2>Real Demo</h2>
+                <p>Production-ready demonstration of VIB3+ capabilities.</p>
+                <span class="tag">Production • Full</span>
+            </a>
+
+            <a href="./outputs/interactive-demo.html" class="card" style="--accent: #ff9a9e; --accent2: #fecfef;">
+                <span class="card-icon">🎮</span>
+                <h2>Interactive Output</h2>
+                <p>Fully interactive visualization output with real-time controls.</p>
+                <span class="tag">Interactive • Output</span>
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <p>VIB3+ Engine &copy; 2025 | <a href="https://github.com/Domusgpt/Vib3-CORE-Documented01-">GitHub Repository</a></p>
+        <p style="margin-top: 10px;">Epitaxial 600-Cell Kirigami Engine • Holographic Hyper-Computer</p>
+    </footer>
+</body>
+</html>

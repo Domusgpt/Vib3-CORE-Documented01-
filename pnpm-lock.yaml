@@ -36,6 +36,9 @@ importers:
       happy-dom:
         specifier: ^20.3.7
         version: 20.3.7
+      playwright:
+        specifier: ^1.58.0
+        version: 1.58.0
       puppeteer-core:
         specifier: ^24.36.0
         version: 24.36.0

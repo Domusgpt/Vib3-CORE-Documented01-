@@ -21,19 +21,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Create pages directory
+      - name: Build with Vite
+        run: pnpm run build:web
+
+      - name: Set launcher as index
         run: |
-          # Deploy the VIB3+ SDK
-          mkdir -p _site
-          cp -r sdk/* _site/
+          # Rename original index.html to vib3-engine.html (for main VIB3 Engine link)
+          if [ -f dist/index.html ]; then
+            mv dist/index.html dist/vib3-engine.html
+          fi
+          # Copy launcher.html as the main index.html
+          if [ -f dist/launcher.html ]; then
+            cp dist/launcher.html dist/index.html
+          fi
+          # List output for debugging
+          echo "=== dist/ contents ==="
+          ls -la dist/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: dist
 
   deploy:
     environment:
