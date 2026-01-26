@@ -268,6 +268,133 @@ export const toolDefinitions = {
             },
             required: ['q1_rotation_planes', 'q2_geometry_formula', 'q3_canvas_layers']
         }
+    },
+
+    // ===== REACTIVITY TOOLS (Phase 6.5) =====
+
+    set_reactivity_config: {
+        name: 'set_reactivity_config',
+        description: 'Set complete reactivity configuration for audio/tilt/interaction behavior. This controls how the visualization responds to audio input, device motion, and user interaction.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                audio: {
+                    type: 'object',
+                    description: 'Audio reactivity configuration',
+                    properties: {
+                        enabled: { type: 'boolean', description: 'Enable audio reactivity' },
+                        globalSensitivity: { type: 'number', minimum: 0.1, maximum: 3.0, description: 'Overall audio sensitivity' }
+                    }
+                },
+                tilt: {
+                    type: 'object',
+                    description: 'Device tilt configuration',
+                    properties: {
+                        enabled: { type: 'boolean', description: 'Enable tilt reactivity' },
+                        sensitivity: { type: 'number', minimum: 0.1, maximum: 3.0, description: 'Tilt sensitivity' },
+                        dramaticMode: { type: 'boolean', description: 'Enable dramatic (8x) mode' }
+                    }
+                },
+                interaction: {
+                    type: 'object',
+                    description: 'Mouse/touch interaction configuration',
+                    properties: {
+                        enabled: { type: 'boolean', description: 'Enable interaction' },
+                        mouseMode: { type: 'string', enum: ['rotation', 'velocity', 'shimmer', 'attract', 'repel', 'none'] },
+                        clickMode: { type: 'string', enum: ['burst', 'blast', 'ripple', 'pulse', 'none'] },
+                        scrollMode: { type: 'string', enum: ['cycle', 'wave', 'sweep', 'zoom', 'morph', 'none'] }
+                    }
+                }
+            }
+        }
+    },
+
+    get_reactivity_config: {
+        name: 'get_reactivity_config',
+        description: 'Get current reactivity configuration including audio, tilt, and interaction settings.',
+        inputSchema: {
+            type: 'object',
+            properties: {}
+        }
+    },
+
+    configure_audio_band: {
+        name: 'configure_audio_band',
+        description: 'Configure a single audio frequency band (bass, mid, or high) with target parameter mappings.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                band: {
+                    type: 'string',
+                    enum: ['bass', 'mid', 'high'],
+                    description: 'Frequency band to configure'
+                },
+                enabled: { type: 'boolean', description: 'Enable this band' },
+                sensitivity: { type: 'number', minimum: 0.1, maximum: 3.0, description: 'Band sensitivity' },
+                targets: {
+                    type: 'array',
+                    description: 'Parameter targets for this band',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            param: { type: 'string', description: 'Target parameter name (e.g., morphFactor, chaos, speed)' },
+                            weight: { type: 'number', description: 'Effect weight/strength' },
+                            mode: { type: 'string', enum: ['add', 'multiply', 'replace', 'max', 'min'], default: 'add' }
+                        }
+                    }
+                }
+            },
+            required: ['band']
+        }
+    },
+
+    // ===== EXPORT TOOLS (Phase 6.5) =====
+
+    export_package: {
+        name: 'export_package',
+        description: 'Export complete VIB3Package with visual state, reactivity config, and embed code. The package is self-contained and portable.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                name: { type: 'string', description: 'Package name' },
+                description: { type: 'string', description: 'Package description' },
+                includeReactivity: { type: 'boolean', default: true, description: 'Include reactivity configuration' },
+                includeEmbed: { type: 'boolean', default: true, description: 'Include embed code (HTML/JS/CSS)' },
+                format: {
+                    type: 'string',
+                    enum: ['json', 'html', 'webcomponent'],
+                    default: 'json',
+                    description: 'Export format'
+                }
+            }
+        }
+    },
+
+    // ===== PRESET TOOLS (Phase 6.6) =====
+
+    apply_behavior_preset: {
+        name: 'apply_behavior_preset',
+        description: 'Apply a named behavior preset that configures reactivity for common use cases.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                preset: {
+                    type: 'string',
+                    enum: ['ambient', 'reactive', 'immersive', 'energetic', 'calm', 'cinematic'],
+                    description: 'Preset name: ambient (minimal), reactive (audio-driven), immersive (full tilt), energetic (high speed), calm (slow/smooth), cinematic (dramatic rotations)'
+                }
+            },
+            required: ['preset']
+        }
+    },
+
+    list_behavior_presets: {
+        name: 'list_behavior_presets',
+        description: 'List all available behavior presets with descriptions.',
+        inputSchema: {
+            type: 'object',
+            properties: {}
+        }
     }
 };
 

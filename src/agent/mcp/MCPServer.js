@@ -142,6 +142,27 @@ export class MCPServer {
                 case 'verify_knowledge':
                     result = this.verifyKnowledge(args);
                     break;
+                // Reactivity tools (Phase 6.5)
+                case 'set_reactivity_config':
+                    result = this.setReactivityConfig(args);
+                    break;
+                case 'get_reactivity_config':
+                    result = this.getReactivityConfig();
+                    break;
+                case 'configure_audio_band':
+                    result = this.configureAudioBand(args);
+                    break;
+                // Export tools (Phase 6.5)
+                case 'export_package':
+                    result = this.exportPackage(args);
+                    break;
+                // Preset tools (Phase 6.6)
+                case 'apply_behavior_preset':
+                    result = this.applyBehaviorPreset(args);
+                    break;
+                case 'list_behavior_presets':
+                    result = this.listBehaviorPresets();
+                    break;
                 default:
                     throw new Error(`Unknown tool: ${toolName}`);
             }
@@ -673,6 +694,250 @@ export class MCPServer {
             name,
             description: toolDefinitions[name].description
         }));
+    }
+
+    // ===== REACTIVITY HANDLERS (Phase 6.5) =====
+
+    /**
+     * Set reactivity configuration
+     */
+    setReactivityConfig(args) {
+        const { audio, tilt, interaction } = args;
+
+        // Update via global reactivity manager if available
+        if (window?.reactivityManager) {
+            if (audio) {
+                if (audio.enabled !== undefined) window.audioEnabled = audio.enabled;
+                if (audio.globalSensitivity !== undefined) {
+                    window.reactivityManager.setAudioSensitivity?.(audio.globalSensitivity);
+                }
+            }
+            if (tilt) {
+                if (tilt.enabled !== undefined) window.toggleDeviceTilt?.();
+                if (tilt.dramaticMode !== undefined) {
+                    window.setDramaticMode?.(tilt.dramaticMode);
+                }
+            }
+            if (interaction) {
+                if (interaction.mouseMode) window.setMouseMode?.(interaction.mouseMode);
+                if (interaction.clickMode) window.setClickMode?.(interaction.clickMode);
+                if (interaction.scrollMode) window.setScrollMode?.(interaction.scrollMode);
+            }
+        }
+
+        telemetry.recordEvent(EventType.PARAMETER_CHANGE, { type: 'reactivity' });
+
+        return {
+            updated: true,
+            config: { audio: audio || {}, tilt: tilt || {}, interaction: interaction || {} },
+            suggested_next_actions: ['get_reactivity_config', 'apply_behavior_preset']
+        };
+    }
+
+    /**
+     * Get current reactivity configuration
+     */
+    getReactivityConfig() {
+        return {
+            config: {
+                audio: {
+                    enabled: window?.audioEnabled || false,
+                    globalSensitivity: window?.reactivityManager?.audioSensitivity || 1.0
+                },
+                tilt: {
+                    enabled: window?.deviceTiltHandler?.isEnabled || false,
+                    dramaticMode: window?.dramaticMode || false
+                },
+                interaction: {
+                    enabled: window?.interactivityEnabled !== false,
+                    mouseMode: window?.currentMouseMode || 'rotation',
+                    clickMode: window?.currentClickMode || 'burst',
+                    scrollMode: window?.currentScrollMode || 'cycle'
+                }
+            },
+            suggested_next_actions: ['set_reactivity_config', 'configure_audio_band', 'apply_behavior_preset']
+        };
+    }
+
+    /**
+     * Configure a single audio band
+     */
+    configureAudioBand(args) {
+        const { band, enabled, sensitivity, targets } = args;
+
+        if (window?.reactivityManager?.configureAudioBand) {
+            window.reactivityManager.configureAudioBand(band, { enabled, sensitivity, targets });
+        }
+
+        telemetry.recordEvent(EventType.PARAMETER_CHANGE, { type: 'audio_band', band });
+
+        return {
+            band,
+            updated: true,
+            config: { enabled, sensitivity, targets },
+            suggested_next_actions: ['get_reactivity_config', 'configure_audio_band']
+        };
+    }
+
+    // ===== EXPORT HANDLERS (Phase 6.5) =====
+
+    /**
+     * Export VIB3Package
+     */
+    exportPackage(args) {
+        const { name, description, includeReactivity = true, includeEmbed = true, format = 'json' } = args;
+
+        const visualParams = this.getState()?.parameters || {};
+        const system = window?.currentSystem || 'quantum';
+        const reactivityConfig = includeReactivity ? this.getReactivityConfig().config : null;
+
+        const package_ = {
+            id: generateId('pkg'),
+            version: '2.0',
+            type: 'vib3-package',
+            name: name || `VIB3 ${system} Export`,
+            description: description || 'Exported visualization package',
+            created: new Date().toISOString(),
+            system,
+            visual: {
+                parameters: visualParams,
+                geometry: {
+                    index: visualParams.geometry || 0,
+                    coreIndex: Math.floor((visualParams.geometry || 0) / 8),
+                    baseIndex: (visualParams.geometry || 0) % 8
+                }
+            }
+        };
+
+        if (includeReactivity && reactivityConfig) package_.reactivity = reactivityConfig;
+        if (includeEmbed) {
+            package_.embed = {
+                html: `<div id="vib3-container" data-package="${package_.id}"></div>`,
+                js: `VIB3.loadPackage(${JSON.stringify(package_.id)});`,
+                iframe: `<iframe src="https://vib3.app/embed/${package_.id}" width="100%" height="400"></iframe>`
+            };
+        }
+
+        return { package: package_, format, suggested_next_actions: ['save_to_gallery', 'apply_behavior_preset'] };
+    }
+
+    // ===== PRESET HANDLERS (Phase 6.6) =====
+
+    static BEHAVIOR_PRESETS = {
+        ambient: {
+            name: 'Ambient',
+            description: 'Calm, slow, minimal reactivity - perfect for backgrounds',
+            config: {
+                audio: { enabled: false },
+                tilt: { enabled: true, sensitivity: 0.3, dramaticMode: false },
+                interaction: { mouseMode: 'shimmer', clickMode: 'none', scrollMode: 'none' }
+            },
+            visualOverrides: { speed: 0.3, chaos: 0.1 }
+        },
+        reactive: {
+            name: 'Reactive',
+            description: 'High audio reactivity - responds to music/sound',
+            config: {
+                audio: { enabled: true, globalSensitivity: 1.5 },
+                tilt: { enabled: false },
+                interaction: { mouseMode: 'rotation', clickMode: 'burst', scrollMode: 'cycle' }
+            },
+            visualOverrides: { speed: 1.0, chaos: 0.3 }
+        },
+        immersive: {
+            name: 'Immersive',
+            description: 'Full tilt control with dramatic rotations',
+            config: {
+                audio: { enabled: true, globalSensitivity: 0.8 },
+                tilt: { enabled: true, sensitivity: 1.0, dramaticMode: true },
+                interaction: { mouseMode: 'velocity', clickMode: 'ripple', scrollMode: 'zoom' }
+            },
+            visualOverrides: { speed: 0.8 }
+        },
+        energetic: {
+            name: 'Energetic',
+            description: 'Fast, chaotic, high-energy visuals',
+            config: {
+                audio: { enabled: true, globalSensitivity: 2.0 },
+                tilt: { enabled: true, sensitivity: 1.5, dramaticMode: true },
+                interaction: { mouseMode: 'velocity', clickMode: 'blast', scrollMode: 'wave' }
+            },
+            visualOverrides: { speed: 2.5, chaos: 0.8, morphFactor: 1.5 }
+        },
+        calm: {
+            name: 'Calm',
+            description: 'Slow, smooth, meditative patterns',
+            config: {
+                audio: { enabled: false },
+                tilt: { enabled: true, sensitivity: 0.2, dramaticMode: false },
+                interaction: { mouseMode: 'shimmer', clickMode: 'pulse', scrollMode: 'none' }
+            },
+            visualOverrides: { speed: 0.2, chaos: 0.05, morphFactor: 0.3 }
+        },
+        cinematic: {
+            name: 'Cinematic',
+            description: 'Dramatic rotations, smooth transitions for video',
+            config: {
+                audio: { enabled: false },
+                tilt: { enabled: false },
+                interaction: { mouseMode: 'none', clickMode: 'none', scrollMode: 'none' }
+            },
+            visualOverrides: { speed: 0.5, chaos: 0.2 }
+        }
+    };
+
+    /**
+     * Apply a behavior preset
+     */
+    applyBehaviorPreset(args) {
+        const { preset } = args;
+        const presetConfig = MCPServer.BEHAVIOR_PRESETS[preset];
+
+        if (!presetConfig) {
+            return {
+                error: {
+                    type: 'ValidationError',
+                    code: 'INVALID_PRESET',
+                    message: `Unknown preset: ${preset}`,
+                    valid_options: Object.keys(MCPServer.BEHAVIOR_PRESETS)
+                }
+            };
+        }
+
+        this.setReactivityConfig(presetConfig.config);
+
+        if (presetConfig.visualOverrides && this.engine) {
+            for (const [param, value] of Object.entries(presetConfig.visualOverrides)) {
+                this.engine.setParameter(param, value);
+            }
+        }
+
+        telemetry.recordEvent(EventType.PARAMETER_CHANGE, { type: 'preset', preset });
+
+        return {
+            preset,
+            applied: true,
+            name: presetConfig.name,
+            description: presetConfig.description,
+            config: presetConfig.config,
+            visualOverrides: presetConfig.visualOverrides,
+            suggested_next_actions: ['get_reactivity_config', 'set_visual_parameters', 'export_package']
+        };
+    }
+
+    /**
+     * List available behavior presets
+     */
+    listBehaviorPresets() {
+        return {
+            count: Object.keys(MCPServer.BEHAVIOR_PRESETS).length,
+            presets: Object.entries(MCPServer.BEHAVIOR_PRESETS).map(([key, value]) => ({
+                id: key,
+                name: value.name,
+                description: value.description
+            })),
+            suggested_next_actions: ['apply_behavior_preset']
+        };
     }
 }
 
