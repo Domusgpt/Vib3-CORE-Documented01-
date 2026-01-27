@@ -18,7 +18,7 @@ export class Polychora4DPhysics {
         this.paused = false;
         
         // Environmental forces
-        this.magneticField = [0, 0, 1, 0];  // 4D magnetic field
+        this.magneticField = [0, 0, 1, 0, 0, 0];  // 4D magnetic bivector (XY,XZ,YZ,XW,YW,ZW)
         this.fluidFlow = [0.5, 0, 0, 0];   // 4D fluid current
         
         console.log('🔮 Polychora4DPhysics initialized');
@@ -37,8 +37,9 @@ export class Polychora4DPhysics {
             velocity: [0, 0, 0, 0],          // 4D velocity
             acceleration: [0, 0, 0, 0],       // 4D acceleration
             
-            // 4D rotational state (6 rotational degrees of freedom)
-            rotation: [0, 0, 0, 0, 0, 0],    // XY, XZ, YZ, XW, YW, ZW rotations
+            // 4D rotational state (matrix-based orientation + plane tracking for visualization)
+            rotationMatrix: this.createIdentityMatrix4D(),
+            rotationPlanes: [0, 0, 0, 0, 0, 0],    // XY, XZ, YZ, XW, YW, ZW (visualization only)
             angularVelocity: [0, 0, 0, 0, 0, 0], // 6D angular velocity
             angularAcceleration: [0, 0, 0, 0, 0, 0], // 6D angular acceleration
             
@@ -161,8 +162,8 @@ export class Polychora4DPhysics {
     applyMagneticForces(body) {
         if (body.magneticSusceptibility === 0) return;
         
-        // 4D Lorentz force: F = q(v × B) in 4D
-        const magneticForce = this.cross4D(body.velocity, this.magneticField);
+        // 4D Lorentz-like force using bivector field
+        const magneticForce = this.applyBivectorToVector(body.velocity, this.magneticField);
         
         magneticForce.forEach((component, i) => {
             body.forces[i] += component * body.magneticSusceptibility;
@@ -384,15 +385,18 @@ export class Polychora4DPhysics {
             this.multiply4D(body.velocity, deltaTime)
         );
         
-        // Rotational motion integration (simplified 6D)
+        // Rotational motion integration (matrix-based orientation)
+        const deltaAngles = [];
         for (let i = 0; i < 6; i++) {
             body.angularAcceleration[i] = body.torques[i] / body.inertia4D[i];
             body.angularVelocity[i] += body.angularAcceleration[i] * deltaTime;
-            body.rotation[i] += body.angularVelocity[i] * deltaTime;
-            
-            // Keep rotations in [0, 2π] range
-            body.rotation[i] = body.rotation[i] % (Math.PI * 2);
+            deltaAngles[i] = body.angularVelocity[i] * deltaTime;
+            body.rotationPlanes[i] += deltaAngles[i];
+            body.rotationPlanes[i] = body.rotationPlanes[i] % (Math.PI * 2);
         }
+
+        const incrementalRotation = this.buildRotationMatrix(deltaAngles);
+        body.rotationMatrix = this.multiplyMatrix4(body.rotationMatrix, incrementalRotation);
     }
     
     /**
@@ -443,15 +447,16 @@ export class Polychora4DPhysics {
     }
     
     /**
-     * 4D cross product (simplified - returns 4D vector)
+     * Apply a 4D bivector (XY,XZ,YZ,XW,YW,ZW) to a vector
      */
-    cross4D(a, b) {
-        // Simplified 4D cross product
+    applyBivectorToVector(vec, bivector) {
+        const [bXY, bXZ, bYZ, bXW, bYW, bZW] = bivector;
+        const [x, y, z, w] = vec;
         return [
-            a[1] * b[2] - a[2] * b[1],
-            a[2] * b[0] - a[0] * b[2], 
-            a[0] * b[1] - a[1] * b[0],
-            a[3] // W component
+            -bXY * y - bXZ * z - bXW * w,
+            bXY * x - bYZ * z - bYW * w,
+            bXZ * x + bYZ * y - bZW * w,
+            bXW * x + bYW * y + bZW * z
         ];
     }
     
@@ -480,6 +485,106 @@ export class Polychora4DPhysics {
         // Approximate bounding radii for different polytopes
         const radii = [1.2, 1.5, 1.0, 1.3, 0.8, 2.0]; // Corresponds to polytope types
         return radii[polytopeType] || 1.0;
+    }
+
+    createIdentityMatrix4D() {
+        const matrix = new Float32Array(16);
+        for (let i = 0; i < 16; i++) {
+            matrix[i] = (i % 5 === 0) ? 1 : 0;
+        }
+        return matrix;
+    }
+
+    buildRotationMatrix(angles) {
+        const [xy, xz, yz, xw, yw, zw] = angles.map(angle => angle || 0);
+        let matrix = this.createIdentityMatrix4D();
+        matrix = this.multiplyMatrix4(matrix, this.rotateXY(xy));
+        matrix = this.multiplyMatrix4(matrix, this.rotateXZ(xz));
+        matrix = this.multiplyMatrix4(matrix, this.rotateYZ(yz));
+        matrix = this.multiplyMatrix4(matrix, this.rotateXW(xw));
+        matrix = this.multiplyMatrix4(matrix, this.rotateYW(yw));
+        matrix = this.multiplyMatrix4(matrix, this.rotateZW(zw));
+        return matrix;
+    }
+
+    multiplyMatrix4(a, b) {
+        const result = new Float32Array(16);
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 4; col++) {
+                let sum = 0;
+                for (let i = 0; i < 4; i++) {
+                    sum += a[row * 4 + i] * b[i * 4 + col];
+                }
+                result[row * 4 + col] = sum;
+            }
+        }
+        return result;
+    }
+
+    rotateXY(angle) {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([
+            c, -s, 0, 0,
+            s, c, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ]);
+    }
+
+    rotateXZ(angle) {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([
+            c, 0, -s, 0,
+            0, 1, 0, 0,
+            s, 0, c, 0,
+            0, 0, 0, 1
+        ]);
+    }
+
+    rotateYZ(angle) {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([
+            1, 0, 0, 0,
+            0, c, -s, 0,
+            0, s, c, 0,
+            0, 0, 0, 1
+        ]);
+    }
+
+    rotateXW(angle) {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([
+            c, 0, 0, -s,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            s, 0, 0, c
+        ]);
+    }
+
+    rotateYW(angle) {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([
+            1, 0, 0, 0,
+            0, c, 0, -s,
+            0, 0, 1, 0,
+            0, s, 0, c
+        ]);
+    }
+
+    rotateZW(angle) {
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        return new Float32Array([
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, c, -s,
+            0, 0, s, c
+        ]);
     }
     
     checkSleeping(body) {
@@ -552,7 +657,8 @@ export class Polychora4DPhysics {
         return this.bodies.map(body => ({
             id: body.id,
             position: body.position,
-            rotation: body.rotation,
+            rotation: body.rotationPlanes,
+            rotationMatrix: body.rotationMatrix,
             feedback: body.physicsFeedback,
             polytopeType: body.polytopeType
         }));

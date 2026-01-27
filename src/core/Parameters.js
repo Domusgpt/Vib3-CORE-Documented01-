@@ -19,6 +19,7 @@ export class ParameterManager {
             rot4dYW: 0.0,      // Y-W plane rotation (-6.28 to 6.28)
             rot4dZW: 0.0,      // Z-W plane rotation (-6.28 to 6.28)
             dimension: 3.5,    // Dimensional level (3.0 to 4.5)
+            projectionType: 0, // 4D projection mode (0=perspective,1=stereographic,2=orthographic)
             
             // Holographic Visualization
             gridDensity: 15,   // Geometric detail (4 to 30)
@@ -41,10 +42,11 @@ export class ParameterManager {
             rot4dXZ: { min: -6.28, max: 6.28, step: 0.01, type: 'float' },
             rot4dYZ: { min: -6.28, max: 6.28, step: 0.01, type: 'float' },
             // 4D Hyperspace Rotations
-            rot4dXW: { min: -2, max: 2, step: 0.01, type: 'float' },
-            rot4dYW: { min: -2, max: 2, step: 0.01, type: 'float' },
-            rot4dZW: { min: -2, max: 2, step: 0.01, type: 'float' },
+            rot4dXW: { min: -6.28, max: 6.28, step: 0.01, type: 'float' },
+            rot4dYW: { min: -6.28, max: 6.28, step: 0.01, type: 'float' },
+            rot4dZW: { min: -6.28, max: 6.28, step: 0.01, type: 'float' },
             dimension: { min: 3.0, max: 4.5, step: 0.01, type: 'float' },
+            projectionType: { min: 0, max: 2, step: 1, type: 'int' },
             gridDensity: { min: 4, max: 100, step: 0.1, type: 'float' },
             morphFactor: { min: 0, max: 2, step: 0.01, type: 'float' },
             chaos: { min: 0, max: 1, step: 0.01, type: 'float' },
