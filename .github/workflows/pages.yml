@@ -24,11 +24,34 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Create pages directory
+      - name: Build site
         run: |
-          # Deploy the VIB3+ SDK
           mkdir -p _site
-          cp -r sdk/* _site/
+
+          # Root pages
+          cp index.html _site/
+          cp index-kirigami.html _site/ 2>/dev/null || true
+
+          # Stylesheets for root page
+          cp -r styles _site/styles
+
+          # JavaScript modules for root page
+          cp -r js _site/js
+
+          # Demo pages (Geometric Alpha + others)
+          cp -r demo _site/demo
+
+          # SDK
+          cp -r sdk _site/sdk
+
+          # Source modules (referenced by some pages)
+          cp -r src _site/src 2>/dev/null || true
+
+          # Examples
+          cp -r examples _site/examples 2>/dev/null || true
+
+          echo "Site built. Contents:"
+          find _site -maxdepth 3 -type f | head -60
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
