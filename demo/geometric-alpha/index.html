@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Alpha - Visual Computation for Sports Betting</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Geometric Alpha</h1>
+            <p class="tagline">Visual Computation System for Sports Betting Bots</p>
+            <p class="philosophy">"The geometry IS the computation. The decision IS the shape."</p>
+        </header>
+
+        <!-- Main Dashboard -->
+        <main class="dashboard">
+            <!-- Left Panel: Geometry Visualization -->
+            <section class="panel geometry-panel">
+                <h2>4D Edge Space</h2>
+                <div class="canvas-container">
+                    <canvas id="geometry-canvas" width="400" height="400"></canvas>
+                    <div class="canvas-overlay">
+                        <span id="attractor-label" class="attractor-badge">WAITING</span>
+                    </div>
+                </div>
+                <div class="geometry-stats">
+                    <div class="stat">
+                        <span class="stat-label">Crystallization</span>
+                        <div class="stat-bar">
+                            <div id="crystal-bar" class="stat-fill" style="width: 0%"></div>
+                        </div>
+                        <span id="crystal-value" class="stat-value">0%</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Portfolio Energy</span>
+                        <div class="stat-bar">
+                            <div id="energy-bar" class="stat-fill energy" style="width: 0%"></div>
+                        </div>
+                        <span id="energy-value" class="stat-value">0.00</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Signal Strength</span>
+                        <div class="stat-bar">
+                            <div id="signal-bar" class="stat-fill signal" style="width: 0%"></div>
+                        </div>
+                        <span id="signal-value" class="stat-value">NOISE</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Center Panel: 6-Channel Display -->
+            <section class="panel channels-panel">
+                <h2>6-Channel Bivector Rotation</h2>
+                <div class="channels-grid">
+                    <div class="channel" data-channel="0">
+                        <div class="channel-header">
+                            <span class="channel-plane">XY</span>
+                            <span class="channel-name">Edge Magnitude</span>
+                        </div>
+                        <div class="channel-viz">
+                            <canvas id="channel-0" width="80" height="80"></canvas>
+                        </div>
+                        <div class="channel-value" id="ch-0-value">0.00</div>
+                        <div class="channel-desc">Planar spin intensity</div>
+                    </div>
+                    <div class="channel" data-channel="1">
+                        <div class="channel-header">
+                            <span class="channel-plane">ZW</span>
+                            <span class="channel-name">Confidence</span>
+                        </div>
+                        <div class="channel-viz">
+                            <canvas id="channel-1" width="80" height="80"></canvas>
+                        </div>
+                        <div class="channel-value" id="ch-1-value">0.00</div>
+                        <div class="channel-desc">"Inside-out" distortion</div>
+                    </div>
+                    <div class="channel" data-channel="2">
+                        <div class="channel-header">
+                            <span class="channel-plane">XZ</span>
+                            <span class="channel-name">Time Pressure</span>
+                        </div>
+                        <div class="channel-viz">
+                            <canvas id="channel-2" width="80" height="80"></canvas>
+                        </div>
+                        <div class="channel-value" id="ch-2-value">0.00</div>
+                        <div class="channel-desc">Shear with urgency</div>
+                    </div>
+                    <div class="channel" data-channel="3">
+                        <div class="channel-header">
+                            <span class="channel-plane">YW</span>
+                            <span class="channel-name">Correlation</span>
+                        </div>
+                        <div class="channel-viz">
+                            <canvas id="channel-3" width="80" height="80"></canvas>
+                        </div>
+                        <div class="channel-value" id="ch-3-value">0.00</div>
+                        <div class="channel-desc">Counter-shear risk</div>
+                    </div>
+                    <div class="channel" data-channel="4">
+                        <div class="channel-header">
+                            <span class="channel-plane">XW</span>
+                            <span class="channel-name">Market Efficiency</span>
+                        </div>
+                        <div class="channel-viz">
+                            <canvas id="channel-4" width="80" height="80"></canvas>
+                        </div>
+                        <div class="channel-value" id="ch-4-value">0.00</div>
+                        <div class="channel-desc">Volumetric expansion</div>
+                    </div>
+                    <div class="channel" data-channel="5">
+                        <div class="channel-header">
+                            <span class="channel-plane">YZ</span>
+                            <span class="channel-name">Momentum</span>
+                        </div>
+                        <div class="channel-viz">
+                            <canvas id="channel-5" width="80" height="80"></canvas>
+                        </div>
+                        <div class="channel-value" id="ch-5-value">0.00</div>
+                        <div class="channel-desc">Edge breathing</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Opportunities & Decision -->
+            <section class="panel decision-panel">
+                <h2>Live Opportunities</h2>
+                <div id="opportunities-list" class="opportunities-list">
+                    <!-- Populated by JS -->
+                </div>
+
+                <h2>Bot Decision</h2>
+                <div id="decision-output" class="decision-output">
+                    <div class="decision-action" id="decision-action">WAITING</div>
+                    <div class="decision-details" id="decision-details">
+                        <p>Feed opportunities to generate geometric decision...</p>
+                    </div>
+                    <div class="decision-allocations" id="decision-allocations">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Attractor States Reference -->
+        <section class="attractors-reference">
+            <h2>Attractor States</h2>
+            <div class="attractors-grid">
+                <div class="attractor-card stable">
+                    <div class="attractor-icon">◈</div>
+                    <div class="attractor-name">STABLE_EDGE</div>
+                    <div class="attractor-action">EXECUTE</div>
+                    <div class="attractor-desc">Crystallized geometry - clear opportunity</div>
+                </div>
+                <div class="attractor-card emerging">
+                    <div class="attractor-icon">◇</div>
+                    <div class="attractor-name">EMERGING_EDGE</div>
+                    <div class="attractor-action">PREPARE</div>
+                    <div class="attractor-desc">Coalescing - opportunity developing</div>
+                </div>
+                <div class="attractor-card closing">
+                    <div class="attractor-icon">⧗</div>
+                    <div class="attractor-name">CLOSING_WINDOW</div>
+                    <div class="attractor-action">EXECUTE (reduced)</div>
+                    <div class="attractor-desc">Time-sheared - act now or miss</div>
+                </div>
+                <div class="attractor-card correlated">
+                    <div class="attractor-icon">⬡</div>
+                    <div class="attractor-name">CORRELATED_CLUSTER</div>
+                    <div class="attractor-action">REDUCE</div>
+                    <div class="attractor-desc">Cross-sheared - reduce exposure</div>
+                </div>
+                <div class="attractor-card efficient">
+                    <div class="attractor-icon">●</div>
+                    <div class="attractor-name">EFFICIENT_MARKET</div>
+                    <div class="attractor-action">PASS</div>
+                    <div class="attractor-desc">Contracted - no edge available</div>
+                </div>
+                <div class="attractor-card chaos">
+                    <div class="attractor-icon">✳</div>
+                    <div class="attractor-name">UNSTABLE_CHAOS</div>
+                    <div class="attractor-action">WAIT</div>
+                    <div class="attractor-desc">Chaotic - wait for clarity</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Controls -->
+        <section class="controls">
+            <h2>Simulation Controls</h2>
+            <div class="control-buttons">
+                <button id="btn-load-sample" class="btn btn-primary">Load Sample MLB Data</button>
+                <button id="btn-simulate" class="btn btn-secondary">Simulate Market Movement</button>
+                <button id="btn-randomize" class="btn btn-secondary">Randomize Opportunities</button>
+                <button id="btn-clear" class="btn btn-danger">Clear All</button>
+            </div>
+            <div class="bankroll-control">
+                <label for="bankroll-input">Bankroll: $</label>
+                <input type="number" id="bankroll-input" value="10000" min="100" step="100">
+            </div>
+        </section>
+
+        <!-- Explanation -->
+        <section class="explanation">
+            <h2>How It Works</h2>
+            <div class="explanation-grid">
+                <div class="explanation-card">
+                    <h3>1. Data → Channels</h3>
+                    <p>Betting signals (edge, confidence, time, correlation, efficiency, momentum) are mapped to 6 data channels, each controlling a rotation plane in 4D space.</p>
+                </div>
+                <div class="explanation-card">
+                    <h3>2. Channels → Geometry</h3>
+                    <p>The 6 channels drive rotations in the XY, ZW, XZ, YW, XW, and YZ planes. Each opportunity becomes a point in 4D "edge space" with rotation encoding its characteristics.</p>
+                </div>
+                <div class="explanation-card">
+                    <h3>3. Geometry → Attractor</h3>
+                    <p>The system detects which "attractor state" the geometry is in. Stable, crystallized geometry indicates a clear betting opportunity. Chaotic geometry means wait.</p>
+                </div>
+                <div class="explanation-card">
+                    <h3>4. Attractor → Decision</h3>
+                    <p>The bot doesn't read numbers - it reads geometric configuration. When geometry reaches STABLE_EDGE attractor, it signals EXECUTE with calculated allocations.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Geometric Alpha - Visual Computation for Sports Betting</p>
+            <p class="attribution">Part of the VIB3+ Engine - A Paul Phillips Manifestation</p>
+            <p class="links">
+                <a href="https://github.com/Domusgpt/Vib3-CORE-Documented01-">GitHub</a> |
+                <a href="#explanation">Documentation</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="geometry-engine.js"></script>
+    <script src="visualization.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
