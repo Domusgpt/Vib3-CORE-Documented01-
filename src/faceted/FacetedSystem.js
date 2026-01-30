@@ -40,6 +40,13 @@ const FRAGMENT_SHADER_GLSL = `
     uniform float u_chaos;
     uniform float u_hue;
     uniform float u_intensity;
+    uniform float u_saturation;
+    uniform float u_speed;
+    uniform float u_mouseIntensity;
+    uniform float u_clickIntensity;
+    uniform float u_bass;
+    uniform float u_mid;
+    uniform float u_high;
 
     // 6 Rotation matrices for complete 4D rotation
     mat4 rotateXY(float angle) {
@@ -185,9 +192,28 @@ const FRAGMENT_SHADER_GLSL = `
         }
     }
 
+    vec3 hsl2rgb(float h, float s, float l) {
+        float c = (1.0 - abs(2.0 * l - 1.0)) * s;
+        float hp = h * 6.0;
+        float x = c * (1.0 - abs(mod(hp, 2.0) - 1.0));
+        float m = l - c * 0.5;
+        vec3 rgb;
+        if (hp < 1.0)      rgb = vec3(c, x, 0.0);
+        else if (hp < 2.0) rgb = vec3(x, c, 0.0);
+        else if (hp < 3.0) rgb = vec3(0.0, c, x);
+        else if (hp < 4.0) rgb = vec3(0.0, x, c);
+        else if (hp < 5.0) rgb = vec3(x, 0.0, c);
+        else               rgb = vec3(c, 0.0, x);
+        return rgb + m;
+    }
+
     void main() {
+        // Audio-reactive modifications
+        float audioDensity = u_gridDensity + u_bass * 3.0;
+        float audioMorph = u_morphFactor + u_mid * 0.8;
+
         vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / min(u_resolution.x, u_resolution.y);
-        uv *= 2.0 / u_gridDensity;
+        uv *= 2.0 / audioDensity;
 
         // Create 4D point
         vec4 pos = vec4(uv, sin(u_time * 0.3) * 0.5, cos(u_time * 0.2) * 0.5);
@@ -195,8 +221,8 @@ const FRAGMENT_SHADER_GLSL = `
         // Apply full 6D rotation
         pos = apply6DRotation(pos);
 
-        // Apply morphing
-        pos *= u_morphFactor;
+        // Apply morphing (audio-reactive)
+        pos *= audioMorph;
         pos += vec4(sin(u_time * 0.1), cos(u_time * 0.15), sin(u_time * 0.12), cos(u_time * 0.18)) * u_chaos;
 
         // Get distance
@@ -206,15 +232,13 @@ const FRAGMENT_SHADER_GLSL = `
         float edge = smoothstep(0.02, 0.0, abs(dist));
         float fill = smoothstep(0.1, 0.0, dist) * 0.3;
 
-        // Color based on hue and distance
-        float hueVal = u_hue / 360.0 + dist * 0.2 + u_time * 0.05;
-        vec3 color = vec3(
-            0.5 + 0.5 * cos(hueVal * 6.28),
-            0.5 + 0.5 * cos((hueVal + 0.33) * 6.28),
-            0.5 + 0.5 * cos((hueVal + 0.67) * 6.28)
-        );
+        // Color based on hue, saturation, and distance
+        float hueVal = u_hue / 360.0 + dist * 0.2 + u_time * 0.05 + u_high * 0.3;
+        vec3 color = hsl2rgb(fract(hueVal), u_saturation, 0.5 + edge * 0.2);
 
-        float alpha = (edge + fill) * u_intensity;
+        // Click intensity boost
+        float clickBoost = 1.0 + u_clickIntensity * 0.5;
+        float alpha = (edge + fill) * u_intensity * clickBoost;
         gl_FragColor = vec4(color * alpha, alpha);
     }
 `;
@@ -353,29 +377,47 @@ struct VertexOutput {
     @location(0) uv: vec2<f32>,
 };
 
+fn hsl2rgb_w(h: f32, s: f32, l: f32) -> vec3<f32> {
+    let c = (1.0 - abs(2.0 * l - 1.0)) * s;
+    let hp = h * 6.0;
+    let x = c * (1.0 - abs(hp % 2.0 - 1.0));
+    let m = l - c * 0.5;
+    var rgb: vec3<f32>;
+    if (hp < 1.0)      { rgb = vec3<f32>(c, x, 0.0); }
+    else if (hp < 2.0) { rgb = vec3<f32>(x, c, 0.0); }
+    else if (hp < 3.0) { rgb = vec3<f32>(0.0, c, x); }
+    else if (hp < 4.0) { rgb = vec3<f32>(0.0, x, c); }
+    else if (hp < 5.0) { rgb = vec3<f32>(x, 0.0, c); }
+    else               { rgb = vec3<f32>(c, 0.0, x); }
+    return rgb + m;
+}
+
 @fragment
 fn main(input: VertexOutput) -> @location(0) vec4<f32> {
+    // Audio-reactive modifications
+    let audioDensity = u.gridDensity + u.bass * 3.0;
+    let audioMorph = u.morphFactor + u.mid * 0.8;
+
     let fragCoord = input.position.xy;
     var uv2 = (fragCoord - 0.5 * u.resolution) / min(u.resolution.x, u.resolution.y);
-    uv2 *= 2.0 / u.gridDensity;
+    uv2 *= 2.0 / audioDensity;
 
     var pos = vec4<f32>(uv2, sin(u.time * 0.3) * 0.5, cos(u.time * 0.2) * 0.5);
     pos = apply6DRot(pos);
-    pos *= u.morphFactor;
+    pos *= audioMorph;
     pos += vec4<f32>(sin(u.time * 0.1), cos(u.time * 0.15), sin(u.time * 0.12), cos(u.time * 0.18)) * u.chaos;
 
     let dist = geom(pos, u.geometry);
     let edge = smoothstep(0.02, 0.0, abs(dist));
     let fill = smoothstep(0.1, 0.0, dist) * 0.3;
 
-    let hueVal = u.hue / 360.0 + dist * 0.2 + u.time * 0.05;
-    let color = vec3<f32>(
-        0.5 + 0.5 * cos(hueVal * 6.28),
-        0.5 + 0.5 * cos((hueVal + 0.33) * 6.28),
-        0.5 + 0.5 * cos((hueVal + 0.67) * 6.28)
-    );
+    // Color based on hue, saturation, and distance
+    let hueVal = u.hue / 360.0 + dist * 0.2 + u.time * 0.05 + u.high * 0.3;
+    let color = hsl2rgb_w(fract(hueVal), u.saturation, 0.5 + edge * 0.2);
 
-    let alpha = (edge + fill) * u.intensity;
+    // Click intensity boost
+    let clickBoost = 1.0 + u.clickIntensity * 0.5;
+    let alpha = (edge + fill) * u.intensity * clickBoost;
     return vec4<f32>(color * alpha, alpha);
 }
 `;
@@ -401,7 +443,13 @@ export class FacetedSystem {
             speed: 1.0,
             hue: 200,
             intensity: 0.7,
-            dimension: 3.5
+            saturation: 0.8,
+            dimension: 3.5,
+            mouseIntensity: 0.0,
+            clickIntensity: 0.0,
+            bass: 0.0,
+            mid: 0.0,
+            high: 0.0
         };
 
         /** @type {UnifiedRenderBridge|null} */
@@ -632,7 +680,14 @@ export class FacetedSystem {
             u_morphFactor: this.parameters.morphFactor,
             u_chaos: this.parameters.chaos,
             u_hue: this.parameters.hue,
-            u_intensity: this.parameters.intensity
+            u_intensity: this.parameters.intensity,
+            u_saturation: this.parameters.saturation,
+            u_speed: this.parameters.speed,
+            u_mouseIntensity: this.parameters.mouseIntensity || 0,
+            u_clickIntensity: this.parameters.clickIntensity || 0,
+            u_bass: this.parameters.bass || 0,
+            u_mid: this.parameters.mid || 0,
+            u_high: this.parameters.high || 0
         };
     }
 
@@ -689,6 +744,13 @@ export class FacetedSystem {
      */
     renderFrame() {
         if (!this.isActive) return;
+
+        // Apply audio reactivity
+        if (window.audioEnabled && window.audioReactive) {
+            this.parameters.bass = window.audioReactive.bass || 0;
+            this.parameters.mid = window.audioReactive.mid || 0;
+            this.parameters.high = window.audioReactive.high || 0;
+        }
 
         this.time += 0.016 * this.parameters.speed;
 

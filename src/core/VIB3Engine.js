@@ -14,6 +14,7 @@ import { FacetedSystem } from '../faceted/FacetedSystem.js';
 import { RealHolographicSystem } from '../holograms/RealHolographicSystem.js';
 import { ReactivityManager } from '../reactivity/ReactivityManager.js';
 import { ReactivityConfig } from '../reactivity/ReactivityConfig.js';
+import { SpatialInputSystem } from '../reactivity/SpatialInputSystem.js';
 
 export class VIB3Engine {
     /**
@@ -41,9 +42,24 @@ export class VIB3Engine {
             this.updateCurrentSystemParameters();
         });
 
+        /** @type {SpatialInputSystem} Universal spatial input (evolved tilt/perspective/gamepad) */
+        this.spatialInput = new SpatialInputSystem({
+            sensitivity: options.spatialSensitivity || 1.0,
+            smoothing: options.spatialSmoothing || 0.15,
+            onParameterUpdate: (name, value) => {
+                this.parameters.setParameter(name, value);
+                this.updateCurrentSystemParameters();
+            }
+        });
+
         // Load initial reactivity config if provided
         if (options.reactivityConfig) {
             this.reactivity.loadConfig(options.reactivityConfig);
+        }
+
+        // Load initial spatial profile if provided
+        if (options.spatialProfile) {
+            this.spatialInput.loadProfile(options.spatialProfile);
         }
     }
 
@@ -377,6 +393,68 @@ export class VIB3Engine {
     }
 
     // ========================================================================
+    // Spatial Input System
+    // ========================================================================
+
+    /**
+     * Get the SpatialInputSystem instance
+     * @returns {SpatialInputSystem}
+     */
+    getSpatialInputSystem() {
+        return this.spatialInput;
+    }
+
+    /**
+     * Enable spatial input with a named profile
+     * @param {string} [profile='cardTilt'] - Profile name
+     * @returns {boolean}
+     */
+    enableSpatialInput(profile = 'cardTilt') {
+        this.spatialInput.loadProfile(profile);
+        this.spatialInput.enable();
+        return true;
+    }
+
+    /**
+     * Disable spatial input
+     */
+    disableSpatialInput() {
+        this.spatialInput.disable();
+    }
+
+    /**
+     * Switch spatial input profile
+     * @param {string} profile - Profile name
+     */
+    setSpatialProfile(profile) {
+        this.spatialInput.loadProfile(profile);
+    }
+
+    /**
+     * Feed external spatial data (for programmatic/API use)
+     * @param {object} data - Spatial state data {pitch, yaw, roll, x, y, z}
+     */
+    feedSpatialInput(data) {
+        this.spatialInput.feedInput('programmatic', data);
+    }
+
+    /**
+     * Set spatial input sensitivity
+     * @param {number} value - 0.1 to 5.0
+     */
+    setSpatialSensitivity(value) {
+        this.spatialInput.setSensitivity(value);
+    }
+
+    /**
+     * Toggle dramatic spatial mode (8x amplification)
+     * @param {boolean} enabled
+     */
+    setSpatialDramaticMode(enabled) {
+        this.spatialInput.setDramaticMode(enabled);
+    }
+
+    // ========================================================================
     // Geometry
     // ========================================================================
 
@@ -424,9 +502,11 @@ export class VIB3Engine {
             parameters: this.parameters.getAllParameters(),
             reactivity: this.reactivity.getConfig(),
             reactivityActive: this.reactivity.isActive,
+            spatialInput: this.spatialInput.exportConfig(),
+            spatialActive: this.spatialInput.enabled,
             backend: this.getActiveBackendType(),
             timestamp: new Date().toISOString(),
-            version: '1.1.0'
+            version: '1.2.0'
         };
     }
 
@@ -488,12 +568,23 @@ export class VIB3Engine {
         if (state.reactivityActive) {
             this.startReactivity();
         }
+        if (state.spatialInput && typeof state.spatialInput === 'object') {
+            this.spatialInput.importConfig(state.spatialInput);
+        }
+        if (state.spatialActive) {
+            this.spatialInput.enable();
+        }
     }
 
     /**
      * Destroy engine and clean up
      */
     destroy() {
+        // Stop and destroy spatial input
+        if (this.spatialInput) {
+            this.spatialInput.destroy();
+        }
+
         // Stop and destroy reactivity
         if (this.reactivity) {
             this.reactivity.destroy();

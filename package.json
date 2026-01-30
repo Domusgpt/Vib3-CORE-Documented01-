@@ -1,6 +1,6 @@
 {
   "name": "@vib3/sdk",
-  "version": "1.9.0",
+  "version": "2.0.0",
   "description": "VIB3+ 4D Visualization SDK - Unified engine with 6D rotation, MCP agentic integration, and cross-platform support",
   "type": "module",
   "main": "src/core/VIB3Engine.js",
@@ -190,6 +190,66 @@
     "./viewer/gallery-ui": {
       "import": "./src/viewer/GalleryUI.js"
     },
+    "./spatial-input": {
+      "import": "./src/reactivity/SpatialInputSystem.js"
+    },
+    "./reactivity": {
+      "import": "./src/reactivity/ReactivityManager.js"
+    },
+    "./reactivity/config": {
+      "import": "./src/reactivity/ReactivityConfig.js"
+    },
+    "./creative/color-presets": {
+      "import": "./src/creative/ColorPresetsSystem.js"
+    },
+    "./creative/transitions": {
+      "import": "./src/creative/TransitionAnimator.js"
+    },
+    "./creative/post-processing": {
+      "import": "./src/creative/PostProcessingPipeline.js"
+    },
+    "./creative/timeline": {
+      "import": "./src/creative/ParameterTimeline.js"
+    },
+    "./integrations/react": {
+      "import": "./src/integrations/frameworks/Vib3React.js"
+    },
+    "./integrations/vue": {
+      "import": "./src/integrations/frameworks/Vib3Vue.js"
+    },
+    "./integrations/svelte": {
+      "import": "./src/integrations/frameworks/Vib3Svelte.js"
+    },
+    "./integrations/figma": {
+      "import": "./src/integrations/FigmaPlugin.js"
+    },
+    "./integrations/threejs": {
+      "import": "./src/integrations/ThreeJsPackage.js"
+    },
+    "./integrations/touchdesigner": {
+      "import": "./src/integrations/TouchDesignerExport.js"
+    },
+    "./integrations/obs": {
+      "import": "./src/integrations/OBSMode.js"
+    },
+    "./advanced/webxr": {
+      "import": "./src/advanced/WebXRRenderer.js"
+    },
+    "./advanced/compute": {
+      "import": "./src/advanced/WebGPUCompute.js"
+    },
+    "./advanced/midi": {
+      "import": "./src/advanced/MIDIController.js"
+    },
+    "./advanced/ai-presets": {
+      "import": "./src/advanced/AIPresetGenerator.js"
+    },
+    "./advanced/offscreen": {
+      "import": "./src/advanced/OffscreenWorker.js"
+    },
+    "./tools/shader-sync": {
+      "import": "./tools/shader-sync-verify.js"
+    },
     "./llm": {
       "import": "./src/llm/LLMParameterInterface.js"
     },
@@ -266,7 +326,20 @@
     "geometric-processing",
     "ar",
     "vr",
-    "mixed-reality"
+    "mixed-reality",
+    "webgpu",
+    "midi",
+    "spatial-input",
+    "audio-reactive",
+    "post-processing",
+    "shader",
+    "visualization",
+    "react",
+    "vue",
+    "svelte",
+    "threejs",
+    "touchdesigner",
+    "obs"
   ],
   "author": {
     "name": "Paul Phillips",
@@ -298,11 +371,13 @@
     "cli:telemetry": "node tools/cli/agent-cli.js telemetry:export",
     "storybook": "storybook dev -p 6006",
     "build:storybook": "storybook build",
-    "demo:generate": "node scripts/generate-demo-assets.js"
+    "demo:generate": "node scripts/generate-demo-assets.js",
+    "verify:shaders": "node tools/shader-sync-verify.js"
   },
   "packageManager": "pnpm@9.4.0",
   "files": [
     "src/",
+    "tools/",
     "types/",
     "DOCS/",
     "README.md"

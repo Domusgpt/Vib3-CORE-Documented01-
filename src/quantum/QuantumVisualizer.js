@@ -789,7 +789,7 @@ void main() {
             rot4dYW: this.gl.getUniformLocation(this.program, 'u_rot4dYW'),
             rot4dZW: this.gl.getUniformLocation(this.program, 'u_rot4dZW'),
             mouseIntensity: this.gl.getUniformLocation(this.program, 'u_mouseIntensity'),
-            clickIntensity: this.gl.getUniformLocation(this.program, 'u_mouseIntensity'),
+            clickIntensity: this.gl.getUniformLocation(this.program, 'u_clickIntensity'),
             roleIntensity: this.gl.getUniformLocation(this.program, 'u_roleIntensity')
         };
     }
