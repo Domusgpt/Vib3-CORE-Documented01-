@@ -14,10 +14,18 @@ export class RealHolographicSystem {
         this.baseVariants = 30; // Original 30 variations
         this.totalVariants = 30;
         this.isActive = false;
-        
+
+        // Bridge rendering state
+        /** @type {MultiCanvasBridge|null} */
+        this._multiCanvasBridge = null;
+        /** @type {'direct'|'bridge'} */
+        this._renderMode = 'direct';
+        /** @type {number} time accumulator for bridge rendering (ms) */
+        this._bridgeTime = 0;
+
         // Conditional reactivity: Use built-in only if ReactivityManager not active
         this.useBuiltInReactivity = !window.reactivityManager;
-        
+
         // Audio reactivity system
         this.audioEnabled = false;
         this.audioContext = null;
@@ -99,9 +107,36 @@ export class RealHolographicSystem {
     }
 
     /**
+     * Initialize the Holographic system through UnifiedRenderBridge / MultiCanvasBridge.
+     * Wires all 5 layers through the bridge for WebGL/WebGPU abstraction.
+     * Falls back to direct WebGL if bridge initialization fails.
+     *
+     * @param {object} [options]
+     * @param {boolean} [options.preferWebGPU=true]
+     * @param {boolean} [options.debug=false]
+     * @returns {Promise<boolean>} True if bridge mode activated
+     */
+    async initWithBridge(options = {}) {
+        try {
+            const bridge = await this.createMultiCanvasBridge(options);
+            if (bridge && bridge.initialized) {
+                this._renderMode = 'bridge';
+                this._bridgeTime = 0;
+                console.log(`Holographic System initialized via ${bridge.backendType} bridge (${bridge.layerCount} layers)`);
+                return true;
+            }
+            console.warn('Holographic bridge init returned no bridge, staying in direct mode');
+            return false;
+        } catch (e) {
+            console.error('Holographic bridge init failed, staying in direct mode:', e);
+            this._renderMode = 'direct';
+            return false;
+        }
+    }
+
+    /**
      * Create a MultiCanvasBridge for WebGPU rendering.
      * Returns a configured bridge with holographic shaders compiled on all layers.
-     * Use this when migrating from direct WebGL to the unified bridge system.
      *
      * @param {object} [options]
      * @param {boolean} [options.preferWebGPU=true]
@@ -127,13 +162,93 @@ export class RealHolographicSystem {
         const bridge = new MultiCanvasBridge();
         await bridge.initialize({ canvases: canvasMap, preferWebGPU: options.preferWebGPU !== false });
 
-        const sources = await shaderLoader.loadShaderPair('holographic', 'holographic/holographic.frag');
+        // Load external shader files, fall back to inline if unavailable
+        let sources = {
+            glslVertex: 'attribute vec2 a_position;\nvoid main() { gl_Position = vec4(a_position, 0.0, 1.0); }',
+            glslFragment: null,
+            wgslFragment: null
+        };
+
+        try {
+            const external = await shaderLoader.loadShaderPair('holographic', 'holographic/holographic.frag');
+            if (external.glslVertex) sources.glslVertex = external.glslVertex;
+            if (external.glslFragment) sources.glslFragment = external.glslFragment;
+            if (external.wgslFragment) sources.wgslFragment = external.wgslFragment;
+        } catch (loadErr) {
+            console.warn('Holographic external shader load failed, using inline fallback');
+        }
+
         if (sources.glslFragment || sources.wgslFragment) {
-            bridge.compileShaderAll('holographic', sources);
+            const result = bridge.compileShaderAll('holographic', sources);
+            if (result.failed.length > 0) {
+                console.warn(`Holographic shader compilation failed on layers: ${result.failed.join(', ')}`);
+            }
         }
 
         this._multiCanvasBridge = bridge;
         return bridge;
+    }
+
+    /**
+     * Build the VIB3+ standard uniform object from current parameters and audio data.
+     * Used by bridge rendering to send uniforms to external shader programs.
+     * @private
+     * @returns {object}
+     */
+    _buildSharedUniforms() {
+        const params = this.getParameters();
+        const audio = this.audioData || { bass: 0, mid: 0, high: 0 };
+
+        return {
+            u_time: this._bridgeTime,
+            u_resolution: null, // Set per-layer by MultiCanvasBridge
+            u_geometry: params.geometry || 0,
+            u_rot4dXY: params.rot4dXY || 0,
+            u_rot4dXZ: params.rot4dXZ || 0,
+            u_rot4dYZ: params.rot4dYZ || 0,
+            u_rot4dXW: params.rot4dXW || 0,
+            u_rot4dYW: params.rot4dYW || 0,
+            u_rot4dZW: params.rot4dZW || 0,
+            u_dimension: params.dimension || 3.5,
+            u_gridDensity: params.gridDensity || 15,
+            u_morphFactor: params.morphFactor || 1.0,
+            u_chaos: params.chaos || 0.2,
+            u_speed: params.speed || 1.0,
+            u_hue: params.hue || 320,
+            u_intensity: params.intensity || 0.6,
+            u_saturation: params.saturation || 0.8,
+            u_mouseIntensity: 0,
+            u_clickIntensity: this.colorBurstIntensity || 0,
+            u_bass: audio.bass || 0,
+            u_mid: audio.mid || 0,
+            u_high: audio.high || 0
+        };
+    }
+
+    /**
+     * Render a single frame via the MultiCanvasBridge.
+     * Sets shared uniforms and renders all 5 layers with the external holographic shader.
+     * @private
+     */
+    _renderBridgeFrame() {
+        if (!this._multiCanvasBridge || !this._multiCanvasBridge.initialized) return;
+
+        this._bridgeTime += 16; // ~60fps increment
+
+        const uniforms = this._buildSharedUniforms();
+
+        // Set canvas resolution per layer before rendering
+        for (const layerName of this._multiCanvasBridge.layerNames) {
+            const bridge = this._multiCanvasBridge.getBridge(layerName);
+            if (bridge && bridge.canvas) {
+                this._multiCanvasBridge.setLayerUniforms(layerName, {
+                    u_resolution: [bridge.canvas.width, bridge.canvas.height]
+                });
+            }
+        }
+
+        this._multiCanvasBridge.setSharedUniforms(uniforms);
+        this._multiCanvasBridge.renderAll('holographic', { clearColor: [0, 0, 0, 0] });
     }
 
     setActive(active) {
@@ -664,18 +779,22 @@ export class RealHolographicSystem {
             if (this.isActive) {
                 // Update audio reactivity
                 this.updateAudio();
-                
-                // Render all visualizers
-                this.visualizers.forEach(visualizer => {
-                    visualizer.render();
-                });
+
+                if (this._renderMode === 'bridge') {
+                    this._renderBridgeFrame();
+                } else {
+                    // Direct mode: render all visualizers
+                    this.visualizers.forEach(visualizer => {
+                        visualizer.render();
+                    });
+                }
             }
-            
+
             requestAnimationFrame(render);
         };
-        
+
         render();
-        console.log('🎬 REAL Holographic render loop started');
+        console.log(`🎬 REAL Holographic render loop started (${this._renderMode} mode)`);
     }
     
     getVariantName(variant = this.currentVariant) {
@@ -683,6 +802,13 @@ export class RealHolographicSystem {
     }
     
     destroy() {
+        // Dispose bridge if active
+        if (this._multiCanvasBridge) {
+            this._multiCanvasBridge.dispose();
+            this._multiCanvasBridge = null;
+        }
+        this._renderMode = 'direct';
+
         this.visualizers.forEach(visualizer => {
             if (visualizer.destroy) {
                 visualizer.destroy();
@@ -725,15 +851,19 @@ export class RealHolographicSystem {
      * @param {number} [pixelRatio=1] - Device pixel ratio
      */
     resize(width, height, pixelRatio = 1) {
-        this.visualizers.forEach(visualizer => {
-            if (visualizer.canvas && visualizer.gl) {
-                visualizer.canvas.width = width * pixelRatio;
-                visualizer.canvas.height = height * pixelRatio;
-                visualizer.canvas.style.width = `${width}px`;
-                visualizer.canvas.style.height = `${height}px`;
-                visualizer.gl.viewport(0, 0, visualizer.canvas.width, visualizer.canvas.height);
-            }
-        });
+        if (this._renderMode === 'bridge' && this._multiCanvasBridge) {
+            this._multiCanvasBridge.resizeAll(width, height, pixelRatio);
+        } else {
+            this.visualizers.forEach(visualizer => {
+                if (visualizer.canvas && visualizer.gl) {
+                    visualizer.canvas.width = width * pixelRatio;
+                    visualizer.canvas.height = height * pixelRatio;
+                    visualizer.canvas.style.width = `${width}px`;
+                    visualizer.canvas.style.height = `${height}px`;
+                    visualizer.gl.viewport(0, 0, visualizer.canvas.width, visualizer.canvas.height);
+                }
+            });
+        }
         console.log(`🌌 Holographic resized to ${width}x${height} @${pixelRatio}x`);
     }
 
@@ -754,21 +884,26 @@ export class RealHolographicSystem {
             this.audioData = frameState.audio;
         }
 
-        // Render all visualizers
-        this.visualizers.forEach(visualizer => {
-            if (visualizer.render) {
-                visualizer.render();
-            }
-        });
+        if (this._renderMode === 'bridge') {
+            this._renderBridgeFrame();
+        } else {
+            // Render all visualizers in direct mode
+            this.visualizers.forEach(visualizer => {
+                if (visualizer.render) {
+                    visualizer.render();
+                }
+            });
+        }
     }
 
     /**
      * Get the current rendering backend type.
-     * Holographic uses direct WebGL with 5-layer canvas architecture.
-     * WebGPU multi-layer support is planned for a future release.
-     * @returns {'direct-webgl'}
+     * @returns {'direct-webgl'|string}
      */
     getBackendType() {
+        if (this._renderMode === 'bridge' && this._multiCanvasBridge) {
+            return this._multiCanvasBridge.backendType || 'bridge';
+        }
         return 'direct-webgl';
     }
 
