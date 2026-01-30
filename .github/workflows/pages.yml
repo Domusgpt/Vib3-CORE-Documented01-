@@ -1,0 +1,76 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master, 'claude/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Create pages directory
+        run: |
+          # Deploy the VIB3+ visualizations and test pages
+          mkdir -p _site/docs/vib3-exports
+
+          # Disable Jekyll processing (required for ES module paths)
+          touch _site/.nojekyll
+
+          # Root index (redirects to WebGPU live page)
+          cp index.html _site/
+
+          # Gallery, WebGPU live page, test hub, and all standalone visualizations
+          cp docs/.nojekyll _site/docs/ 2>/dev/null || true
+          cp docs/index.html _site/docs/
+          cp docs/*.html _site/docs/ 2>/dev/null || true
+
+          # 9 shader export visualizations
+          cp docs/vib3-exports/*.html _site/docs/vib3-exports/
+
+          # E2E test harness (for manual testing on devices)
+          mkdir -p _site/tests
+          cp tests/e2e-harness.html _site/tests/ 2>/dev/null || true
+
+          # Source modules (needed by WebGPU live page and test harness)
+          # The live page imports ES modules from ../src/ relative to docs/
+          cp -r src/ _site/src/
+
+          echo "=== Deployed files ==="
+          find _site -name "*.html" | sort
+          echo "Total HTML files: $(find _site -name '*.html' | wc -l)"
+          echo ""
+          echo "=== WebGPU Live Page ==="
+          ls -la _site/docs/webgpu-live.html 2>/dev/null && echo "WebGPU live page: OK" || echo "WebGPU live page: MISSING"
+          echo "Source modules: $(find _site/src -name '*.js' | wc -l) JS files"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

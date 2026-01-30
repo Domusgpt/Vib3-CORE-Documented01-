@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>VIB3+ Live &mdash; Quantum | Faceted | Holographic</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 0;
+        }
+
+        /* HUD overlay */
+        #hud {
+            position: fixed;
+            top: 12px; left: 12px;
+            z-index: 10;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            pointer-events: none;
+            user-select: none;
+        }
+        #hud .backend-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        #hud .backend-badge.webgpu {
+            background: rgba(0,255,100,0.2);
+            color: #0f6;
+            border: 1px solid rgba(0,255,100,0.4);
+        }
+        #hud .backend-badge.webgl {
+            background: rgba(255,200,0,0.2);
+            color: #fc0;
+            border: 1px solid rgba(255,200,0,0.4);
+        }
+        #hud .backend-badge.error {
+            background: rgba(255,50,50,0.2);
+            color: #f44;
+            border: 1px solid rgba(255,50,50,0.4);
+        }
+        #hud .info-line {
+            opacity: 0.6;
+            line-height: 1.6;
+        }
+
+        /* System selector tabs */
+        #system-tabs {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            gap: 4px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        }
+        #system-tabs button {
+            padding: 6px 16px;
+            background: rgba(10,10,20,0.7);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            color: rgba(255,255,255,0.5);
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        #system-tabs button:hover {
+            background: rgba(30,30,50,0.85);
+            color: rgba(255,255,255,0.8);
+        }
+        #system-tabs button.active-quantum {
+            background: rgba(255,50,50,0.2);
+            border-color: rgba(255,100,50,0.6);
+            color: #f64;
+        }
+        #system-tabs button.active-faceted {
+            background: rgba(0,255,255,0.15);
+            border-color: rgba(0,255,255,0.5);
+            color: #0ff;
+        }
+        #system-tabs button.active-holographic {
+            background: rgba(200,0,255,0.15);
+            border-color: rgba(200,100,255,0.5);
+            color: #c8f;
+        }
+
+        /* Controls panel */
+        #controls {
+            position: fixed;
+            top: 12px; right: 12px;
+            z-index: 20;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 11px;
+            color: #e0e0e0;
+            background: rgba(10,10,20,0.85);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 16px;
+            width: 280px;
+            max-height: calc(100vh - 24px);
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        #controls.hidden {
+            transform: translateX(300px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #controls h3 {
+            color: #0ff;
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin: 12px 0 6px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        #controls h3:first-child { margin-top: 0; }
+        #controls label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 4px 0;
+            color: #999;
+        }
+        #controls label span.val {
+            color: #0f6;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: right;
+        }
+        #controls input[type="range"] {
+            width: 100%;
+            margin: 2px 0 8px;
+            accent-color: #0ff;
+            height: 4px;
+        }
+        #controls select {
+            width: 100%;
+            padding: 6px 8px;
+            background: rgba(0,0,0,0.5);
+            color: #0ff;
+            border: 1px solid rgba(0,255,255,0.3);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 11px;
+            margin: 4px 0 8px;
+        }
+        #controls button {
+            width: 100%;
+            padding: 8px;
+            background: rgba(0,255,255,0.12);
+            border: 1px solid rgba(0,255,255,0.3);
+            border-radius: 6px;
+            color: #0ff;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            margin: 4px 0;
+            letter-spacing: 1px;
+        }
+        #controls button:active {
+            background: rgba(0,255,255,0.3);
+        }
+
+        /* Toggle button */
+        #toggle-controls {
+            position: fixed;
+            top: 12px; right: 12px;
+            z-index: 30;
+            width: 36px; height: 36px;
+            background: rgba(10,10,20,0.85);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: #0ff;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: opacity 0.3s;
+        }
+        #toggle-controls.panel-open {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Bottom bar */
+        #bottom-bar {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 10px;
+            color: rgba(255,255,255,0.4);
+            text-align: center;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Scrollbar styling */
+        #controls::-webkit-scrollbar { width: 4px; }
+        #controls::-webkit-scrollbar-track { background: transparent; }
+        #controls::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.3); border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <!-- Canvases for each system -->
+    <canvas id="quantum-canvas" style="display:none;"></canvas>
+    <canvas id="faceted-canvas" style="display:none;"></canvas>
+    <canvas id="holographic-canvas" style="display:none;"></canvas>
+
+    <div id="hud">
+        <div id="backend-badge" class="backend-badge">INITIALIZING</div>
+        <div class="info-line" id="hud-system">System: --</div>
+        <div class="info-line" id="hud-geo">Geometry: --</div>
+        <div class="info-line" id="hud-fps">FPS: --</div>
+    </div>
+
+    <div id="system-tabs">
+        <button id="tab-quantum" onclick="switchSystem('quantum')">1 Quantum</button>
+        <button id="tab-faceted" onclick="switchSystem('faceted')">2 Faceted</button>
+        <button id="tab-holographic" onclick="switchSystem('holographic')">3 Holographic</button>
+    </div>
+
+    <div id="toggle-controls" onclick="togglePanel()">&#9776;</div>
+
+    <div id="controls" class="hidden">
+        <h3>Geometry</h3>
+        <select id="geo-select"></select>
+
+        <h3>6D Rotation</h3>
+        <label>XY <span class="val" id="val-xy">0.00</span></label>
+        <input type="range" id="rot-xy" min="0" max="6.283" step="0.01" value="0">
+        <label>XZ <span class="val" id="val-xz">0.00</span></label>
+        <input type="range" id="rot-xz" min="0" max="6.283" step="0.01" value="0">
+        <label>YZ <span class="val" id="val-yz">0.00</span></label>
+        <input type="range" id="rot-yz" min="0" max="6.283" step="0.01" value="0">
+        <label>XW (4D) <span class="val" id="val-xw">0.00</span></label>
+        <input type="range" id="rot-xw" min="0" max="6.283" step="0.01" value="0">
+        <label>YW (4D) <span class="val" id="val-yw">0.00</span></label>
+        <input type="range" id="rot-yw" min="0" max="6.283" step="0.01" value="0">
+        <label>ZW (4D) <span class="val" id="val-zw">0.00</span></label>
+        <input type="range" id="rot-zw" min="0" max="6.283" step="0.01" value="0">
+
+        <h3>Visual Parameters</h3>
+        <label>Grid Density <span class="val" id="val-grid">15</span></label>
+        <input type="range" id="param-grid" min="4" max="100" step="1" value="15">
+        <label>Morph Factor <span class="val" id="val-morph">1.00</span></label>
+        <input type="range" id="param-morph" min="0" max="2" step="0.01" value="1.0">
+        <label>Chaos <span class="val" id="val-chaos">0.20</span></label>
+        <input type="range" id="param-chaos" min="0" max="1" step="0.01" value="0.2">
+        <label>Speed <span class="val" id="val-speed">1.00</span></label>
+        <input type="range" id="param-speed" min="0.1" max="3" step="0.01" value="1.0">
+        <label>Hue <span class="val" id="val-hue">200</span></label>
+        <input type="range" id="param-hue" min="0" max="360" step="1" value="200">
+        <label>Intensity <span class="val" id="val-int">0.70</span></label>
+        <input type="range" id="param-int" min="0" max="1" step="0.01" value="0.7">
+        <label>Dimension <span class="val" id="val-dim">3.50</span></label>
+        <input type="range" id="param-dim" min="3" max="4.5" step="0.01" value="3.5">
+
+        <h3>Actions</h3>
+        <button onclick="randomizeAll()">Randomize All</button>
+        <button onclick="resetDefaults()">Reset Defaults</button>
+        <button onclick="toggleAutoRotate()">Toggle Auto-Rotate</button>
+        <button onclick="togglePanel()">Close Panel</button>
+    </div>
+
+    <div id="bottom-bar">
+        VIB3+ CORE &mdash; <kbd>1</kbd> Quantum &bull; <kbd>2</kbd> Faceted &bull; <kbd>3</kbd> Holographic &bull; <kbd>C</kbd> controls &bull; <kbd>R</kbd> randomize &bull; <kbd>Space</kbd> auto-rotate
+    </div>
+
+    <script type="module">
+        import { FacetedSystem } from '../src/faceted/FacetedSystem.js';
+        import { QuantumHolographicVisualizer } from '../src/quantum/QuantumVisualizer.js';
+        import { HolographicVisualizer } from '../src/holograms/HolographicVisualizer.js';
+
+        // ---- State ----
+        let activeSystem = 'faceted'; // default
+        let faceted = null;
+        let quantum = null;
+        let holographic = null;
+        let backendType = 'unknown';
+        let autoRotate = true;
+        let frameCount = 0;
+        let lastFPSTime = performance.now();
+        let fps = 0;
+
+        const GEOMETRY_NAMES = [
+            'Tetrahedron', 'Hypercube', 'Sphere', 'Torus',
+            'Klein Bottle', 'Fractal', 'Wave', 'Crystal',
+            'Hypersphere (Tetra)', 'Hypersphere (Cube)', 'Hypersphere (Sphere)', 'Hypersphere (Torus)',
+            'Hypersphere (Klein)', 'Hypersphere (Fractal)', 'Hypersphere (Wave)', 'Hypersphere (Crystal)',
+            'Hypertetra (Tetra)', 'Hypertetra (Cube)', 'Hypertetra (Sphere)', 'Hypertetra (Torus)',
+            'Hypertetra (Klein)', 'Hypertetra (Fractal)', 'Hypertetra (Wave)', 'Hypertetra (Crystal)'
+        ];
+
+        // Shared parameters across all systems
+        const params = {
+            geometry: 0,
+            rot4dXY: 0, rot4dXZ: 0, rot4dYZ: 0,
+            rot4dXW: 0, rot4dYW: 0, rot4dZW: 0,
+            gridDensity: 15,
+            morphFactor: 1.0,
+            chaos: 0.2,
+            speed: 1.0,
+            hue: 200,
+            intensity: 0.7,
+            dimension: 3.5
+        };
+
+        // ---- Populate geometry selector ----
+        const geoSelect = document.getElementById('geo-select');
+        GEOMETRY_NAMES.forEach((name, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = `${i}: ${name}`;
+            geoSelect.appendChild(opt);
+        });
+
+        // ---- Canvas management ----
+        function getCanvasForSystem(sys) {
+            return document.getElementById(sys + '-canvas');
+        }
+
+        function showCanvas(sys) {
+            ['quantum', 'faceted', 'holographic'].forEach(s => {
+                getCanvasForSystem(s).style.display = (s === sys) ? 'block' : 'none';
+            });
+        }
+
+        function resizeCanvas(canvas) {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+        }
+
+        function resizeAll() {
+            ['quantum', 'faceted', 'holographic'].forEach(s => {
+                resizeCanvas(getCanvasForSystem(s));
+            });
+            if (faceted && faceted._renderMode === 'bridge' && faceted._bridge) {
+                faceted._bridge.resize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1);
+            }
+        }
+
+        // ---- Initialize all systems ----
+        async function init() {
+            const badge = document.getElementById('backend-badge');
+            resizeAll();
+            window.addEventListener('resize', resizeAll);
+
+            // --- Faceted System (supports WebGPU bridge) ---
+            const facetedCanvas = getCanvasForSystem('faceted');
+            faceted = new FacetedSystem();
+            try {
+                const success = await faceted.initWithBridge(facetedCanvas, {
+                    preferWebGPU: true,
+                    debug: true
+                });
+                if (success) {
+                    backendType = faceted.getBackendType();
+                } else {
+                    throw new Error('Bridge init returned false');
+                }
+            } catch (err) {
+                console.warn('Faceted bridge init failed, trying direct WebGL:', err);
+                faceted = new FacetedSystem();
+                faceted.initialize(facetedCanvas);
+                backendType = 'webgl';
+            }
+            faceted.setActive(true);
+
+            // --- Quantum System (direct WebGL) ---
+            const quantumCanvas = getCanvasForSystem('quantum');
+            // QuantumHolographicVisualizer expects a canvas ID
+            quantumCanvas.id = 'quantum-canvas';
+            try {
+                quantum = new QuantumHolographicVisualizer('quantum-canvas', 'content', 1.0, 0);
+                console.log('Quantum system initialized');
+            } catch (err) {
+                console.error('Quantum init failed:', err);
+                quantum = null;
+            }
+
+            // --- Holographic System (direct WebGL) ---
+            const holoCanvas = getCanvasForSystem('holographic');
+            holoCanvas.id = 'holographic-canvas';
+            try {
+                holographic = new HolographicVisualizer('holographic-canvas', 'content', 1.0, 0);
+                console.log('Holographic system initialized');
+            } catch (err) {
+                console.error('Holographic init failed:', err);
+                holographic = null;
+            }
+
+            // Set initial system
+            switchSystem('faceted');
+
+            badge.textContent = backendType.toUpperCase();
+            badge.className = 'backend-badge ' + (backendType === 'webgpu' ? 'webgpu' : 'webgl');
+            console.log(`VIB3+ Live: Initialized on ${backendType}`);
+
+            requestAnimationFrame(loop);
+        }
+
+        // ---- System switching ----
+        window.switchSystem = function(sys) {
+            activeSystem = sys;
+            showCanvas(sys);
+
+            // Update tab styling
+            document.getElementById('tab-quantum').className = sys === 'quantum' ? 'active-quantum' : '';
+            document.getElementById('tab-faceted').className = sys === 'faceted' ? 'active-faceted' : '';
+            document.getElementById('tab-holographic').className = sys === 'holographic' ? 'active-holographic' : '';
+
+            document.getElementById('hud-system').textContent = `System: ${sys.charAt(0).toUpperCase() + sys.slice(1)}`;
+        };
+
+        // ---- Push params to active system ----
+        function syncParamsToSystem() {
+            if (activeSystem === 'faceted' && faceted) {
+                Object.assign(faceted.parameters, params);
+            } else if (activeSystem === 'quantum' && quantum) {
+                quantum.updateParameters(params);
+            } else if (activeSystem === 'holographic' && holographic) {
+                holographic.updateParameters(params);
+            }
+        }
+
+        // ---- Render loop ----
+        function loop(now) {
+            // Auto-rotate 4D planes
+            if (autoRotate) {
+                const t = now * 0.0003;
+                params.rot4dXW = Math.sin(t * 0.7) * 3.14;
+                params.rot4dYW = Math.cos(t * 0.5) * 3.14;
+                params.rot4dZW = Math.sin(t * 0.3) * 3.14;
+
+                document.getElementById('rot-xw').value = params.rot4dXW;
+                document.getElementById('rot-yw').value = params.rot4dYW;
+                document.getElementById('rot-zw').value = params.rot4dZW;
+                document.getElementById('val-xw').textContent = params.rot4dXW.toFixed(2);
+                document.getElementById('val-yw').textContent = params.rot4dYW.toFixed(2);
+                document.getElementById('val-zw').textContent = params.rot4dZW.toFixed(2);
+            }
+
+            syncParamsToSystem();
+
+            // Render active system
+            if (activeSystem === 'faceted' && faceted) {
+                faceted.renderFrame();
+            } else if (activeSystem === 'quantum' && quantum) {
+                quantum.render();
+            } else if (activeSystem === 'holographic' && holographic) {
+                holographic.render();
+            }
+
+            // FPS counter
+            frameCount++;
+            if (now - lastFPSTime >= 1000) {
+                fps = frameCount;
+                frameCount = 0;
+                lastFPSTime = now;
+                document.getElementById('hud-fps').textContent = `FPS: ${fps}`;
+            }
+
+            // Update geometry HUD
+            const geoIdx = params.geometry;
+            document.getElementById('hud-geo').textContent =
+                `Geometry: ${geoIdx} (${GEOMETRY_NAMES[geoIdx] || '?'})`;
+
+            requestAnimationFrame(loop);
+        }
+
+        // ---- Controls binding ----
+        geoSelect.addEventListener('change', (e) => {
+            params.geometry = parseInt(e.target.value);
+        });
+
+        // Rotation sliders
+        const rotMap = {
+            'rot-xy': ['rot4dXY', 'val-xy'],
+            'rot-xz': ['rot4dXZ', 'val-xz'],
+            'rot-yz': ['rot4dYZ', 'val-yz'],
+            'rot-xw': ['rot4dXW', 'val-xw'],
+            'rot-yw': ['rot4dYW', 'val-yw'],
+            'rot-zw': ['rot4dZW', 'val-zw']
+        };
+        Object.entries(rotMap).forEach(([sliderId, [paramKey, valId]]) => {
+            const slider = document.getElementById(sliderId);
+            slider.addEventListener('input', () => {
+                params[paramKey] = parseFloat(slider.value);
+                document.getElementById(valId).textContent = parseFloat(slider.value).toFixed(2);
+            });
+        });
+
+        // Visual parameter sliders
+        const paramMap = {
+            'param-grid': ['gridDensity', 'val-grid', 0],
+            'param-morph': ['morphFactor', 'val-morph', 2],
+            'param-chaos': ['chaos', 'val-chaos', 2],
+            'param-speed': ['speed', 'val-speed', 2],
+            'param-hue': ['hue', 'val-hue', 0],
+            'param-int': ['intensity', 'val-int', 2],
+            'param-dim': ['dimension', 'val-dim', 2]
+        };
+        Object.entries(paramMap).forEach(([sliderId, [paramKey, valId, decimals]]) => {
+            const slider = document.getElementById(sliderId);
+            slider.addEventListener('input', () => {
+                params[paramKey] = parseFloat(slider.value);
+                document.getElementById(valId).textContent = parseFloat(slider.value).toFixed(decimals);
+            });
+        });
+
+        // ---- Global actions ----
+        window.randomizeAll = function() {
+            params.geometry = Math.floor(Math.random() * 24);
+            params.rot4dXY = Math.random() * 6.283;
+            params.rot4dXZ = Math.random() * 6.283;
+            params.rot4dYZ = Math.random() * 6.283;
+            params.rot4dXW = Math.random() * 6.283;
+            params.rot4dYW = Math.random() * 6.283;
+            params.rot4dZW = Math.random() * 6.283;
+            params.gridDensity = 4 + Math.random() * 96;
+            params.morphFactor = Math.random() * 2;
+            params.chaos = Math.random();
+            params.speed = 0.1 + Math.random() * 2.9;
+            params.hue = Math.random() * 360;
+            params.intensity = 0.3 + Math.random() * 0.7;
+            params.dimension = 3.0 + Math.random() * 1.5;
+            syncSlidersFromParams();
+        };
+
+        window.resetDefaults = function() {
+            params.geometry = 0;
+            params.rot4dXY = 0;
+            params.rot4dXZ = 0;
+            params.rot4dYZ = 0;
+            params.rot4dXW = 0;
+            params.rot4dYW = 0;
+            params.rot4dZW = 0;
+            params.gridDensity = 15;
+            params.morphFactor = 1.0;
+            params.chaos = 0.2;
+            params.speed = 1.0;
+            params.hue = 200;
+            params.intensity = 0.7;
+            params.dimension = 3.5;
+            syncSlidersFromParams();
+        };
+
+        window.toggleAutoRotate = function() {
+            autoRotate = !autoRotate;
+        };
+
+        window.togglePanel = function() {
+            const panel = document.getElementById('controls');
+            const btn = document.getElementById('toggle-controls');
+            panel.classList.toggle('hidden');
+            btn.classList.toggle('panel-open');
+        };
+
+        function syncSlidersFromParams() {
+            document.getElementById('geo-select').value = params.geometry;
+            document.getElementById('rot-xy').value = params.rot4dXY;
+            document.getElementById('rot-xz').value = params.rot4dXZ;
+            document.getElementById('rot-yz').value = params.rot4dYZ;
+            document.getElementById('rot-xw').value = params.rot4dXW;
+            document.getElementById('rot-yw').value = params.rot4dYW;
+            document.getElementById('rot-zw').value = params.rot4dZW;
+            document.getElementById('param-grid').value = params.gridDensity;
+            document.getElementById('param-morph').value = params.morphFactor;
+            document.getElementById('param-chaos').value = params.chaos;
+            document.getElementById('param-speed').value = params.speed;
+            document.getElementById('param-hue').value = params.hue;
+            document.getElementById('param-int').value = params.intensity;
+            document.getElementById('param-dim').value = params.dimension;
+
+            document.getElementById('val-xy').textContent = params.rot4dXY.toFixed(2);
+            document.getElementById('val-xz').textContent = params.rot4dXZ.toFixed(2);
+            document.getElementById('val-yz').textContent = params.rot4dYZ.toFixed(2);
+            document.getElementById('val-xw').textContent = params.rot4dXW.toFixed(2);
+            document.getElementById('val-yw').textContent = params.rot4dYW.toFixed(2);
+            document.getElementById('val-zw').textContent = params.rot4dZW.toFixed(2);
+            document.getElementById('val-grid').textContent = params.gridDensity.toFixed(0);
+            document.getElementById('val-morph').textContent = params.morphFactor.toFixed(2);
+            document.getElementById('val-chaos').textContent = params.chaos.toFixed(2);
+            document.getElementById('val-speed').textContent = params.speed.toFixed(2);
+            document.getElementById('val-hue').textContent = params.hue.toFixed(0);
+            document.getElementById('val-int').textContent = params.intensity.toFixed(2);
+            document.getElementById('val-dim').textContent = params.dimension.toFixed(2);
+        }
+
+        // ---- Keyboard shortcuts ----
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            switch (e.key.toLowerCase()) {
+                case '1':
+                    switchSystem('quantum');
+                    break;
+                case '2':
+                    switchSystem('faceted');
+                    break;
+                case '3':
+                    switchSystem('holographic');
+                    break;
+                case 'c':
+                    togglePanel();
+                    break;
+                case 'r':
+                    randomizeAll();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    toggleAutoRotate();
+                    break;
+                case 'arrowright':
+                    params.geometry = (params.geometry + 1) % 24;
+                    document.getElementById('geo-select').value = params.geometry;
+                    break;
+                case 'arrowleft':
+                    params.geometry = (params.geometry + 23) % 24;
+                    document.getElementById('geo-select').value = params.geometry;
+                    break;
+                case 'f':
+                    if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                    } else {
+                        document.documentElement.requestFullscreen();
+                    }
+                    break;
+            }
+        });
+
+        // ---- Mouse interaction ----
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            const intensity = Math.sqrt(x * x + y * y) * 0.5;
+
+            if (quantum) quantum.updateInteraction(x, y, intensity);
+            if (holographic) holographic.updateInteraction(x, y, intensity);
+            // Faceted uses parameters directly
+            params.mouseIntensity = intensity;
+        });
+
+        document.addEventListener('click', () => {
+            params.clickIntensity = 1.0;
+            if (holographic) holographic.triggerClick(0.5, 0.5);
+            if (quantum) quantum.clickIntensity = 1.0;
+            setTimeout(() => {
+                params.clickIntensity = 0;
+                if (quantum) quantum.clickIntensity = 0;
+            }, 300);
+        });
+
+        // ---- Touch interaction ----
+        document.addEventListener('touchmove', (e) => {
+            if (!e.touches[0]) return;
+            const x = e.touches[0].clientX / window.innerWidth;
+            const y = e.touches[0].clientY / window.innerHeight;
+            const intensity = Math.sqrt(x * x + y * y) * 0.5;
+
+            if (quantum) quantum.updateInteraction(x, y, intensity);
+            if (holographic) holographic.updateInteraction(x, y, intensity);
+            params.mouseIntensity = intensity;
+        }, { passive: true });
+
+        // ---- Start ----
+        init();
+    </script>
+</body>
+</html>

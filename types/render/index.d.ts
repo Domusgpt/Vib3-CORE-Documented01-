@@ -1,6 +1,6 @@
 /**
  * Render Module TypeScript Definitions
- * VIB3+ SDK - Complete Rendering Abstraction
+ * VIB3+ SDK - Complete Rendering Abstraction (WebGL + WebGPU)
  */
 
 // Re-export all render types
@@ -10,12 +10,16 @@ export * from './CommandBuffer';
 export * from './RenderTarget';
 export * from './ShaderProgram';
 export * from './WebGLBackend';
+export * from './WebGPUBackend';
+export * from './UnifiedRenderBridge';
 
 import { RenderState, BlendMode, CullFace } from './RenderState';
 import { CommandBuffer, CommandBufferOptions } from './CommandBuffer';
 import { RenderTarget, RenderTargetOptions } from './RenderTarget';
 import { ShaderProgram, ShaderProgramOptions, ShaderLib } from './ShaderProgram';
 import { WebGLBackend, WebGLBackendOptions } from './WebGLBackend';
+import { WebGPUBackend } from './WebGPUBackend';
+import { UnifiedRenderBridge, BackendType } from './UnifiedRenderBridge';
 
 /** Render context options */
 export interface RenderContextOptions extends WebGLBackendOptions {}
@@ -117,3 +121,21 @@ export declare const Shader4D: {
      */
     generateFragmentShader(options?: Shader4DOptions): string;
 };
+
+/** Async render context options (supports WebGPU bridge) */
+export interface AsyncRenderContextOptions extends RenderContextOptions {
+    /** Prefer WebGPU backend via UnifiedRenderBridge */
+    preferWebGPU?: boolean;
+    /** Use bridge mode ('bridge' | 'webgl' | 'webgpu') */
+    backend?: 'bridge' | 'webgl' | 'webgpu';
+}
+
+/**
+ * Create a rendering context asynchronously.
+ * Supports WebGPU via UnifiedRenderBridge when preferWebGPU or backend='bridge' is set.
+ * Falls back to WebGL context if WebGPU is unavailable.
+ */
+export declare function createRenderContextAsync(
+    canvas: HTMLCanvasElement,
+    options?: AsyncRenderContextOptions
+): Promise<RenderContext | UnifiedRenderBridge | null>;

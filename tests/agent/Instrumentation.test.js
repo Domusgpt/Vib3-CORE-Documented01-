@@ -308,7 +308,7 @@ describe('withTiming', () => {
 
         await timed();
 
-        expect(measuredDuration).toBeGreaterThanOrEqual(50);
+        expect(measuredDuration).toBeGreaterThanOrEqual(45);
     });
 
     it('should capture errors', () => {

@@ -1,31 +1,54 @@
-function clampDenominator(denominator, epsilon) {
-    if (Math.abs(denominator) < epsilon) {
-        return denominator >= 0 ? epsilon : -epsilon;
-    }
-    return denominator;
-}
+/**
+ * Projection Utilities - Functional API for 4D→3D projections
+ *
+ * Provides functional wrappers around the Projection class for
+ * convenience in tests and direct usage.
+ */
 
-export function stereographicProject4D(vector, options = {}) {
+/**
+ * Perspective projection of a 4D point to 3D.
+ *
+ * Formula: P.xyz = v.xyz / (distance - v.w)
+ *
+ * @param {number[]} v - 4-element array [x, y, z, w]
+ * @param {object} [options]
+ * @param {number} [options.distance=2] - Projection distance
+ * @param {number} [options.epsilon=1e-5] - Minimum absolute denominator
+ * @returns {{ x: number, y: number, z: number, denom: number }}
+ */
+export function perspectiveProject4D(v, options = {}) {
+    const distance = options.distance ?? 2;
     const epsilon = options.epsilon ?? 1e-5;
-    const [x, y, z, w] = vector;
-    const denom = clampDenominator(1 - w, epsilon);
+    const raw = distance - v[3];
+    const denom = Math.abs(raw) < epsilon ? (raw >= 0 ? epsilon : -epsilon) : raw;
+    const scale = 1 / denom;
     return {
-        x: x / denom,
-        y: y / denom,
-        z: z / denom,
+        x: v[0] * scale,
+        y: v[1] * scale,
+        z: v[2] * scale,
         denom,
     };
 }
 
-export function perspectiveProject4D(vector, options = {}) {
+/**
+ * Stereographic projection of a 4D point to 3D.
+ *
+ * Formula: P.xyz = v.xyz / (1 - v.w)
+ *
+ * @param {number[]} v - 4-element array [x, y, z, w]
+ * @param {object} [options]
+ * @param {number} [options.epsilon=1e-5] - Minimum absolute denominator
+ * @returns {{ x: number, y: number, z: number, denom: number }}
+ */
+export function stereographicProject4D(v, options = {}) {
     const epsilon = options.epsilon ?? 1e-5;
-    const distance = options.distance ?? options.d ?? 2;
-    const [x, y, z, w] = vector;
-    const denom = clampDenominator(distance - w, epsilon);
+    const raw = 1 - v[3];
+    const denom = Math.abs(raw) < epsilon ? (raw >= 0 ? epsilon : -epsilon) : raw;
+    const scale = 1 / denom;
     return {
-        x: x / denom,
-        y: y / denom,
-        z: z / denom,
+        x: v[0] * scale,
+        y: v[1] * scale,
+        z: v[2] * scale,
         denom,
     };
 }

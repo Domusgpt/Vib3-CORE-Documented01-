@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIB3+ E2E Test Harness</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #111; color: #0f0; font-family: 'Courier New', monospace; font-size: 12px; }
+        #status { position: fixed; top: 0; left: 0; right: 0; background: #000; padding: 8px 16px; z-index: 1000; border-bottom: 1px solid #333; }
+        #status .ok { color: #0f0; } #status .err { color: #f00; } #status .warn { color: #ff0; }
+        #render-area { margin-top: 40px; display: flex; flex-wrap: wrap; gap: 2px; padding: 2px; }
+        canvas { display: block; background: #000; border: 1px solid #333; }
+        #main-canvas { width: 800px; height: 600px; }
+        .controls { position: fixed; bottom: 0; left: 0; right: 0; background: #000; padding: 8px; border-top: 1px solid #333; z-index: 1000; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .controls label { color: #888; font-size: 10px; }
+        .controls input[type="range"] { width: 100px; }
+        .controls select { background: #222; color: #0f0; border: 1px solid #333; padding: 2px 4px; }
+        .controls button { background: #222; color: #0f0; border: 1px solid #333; padding: 4px 8px; cursor: pointer; }
+        .controls button:hover { background: #333; }
+        #log { position: fixed; right: 0; top: 40px; width: 300px; bottom: 40px; background: rgba(0,0,0,0.95); border-left: 1px solid #333; overflow-y: auto; padding: 8px; font-size: 10px; z-index: 999; }
+        #log .entry { margin-bottom: 2px; } #log .pass { color: #0f0; } #log .fail { color: #f00; } #log .info { color: #0ff; }
+    </style>
+</head>
+<body>
+    <div id="status">VIB3+ E2E Harness — <span id="statusText">Loading...</span></div>
+
+    <div id="render-area">
+        <canvas id="main-canvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="controls" id="controls-panel">
+        <label>System: <select id="system-select">
+            <option value="faceted">Faceted</option>
+            <option value="quantum">Quantum</option>
+            <option value="holographic">Holographic</option>
+        </select></label>
+
+        <label>Geometry: <select id="geometry-select"></select></label>
+
+        <label>XY <input type="range" id="rot-xy" min="0" max="6.28" step="0.01" value="0"></label>
+        <label>XZ <input type="range" id="rot-xz" min="0" max="6.28" step="0.01" value="0"></label>
+        <label>YZ <input type="range" id="rot-yz" min="0" max="6.28" step="0.01" value="0"></label>
+        <label>XW <input type="range" id="rot-xw" min="0" max="6.28" step="0.01" value="0"></label>
+        <label>YW <input type="range" id="rot-yw" min="0" max="6.28" step="0.01" value="0"></label>
+        <label>ZW <input type="range" id="rot-zw" min="0" max="6.28" step="0.01" value="0"></label>
+
+        <label>Speed <input type="range" id="param-speed" min="0.1" max="3" step="0.1" value="1"></label>
+        <label>Hue <input type="range" id="param-hue" min="0" max="360" step="1" value="180"></label>
+        <label>Chaos <input type="range" id="param-chaos" min="0" max="1" step="0.01" value="0.5"></label>
+        <label>Morph <input type="range" id="param-morph" min="0" max="2" step="0.01" value="0.5"></label>
+        <label>Grid <input type="range" id="param-grid" min="4" max="100" step="1" value="20"></label>
+        <label>Dim <input type="range" id="param-dim" min="3.0" max="4.5" step="0.1" value="3.5"></label>
+
+        <button id="btn-randomize">Randomize</button>
+        <button id="btn-reset">Reset</button>
+        <button id="btn-pause">Pause</button>
+    </div>
+
+    <div id="log"></div>
+
+    <script type="module">
+        // ===== Test harness state =====
+        window.__VIB3_HARNESS = {
+            ready: false,
+            errors: [],
+            modules: {},
+            glContext: null,
+            currentSystem: 'faceted',
+            currentGeometry: 0,
+            params: {},
+            frameCount: 0,
+            paused: false,
+            log: [],
+        };
+
+        const H = window.__VIB3_HARNESS;
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('statusText');
+
+        function log(msg, cls = 'info') {
+            H.log.push({ msg, cls, ts: Date.now() });
+            const el = document.createElement('div');
+            el.className = `entry ${cls}`;
+            el.textContent = `[${new Date().toISOString().slice(11,19)}] ${msg}`;
+            logEl.appendChild(el);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(text, cls = 'ok') {
+            statusEl.textContent = text;
+            statusEl.className = cls;
+        }
+
+        // ===== Populate geometry select =====
+        const GEOM_NAMES = [
+            'Tetrahedron','Hypercube','Sphere','Torus','Klein Bottle','Fractal','Wave','Crystal'
+        ];
+        const CORE_NAMES = ['Base','Hypersphere','Hypertetra'];
+        const geomSelect = document.getElementById('geometry-select');
+        for (let core = 0; core < 3; core++) {
+            for (let base = 0; base < 8; base++) {
+                const idx = core * 8 + base;
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = `${idx}: ${CORE_NAMES[core]} ${GEOM_NAMES[base]}`;
+                geomSelect.appendChild(opt);
+            }
+        }
+
+        // ===== Module loading =====
+        async function loadModules() {
+            const modules = [
+                ['Vec4', '/src/math/Vec4.js', 'Vec4'],
+                ['Rotor4D', '/src/math/Rotor4D.js', 'Rotor4D'],
+                ['Mat4x4', '/src/math/Mat4x4.js', 'Mat4x4'],
+                ['Projection', '/src/math/Projection.js', 'Projection'],
+                ['rotations', '/src/math/rotations.js', '*'],
+                ['projections', '/src/math/projections.js', '*'],
+            ];
+
+            for (const [name, path, exportName] of modules) {
+                try {
+                    const mod = await import(path);
+                    H.modules[name] = exportName === '*' ? mod : mod[exportName] || mod.default;
+                    log(`Loaded: ${name}`, 'pass');
+                } catch (e) {
+                    log(`FAILED: ${name} — ${e.message}`, 'fail');
+                    H.errors.push({ module: name, error: e.message });
+                }
+            }
+
+            // Additional SDK modules
+            const sdkModules = [
+                ['GeometryFactory', '/src/geometry/GeometryFactory.js'],
+                ['ShaderProgram', '/src/render/ShaderProgram.js'],
+                ['RenderState', '/src/render/RenderState.js'],
+                ['RenderCommand', '/src/render/RenderCommand.js'],
+                ['CommandBuffer', '/src/render/CommandBuffer.js'],
+                ['RenderTarget', '/src/render/RenderTarget.js'],
+                ['UnifiedRenderBridge', '/src/render/UnifiedRenderBridge.js'],
+                ['WebGLBackend', '/src/render/backends/WebGLBackend.js'],
+                ['Node4D', '/src/scene/Node4D.js'],
+                ['Scene4D', '/src/scene/Scene4D.js'],
+                ['Disposable', '/src/scene/Disposable.js'],
+                ['MemoryPool', '/src/scene/MemoryPool.js'],
+                ['ResourceManager', '/src/scene/ResourceManager.js'],
+                ['GallerySystem', '/src/gallery/GallerySystem.js'],
+            ];
+
+            for (const [name, path] of sdkModules) {
+                try {
+                    const mod = await import(path);
+                    H.modules[name] = mod.default || mod[name] || mod;
+                    log(`Loaded: ${name}`, 'pass');
+                } catch (e) {
+                    log(`FAILED: ${name} — ${e.message}`, 'fail');
+                    H.errors.push({ module: name, error: e.message });
+                }
+            }
+        }
+
+        // ===== WebGL setup =====
+        function setupWebGL() {
+            const canvas = document.getElementById('main-canvas');
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+            if (!gl) {
+                log('WebGL NOT available', 'fail');
+                H.errors.push({ module: 'WebGL', error: 'No WebGL context' });
+                return null;
+            }
+
+            const version = gl instanceof WebGL2RenderingContext ? 'WebGL2' : 'WebGL1';
+            log(`WebGL context: ${version}`, 'pass');
+            log(`Renderer: ${gl.getParameter(gl.RENDERER)}`, 'info');
+            log(`Vendor: ${gl.getParameter(gl.VENDOR)}`, 'info');
+            log(`Max texture: ${gl.getParameter(gl.MAX_TEXTURE_SIZE)}`, 'info');
+
+            H.glContext = gl;
+            H.glVersion = version;
+            H.glRenderer = gl.getParameter(gl.RENDERER);
+            return gl;
+        }
+
+        // ===== Shader compilation test =====
+        function testShaderCompile(gl) {
+            const vsSource = `
+                attribute vec4 aVertexPosition;
+                void main() { gl_Position = aVertexPosition; }
+            `;
+            const fsSource = `
+                precision highp float;
+                uniform float u_time;
+                uniform vec2 u_resolution;
+                uniform float u_rot4dXY, u_rot4dXZ, u_rot4dYZ, u_rot4dXW, u_rot4dYW, u_rot4dZW;
+                uniform float u_geometry, u_gridDensity, u_morphFactor, u_chaos;
+                uniform float u_speed, u_hue, u_intensity, u_dimension;
+
+                mat4 rotateXY(float a) { float c=cos(a),s=sin(a); return mat4(c,-s,0,0, s,c,0,0, 0,0,1,0, 0,0,0,1); }
+                mat4 rotateXZ(float a) { float c=cos(a),s=sin(a); return mat4(c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1); }
+                mat4 rotateYZ(float a) { float c=cos(a),s=sin(a); return mat4(1,0,0,0, 0,c,-s,0, 0,s,c,0, 0,0,0,1); }
+                mat4 rotateXW(float a) { float c=cos(a),s=sin(a); return mat4(c,0,0,-s, 0,1,0,0, 0,0,1,0, s,0,0,c); }
+                mat4 rotateYW(float a) { float c=cos(a),s=sin(a); return mat4(1,0,0,0, 0,c,0,-s, 0,0,1,0, 0,s,0,c); }
+                mat4 rotateZW(float a) { float c=cos(a),s=sin(a); return mat4(1,0,0,0, 0,1,0,0, 0,0,c,-s, 0,0,s,c); }
+
+                vec3 hsv2rgb(vec3 c) {
+                    vec4 K = vec4(1.0,2.0/3.0,1.0/3.0,3.0);
+                    vec3 p = abs(fract(c.xxx+K.xyz)*6.0-K.www);
+                    return c.z*mix(K.xxx,clamp(p-K.xxx,0.0,1.0),c.y);
+                }
+
+                void main() {
+                    vec2 uv = (gl_FragCoord.xy - 0.5*u_resolution) / min(u_resolution.x, u_resolution.y);
+                    float t = u_time * u_speed;
+                    mat4 rot = rotateXY(u_rot4dXY+t*0.1) * rotateXZ(u_rot4dXZ+t*0.07) * rotateYZ(u_rot4dYZ+t*0.05)
+                             * rotateXW(u_rot4dXW+t*0.13) * rotateYW(u_rot4dYW+t*0.11) * rotateZW(u_rot4dZW+t*0.09);
+                    vec3 ro = vec3(0,0,-3);
+                    vec3 rd = normalize(vec3(uv,1.0));
+                    float totalDist = 0.0;
+                    vec3 col = vec3(0);
+                    for (int i = 0; i < 48; i++) {
+                        vec3 p3 = ro + rd * totalDist;
+                        vec4 p4 = rot * vec4(p3, sin(t*0.5)*u_morphFactor);
+                        float d = length(p4) - 1.0;
+                        if (d < 0.001) {
+                            col = hsv2rgb(vec3(u_hue/360.0 + totalDist*0.1, 0.7, u_intensity));
+                            col *= 1.0 - totalDist * 0.1;
+                            break;
+                        }
+                        if (totalDist > 10.0) break;
+                        totalDist += d * 0.5;
+                    }
+                    vec2 grid = fract(uv * u_gridDensity);
+                    col += vec3(smoothstep(0.02,0.0,min(grid.x,grid.y))*0.1);
+                    gl_FragColor = vec4(col, 1.0);
+                }
+            `;
+
+            try {
+                const vs = gl.createShader(gl.VERTEX_SHADER);
+                gl.shaderSource(vs, vsSource);
+                gl.compileShader(vs);
+                if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+                    log(`Vertex shader error: ${gl.getShaderInfoLog(vs)}`, 'fail');
+                    return null;
+                }
+
+                const fs = gl.createShader(gl.FRAGMENT_SHADER);
+                gl.shaderSource(fs, fsSource);
+                gl.compileShader(fs);
+                if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+                    log(`Fragment shader error: ${gl.getShaderInfoLog(fs)}`, 'fail');
+                    return null;
+                }
+
+                const prog = gl.createProgram();
+                gl.attachShader(prog, vs);
+                gl.attachShader(prog, fs);
+                gl.linkProgram(prog);
+                if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+                    log(`Program link error: ${gl.getProgramInfoLog(prog)}`, 'fail');
+                    return null;
+                }
+
+                log('Shader compilation: OK', 'pass');
+                H.shaderProgram = prog;
+                return prog;
+            } catch (e) {
+                log(`Shader setup error: ${e.message}`, 'fail');
+                return null;
+            }
+        }
+
+        // ===== Render with parameters =====
+        function renderFrame(gl, prog, params) {
+            const canvas = gl.canvas;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            gl.useProgram(prog);
+
+            // Set uniforms
+            const setU = (name, val) => {
+                const loc = gl.getUniformLocation(prog, name);
+                if (loc) gl.uniform1f(loc, val);
+            };
+            const set2f = (name, x, y) => {
+                const loc = gl.getUniformLocation(prog, name);
+                if (loc) gl.uniform2f(loc, x, y);
+            };
+
+            set2f('u_resolution', canvas.width, canvas.height);
+            setU('u_time', params.time || 0);
+            setU('u_rot4dXY', params.rotXY || 0);
+            setU('u_rot4dXZ', params.rotXZ || 0);
+            setU('u_rot4dYZ', params.rotYZ || 0);
+            setU('u_rot4dXW', params.rotXW || 0);
+            setU('u_rot4dYW', params.rotYW || 0);
+            setU('u_rot4dZW', params.rotZW || 0);
+            setU('u_geometry', params.geometry || 0);
+            setU('u_gridDensity', params.gridDensity || 20);
+            setU('u_morphFactor', params.morphFactor || 0.5);
+            setU('u_chaos', params.chaos || 0.5);
+            setU('u_speed', params.speed || 1);
+            setU('u_hue', params.hue || 180);
+            setU('u_intensity', params.intensity || 0.7);
+            setU('u_dimension', params.dimension || 3.5);
+
+            // Fullscreen quad
+            if (!H._quadBuffer) {
+                const buf = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+                H._quadBuffer = buf;
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER, H._quadBuffer);
+            const aPos = gl.getAttribLocation(prog, 'aVertexPosition');
+            gl.enableVertexAttribArray(aPos);
+            gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            H.frameCount++;
+        }
+
+        // ===== Math module tests =====
+        function runMathTests() {
+            const results = [];
+            try {
+                const { Vec4 } = H.modules;
+                if (Vec4) {
+                    const v = new Vec4(1, 2, 3, 4);
+                    results.push({ name: 'Vec4 create', pass: v.x === 1 && v.w === 4 });
+                    results.push({ name: 'Vec4 length', pass: Math.abs(v.length() - Math.sqrt(30)) < 1e-5 });
+                    const n = v.normalize();
+                    results.push({ name: 'Vec4 normalize', pass: Math.abs(n.length() - 1) < 1e-5 });
+                }
+            } catch (e) { results.push({ name: 'Vec4 tests', pass: false, error: e.message }); }
+
+            try {
+                const { Mat4x4 } = H.modules;
+                if (Mat4x4) {
+                    const id = Mat4x4.identity();
+                    results.push({ name: 'Mat4x4 identity', pass: id.isIdentity() });
+                    const rotXW = Mat4x4.rotationXW(Math.PI / 4);
+                    results.push({ name: 'Mat4x4 rotationXW', pass: rotXW.isOrthogonal() });
+                    const full = Mat4x4.rotationFromAngles({ xy: 0.1, xw: 0.3, zw: 0.5 });
+                    results.push({ name: 'Mat4x4 rotationFromAngles', pass: full.isOrthogonal() });
+                }
+            } catch (e) { results.push({ name: 'Mat4x4 tests', pass: false, error: e.message }); }
+
+            try {
+                const { Rotor4D } = H.modules;
+                if (Rotor4D) {
+                    const r = Rotor4D.fromPlaneAngle('XW', Math.PI / 3);
+                    results.push({ name: 'Rotor4D create', pass: !!r });
+                    const { Vec4 } = H.modules;
+                    if (Vec4) {
+                        const v = new Vec4(1, 0, 0, 0);
+                        const rotated = r.rotate(v);
+                        results.push({ name: 'Rotor4D rotate preserves length', pass: Math.abs(rotated.length() - 1) < 1e-5 });
+                    }
+                }
+            } catch (e) { results.push({ name: 'Rotor4D tests', pass: false, error: e.message }); }
+
+            try {
+                const { Projection } = H.modules;
+                const { Vec4 } = H.modules;
+                if (Projection && Vec4) {
+                    const v = new Vec4(1, 0, 0, 0);
+                    const persp = Projection.perspective(v, 2);
+                    results.push({ name: 'Projection perspective', pass: Math.abs(persp.x - 0.5) < 1e-5 });
+                    const stereo = Projection.stereographic(v);
+                    results.push({ name: 'Projection stereographic', pass: Math.abs(stereo.x - 1) < 1e-5 });
+                    const ortho = Projection.orthographic(v);
+                    results.push({ name: 'Projection orthographic', pass: ortho.x === 1 && ortho.w === 0 });
+                }
+            } catch (e) { results.push({ name: 'Projection tests', pass: false, error: e.message }); }
+
+            results.forEach(r => log(`${r.pass ? 'PASS' : 'FAIL'}: ${r.name}${r.error ? ' — ' + r.error : ''}`, r.pass ? 'pass' : 'fail'));
+            H.mathTestResults = results;
+            return results;
+        }
+
+        // ===== Geometry generation tests =====
+        async function runGeometryTests() {
+            const results = [];
+            try {
+                const factory = H.modules.GeometryFactory;
+                if (factory) {
+                    const Factory = factory.GeometryFactory || factory.default || factory;
+                    const instance = typeof Factory === 'function' ? (Factory.create ? Factory.create() : new Factory()) : Factory;
+                    for (let i = 0; i < 24; i++) {
+                        try {
+                            const geom = instance.generate ? instance.generate(i) : (instance.create ? instance.create(i) : null);
+                            const hasVerts = geom && (geom.vertices || geom.positions || geom.data);
+                            results.push({ name: `Geometry ${i}`, pass: !!hasVerts, vertCount: hasVerts ? (geom.vertices || geom.positions || geom.data).length : 0 });
+                        } catch (e) {
+                            results.push({ name: `Geometry ${i}`, pass: false, error: e.message });
+                        }
+                    }
+                } else {
+                    results.push({ name: 'GeometryFactory', pass: false, error: 'Module not loaded' });
+                }
+            } catch (e) {
+                results.push({ name: 'Geometry tests', pass: false, error: e.message });
+            }
+            results.forEach(r => log(`${r.pass ? 'PASS' : 'FAIL'}: ${r.name}${r.error ? ' — ' + r.error : ''}`, r.pass ? 'pass' : 'fail'));
+            H.geometryTestResults = results;
+            return results;
+        }
+
+        // ===== Main init =====
+        async function init() {
+            log('=== VIB3+ E2E Harness Starting ===', 'info');
+            setStatus('Loading modules...');
+
+            await loadModules();
+            const loadedCount = Object.keys(H.modules).length;
+            log(`Modules loaded: ${loadedCount}`, loadedCount > 0 ? 'pass' : 'fail');
+
+            setStatus('Setting up WebGL...');
+            const gl = setupWebGL();
+
+            if (gl) {
+                setStatus('Compiling shaders...');
+                const prog = testShaderCompile(gl);
+
+                if (prog) {
+                    setStatus('Rendering test frame...');
+                    renderFrame(gl, prog, { time: 1.0, hue: 180, intensity: 0.7, gridDensity: 20, speed: 1, morphFactor: 0.5, dimension: 3.5 });
+                    log('First render frame: OK', 'pass');
+                }
+            }
+
+            setStatus('Running math tests...');
+            runMathTests();
+
+            setStatus('Running geometry tests...');
+            await runGeometryTests();
+
+            // Expose render function for Playwright
+            window.__VIB3_RENDER = (params) => {
+                if (H.glContext && H.shaderProgram) {
+                    renderFrame(H.glContext, H.shaderProgram, params);
+                    return true;
+                }
+                return false;
+            };
+
+            const totalErrors = H.errors.length;
+            const mathPass = (H.mathTestResults || []).filter(r => r.pass).length;
+            const mathTotal = (H.mathTestResults || []).length;
+            const geomPass = (H.geometryTestResults || []).filter(r => r.pass).length;
+            const geomTotal = (H.geometryTestResults || []).length;
+
+            setStatus(`Ready — Modules: ${loadedCount} | Math: ${mathPass}/${mathTotal} | Geom: ${geomPass}/${geomTotal} | Errors: ${totalErrors}`, totalErrors === 0 ? 'ok' : 'warn');
+
+            H.ready = true;
+            log('=== Harness Ready ===', 'info');
+        }
+
+        init().catch(e => {
+            log(`Init error: ${e.message}`, 'fail');
+            H.errors.push({ module: 'init', error: e.message });
+            H.ready = true; // Still mark ready so tests can inspect errors
+        });
+    </script>
+</body>
+</html>

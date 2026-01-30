@@ -6,6 +6,20 @@
 import { GeometryLibrary } from '../geometry/GeometryLibrary.js';
 
 export class VariationManager {
+    /**
+     * Sanitize a variation name to prevent XSS and enforce limits.
+     * @param {*} name
+     * @param {string} fallback
+     * @returns {string}
+     */
+    static sanitizeName(name, fallback = 'Unnamed') {
+        if (typeof name !== 'string') return fallback;
+        // Strip HTML tags and limit length
+        const clean = name.replace(/<[^>]*>/g, '').trim();
+        if (clean.length === 0) return fallback;
+        return clean.slice(0, 100);
+    }
+
     constructor(engine) {
         this.engine = engine;
         
@@ -63,7 +77,7 @@ export class VariationManager {
         if (index >= 30) return null;
         
         const geometryType = Math.floor(index / 4);
-        const level = index % 4;
+        let level = index % 4;
         
         // Special handling for reduced geometry sets
         let adjustedGeometryType = geometryType;
@@ -191,7 +205,9 @@ export class VariationManager {
         sections.forEach(section => {
             const sectionDiv = document.createElement('div');
             sectionDiv.className = 'variation-section';
-            sectionDiv.innerHTML = `<h3>${section.name} Lattice</h3>`;
+            const sectionHeader = document.createElement('h3');
+            sectionHeader.textContent = `${section.name} Lattice`;
+            sectionDiv.appendChild(sectionHeader);
             
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'variation-buttons';
@@ -210,7 +226,9 @@ export class VariationManager {
         // Add custom variations section
         const customSection = document.createElement('div');
         customSection.className = 'variation-section custom-section';
-        customSection.innerHTML = '<h3>Custom Variations</h3>';
+        const customHeader = document.createElement('h3');
+        customHeader.textContent = 'Custom Variations';
+        customSection.appendChild(customHeader);
         
         const customContainer = document.createElement('div');
         customContainer.className = 'variation-buttons custom-grid';
@@ -300,9 +318,20 @@ export class VariationManager {
         try {
             const stored = localStorage.getItem('vib34d-custom-variations');
             if (stored) {
+                // Limit stored data size (1 MB) to prevent DoS from bloated localStorage
+                if (stored.length > 1024 * 1024) {
+                    console.warn('Custom variations data exceeds 1 MB, ignoring');
+                    return;
+                }
                 const parsed = JSON.parse(stored);
                 if (Array.isArray(parsed) && parsed.length === 70) {
-                    this.customVariations = parsed;
+                    // Sanitize all variation names loaded from storage
+                    this.customVariations = parsed.map(v => {
+                        if (v && typeof v === 'object') {
+                            return { ...v, name: VariationManager.sanitizeName(v.name, 'Custom') };
+                        }
+                        return v;
+                    });
                 }
             }
         } catch (error) {
@@ -350,15 +379,23 @@ export class VariationManager {
     async importCustomVariations(file) {
         try {
             const text = await file.text();
+            // Limit import file size (2 MB)
+            if (text.length > 2 * 1024 * 1024) {
+                console.warn('Import file exceeds 2 MB, rejecting');
+                return 0;
+            }
             const data = JSON.parse(text);
-            
+
             if (data.type === 'vib34d-custom-variations' && Array.isArray(data.variations)) {
-                // Merge imported variations
+                // Merge imported variations (sanitize names)
                 let importCount = 0;
-                
+
                 data.variations.forEach(variation => {
+                    if (!variation || typeof variation !== 'object') return;
                     const emptyIndex = this.customVariations.findIndex(slot => slot === null);
                     if (emptyIndex !== -1) {
+                        // Sanitize name from imported data
+                        variation.name = VariationManager.sanitizeName(variation.name, `Imported ${emptyIndex + 1}`);
                         this.customVariations[emptyIndex] = variation;
                         importCount++;
                     }

@@ -14,6 +14,8 @@ class UnifiedResourceManager {
     this.lastEvictionTime = Date.now();
     this.onMemoryPressure = null;
     
+    this._intervalIds = [];
+    this._boundMemoryWarningHandler = null;
     this.setupMemoryMonitoring();
   }
 
@@ -37,32 +39,37 @@ class UnifiedResourceManager {
   }
 
   setupMemoryMonitoring() {
-    // Monitor memory pressure using available APIs
-    if (window.performance && window.performance.memory) {
-      setInterval(() => {
-        const memory = window.performance.memory;
-        const used = memory.usedJSHeapSize;
-        const limit = memory.jsHeapSizeLimit;
-        
-        if (used / limit > 0.85) {
-          this.handleMemoryPressure();
+    // Monitor memory pressure using available APIs (Chrome-only)
+    if (typeof window !== 'undefined' && window.performance && window.performance.memory) {
+      const heapCheckId = setInterval(() => {
+        try {
+          const memory = window.performance.memory;
+          const used = memory.usedJSHeapSize;
+          const limit = memory.jsHeapSizeLimit;
+
+          if (limit > 0 && used / limit > 0.85) {
+            this.handleMemoryPressure();
+          }
+        } catch (e) {
+          // performance.memory may not be available in all contexts
         }
       }, 2000);
+      this._intervalIds.push(heapCheckId);
     }
 
     // Listen for memory pressure events (if available)
-    if (window.addEventListener && 'onmemorywarning' in window) {
-      window.addEventListener('memorywarning', () => {
-        this.handleMemoryPressure();
-      });
+    if (typeof window !== 'undefined' && 'onmemorywarning' in window) {
+      this._boundMemoryWarningHandler = () => this.handleMemoryPressure();
+      window.addEventListener('memorywarning', this._boundMemoryWarningHandler);
     }
 
     // Monitor our own usage
-    setInterval(() => {
-      if (this.currentUsage > this.memoryBudget * 0.9) {
+    const budgetCheckId = setInterval(() => {
+      if (this.memoryBudget > 0 && this.currentUsage > this.memoryBudget * 0.9) {
         this.handleMemoryPressure();
       }
     }, 5000);
+    this._intervalIds.push(budgetCheckId);
   }
 
   createManagedTexture(width, height, format = this.gl.RGBA) {
@@ -323,23 +330,37 @@ class UnifiedResourceManager {
   }
 
   dispose() {
-    // Clean up all resources
-    for (const [_, data] of this.resources.textures) {
-      this.gl.deleteTexture(data.texture);
+    // Clear all monitoring intervals
+    for (const id of this._intervalIds) {
+      clearInterval(id);
     }
-    
-    for (const [_, data] of this.resources.buffers) {
-      this.gl.deleteBuffer(data.buffer);
+    this._intervalIds = [];
+
+    // Remove memory warning listener
+    if (this._boundMemoryWarningHandler && typeof window !== 'undefined') {
+      window.removeEventListener('memorywarning', this._boundMemoryWarningHandler);
+      this._boundMemoryWarningHandler = null;
     }
-    
-    for (const [_, data] of this.resources.programs) {
-      this.gl.deleteProgram(data.program);
+
+    // Clean up all GPU resources (guard against lost context)
+    if (this.gl && !this.gl.isContextLost()) {
+      for (const [_, data] of this.resources.textures) {
+        if (data.texture) this.gl.deleteTexture(data.texture);
+      }
+
+      for (const [_, data] of this.resources.buffers) {
+        if (data.buffer) this.gl.deleteBuffer(data.buffer);
+      }
+
+      for (const [_, data] of this.resources.programs) {
+        if (data.program) this.gl.deleteProgram(data.program);
+      }
+
+      for (const [_, data] of this.resources.framebuffers) {
+        if (data.framebuffer) this.gl.deleteFramebuffer(data.framebuffer);
+      }
     }
-    
-    for (const [_, data] of this.resources.framebuffers) {
-      this.gl.deleteFramebuffer(data.framebuffer);
-    }
-    
+
     // Clear maps
     Object.values(this.resources).forEach(map => map.clear());
     this.currentUsage = 0;

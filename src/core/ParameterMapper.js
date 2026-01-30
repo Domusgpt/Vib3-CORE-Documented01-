@@ -154,9 +154,15 @@ export class ParameterMapper {
      * Convert parameters to unified format
      */
     toUnified(params, sourceSystem) {
+        if (!params || typeof params !== 'object') return {};
+
         const unified = {};
         const mapping = this.mappings[sourceSystem]?.to || {};
-        
+
+        if (!this.mappings[sourceSystem]) {
+            console.warn(`ParameterMapper: Unknown source system "${sourceSystem}"`);
+        }
+
         // Map known parameters
         Object.entries(params).forEach(([key, value]) => {
             const unifiedKey = mapping[key] || key;
@@ -177,6 +183,8 @@ export class ParameterMapper {
      * Convert unified format to specific system format
      */
     fromUnified(params, targetSystem) {
+        if (!params || typeof params !== 'object') return {};
+
         const systemParams = {};
         const mapping = this.mappings[targetSystem]?.from || {};
         
@@ -211,11 +219,17 @@ export class ParameterMapper {
             
             // Type validation
             if (schema.type === 'integer') {
-                value = Math.round(value);
+                value = Math.round(Number(value));
             } else if (schema.type === 'float') {
-                value = parseFloat(value);
+                value = Number(value);
             }
-            
+
+            // Reject NaN/Infinity
+            if (!Number.isFinite(value)) {
+                errors.push(`${key} is not a finite number, using default`);
+                value = schema.default;
+            }
+
             // Range validation
             if (value < schema.min) {
                 value = schema.min;

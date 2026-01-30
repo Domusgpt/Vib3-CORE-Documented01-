@@ -307,16 +307,30 @@ export class GallerySystem {
             thumbnail.classList.add('current');
         }
         
-        thumbnail.innerHTML = `
-            <div class="thumbnail-preview">
-                <div class="variation-number">${index + 1}</div>
-                <div class="preview-placeholder"></div>
-            </div>
-            <div class="thumbnail-info">
-                <div class="variation-name">${name}</div>
-                <div class="variation-type">${isDefault ? 'Default' : 'Custom'}</div>
-            </div>
-        `;
+        // Build DOM safely to prevent XSS from user-supplied variation names
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'thumbnail-preview';
+        const numberDiv = document.createElement('div');
+        numberDiv.className = 'variation-number';
+        numberDiv.textContent = index + 1;
+        const placeholderDiv = document.createElement('div');
+        placeholderDiv.className = 'preview-placeholder';
+        previewDiv.appendChild(numberDiv);
+        previewDiv.appendChild(placeholderDiv);
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'thumbnail-info';
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'variation-name';
+        nameDiv.textContent = name;
+        const typeDiv = document.createElement('div');
+        typeDiv.className = 'variation-type';
+        typeDiv.textContent = isDefault ? 'Default' : 'Custom';
+        infoDiv.appendChild(nameDiv);
+        infoDiv.appendChild(typeDiv);
+
+        thumbnail.appendChild(previewDiv);
+        thumbnail.appendChild(infoDiv);
         
         // Event handlers
         thumbnail.addEventListener('mouseenter', () => {
@@ -356,12 +370,19 @@ export class GallerySystem {
                 const details = this.galleryModal.querySelector('.preview-details');
                 
                 title.textContent = this.engine.variationManager.getVariationName(index);
-                details.innerHTML = `
-                    <div>Variation #${index + 1}</div>
-                    <div>Geometry: ${this.getGeometryName(params.geometry)}</div>
-                    <div>Density: ${params.gridDensity.toFixed(1)}</div>
-                    <div>Hue: ${params.hue}°</div>
-                `;
+                // Build preview details safely (avoid innerHTML with dynamic data)
+                details.textContent = '';
+                const lines = [
+                    `Variation #${index + 1}`,
+                    `Geometry: ${this.getGeometryName(params.geometry)}`,
+                    `Density: ${params.gridDensity.toFixed(1)}`,
+                    `Hue: ${params.hue}\u00B0`
+                ];
+                lines.forEach(text => {
+                    const div = document.createElement('div');
+                    div.textContent = text;
+                    details.appendChild(div);
+                });
             }
         }, 100);
     }
