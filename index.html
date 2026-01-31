@@ -5,95 +5,301 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIB3+ CORE — 4D Visualization Engine</title>
     <meta name="description" content="VIB3+ is a 4D visualization SDK with 24 geometry variants, 6D rotation, and three rendering systems. WebGL + WebGPU.">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* ─── Reset & Base ─── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: auto; }
         body {
-            background: #07070f;
+            background: #050508;
             color: #c8c8d4;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
-            min-height: 100vh;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            overflow-x: hidden;
         }
 
-        .hero {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 80px 24px 48px;
-            text-align: center;
+        /* ─── Utility ─── */
+        .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+        /* ─── Scroll Progress Bar ─── */
+        .scroll-progress {
+            position: fixed; top: 0; left: 0; height: 2px; z-index: 9999;
+            background: linear-gradient(90deg, #0ff, #0f6, #0ff);
+            transform-origin: left; transform: scaleX(0);
+            will-change: transform;
+        }
+
+        /* ─── Canvas System ─── */
+        .vib3-canvas {
+            display: block; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0;
+        }
+        .canvas-container {
+            position: relative; overflow: hidden;
+            background: #0a0a10;
+        }
+
+        /* ─── Section: Hero ─── */
+        .hero-section {
+            position: relative; height: 100vh; display: flex;
+            align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .hero-bg { position: absolute; inset: 0; z-index: 0; }
+        .hero-content {
+            position: relative; z-index: 2; text-align: center;
+            padding: 0 24px;
         }
         .hero-badge {
-            display: inline-block;
-            padding: 4px 14px;
-            border: 1px solid rgba(0, 255, 200, 0.3);
-            border-radius: 100px;
-            font-size: 12px;
-            color: #0fc;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
+            display: inline-block; padding: 5px 16px;
+            border: 1px solid rgba(0,255,200,0.35); border-radius: 100px;
+            font-size: 11px; color: #0fc; letter-spacing: 2px;
+            text-transform: uppercase; margin-bottom: 24px;
+            backdrop-filter: blur(8px); background: rgba(0,255,200,0.04);
         }
-        h1 {
-            font-size: clamp(32px, 6vw, 56px);
-            font-weight: 700;
-            letter-spacing: 4px;
-            background: linear-gradient(135deg, #0ff 0%, #0f6 40%, #0ff 100%);
-            -webkit-background-clip: text;
+        h1.hero-title {
+            font-size: clamp(40px, 8vw, 96px); font-weight: 800;
+            letter-spacing: 6px; line-height: 1.05;
+            background: linear-gradient(135deg, #0ff 0%, #0f6 35%, #7b3ff2 70%, #0ff 100%);
+            background-size: 300% 300%;
+            -webkit-background-clip: text; background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 16px;
+            animation: gradientShift 8s ease infinite;
         }
-        .subtitle {
-            font-size: clamp(14px, 2.5vw, 18px);
-            color: #888;
-            max-width: 600px;
-            line-height: 1.6;
-            margin-bottom: 32px;
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .hero-sub {
+            font-size: clamp(14px, 2vw, 20px); color: rgba(200,200,212,0.6);
+            max-width: 560px; margin: 20px auto 0; line-height: 1.7;
+        }
+        .hero-scroll-hint {
+            position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+            z-index: 2; color: rgba(255,255,255,0.25); font-size: 12px;
+            letter-spacing: 3px; text-transform: uppercase;
+            animation: floatDown 2s ease-in-out infinite;
+        }
+        @keyframes floatDown {
+            0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.25; }
+            50% { transform: translateX(-50%) translateY(8px); opacity: 0.5; }
         }
 
-        .cta-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-bottom: 48px;
+        /* ─── Section: Coordinated Instances ─── */
+        .coordinated-section {
+            position: relative; min-height: 300vh;
         }
+        .coordinated-pinned {
+            position: relative; height: 100vh; width: 100%;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+        .coord-panel {
+            position: relative; overflow: hidden;
+        }
+        .coord-panel .canvas-container { width: 100%; height: 100%; }
+        .coord-label {
+            position: absolute; bottom: 24px; left: 24px; z-index: 5;
+            font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+            backdrop-filter: blur(8px); background: rgba(0,0,0,0.4);
+            padding: 8px 16px; border-radius: 6px;
+        }
+        .coord-divider {
+            position: absolute; top: 0; left: 50%; width: 1px; height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(0,255,200,0.3), transparent);
+            z-index: 10;
+        }
+        .coord-info {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 20; text-align: center; pointer-events: none;
+        }
+        .coord-info h2 {
+            font-size: clamp(24px, 4vw, 48px); font-weight: 700;
+            color: #fff; letter-spacing: 2px;
+            text-shadow: 0 0 40px rgba(0,255,200,0.3);
+        }
+        .coord-info p {
+            color: rgba(200,200,212,0.5); font-size: 14px;
+            margin-top: 8px; max-width: 400px;
+        }
+
+        /* ─── Section: Density Interaction Demo ─── */
+        .density-section {
+            position: relative; min-height: 200vh;
+        }
+        .density-pinned {
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .density-bg { position: absolute; inset: 0; z-index: 0; }
+        .density-card {
+            position: relative; z-index: 5;
+            width: min(440px, 90vw); padding: 40px;
+            background: rgba(10,10,20,0.7); backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            text-align: center;
+        }
+        .density-card h3 {
+            font-size: 20px; font-weight: 700; color: #e0e0e8;
+            margin-bottom: 8px;
+        }
+        .density-card p {
+            font-size: 13px; color: rgba(200,200,212,0.5); line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .density-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 32px; border: none; border-radius: 12px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            background: linear-gradient(135deg, rgba(0,255,200,0.2), rgba(0,200,255,0.15));
+            color: #0fc; border: 1px solid rgba(0,255,200,0.3);
+            transition: all 0.15s ease;
+        }
+        .density-btn:hover {
+            background: linear-gradient(135deg, rgba(0,255,200,0.3), rgba(0,200,255,0.25));
+            border-color: rgba(0,255,200,0.5); transform: scale(1.02);
+        }
+        .density-btn:active { transform: scale(0.97); }
+        .density-meter {
+            margin-top: 20px; height: 4px; border-radius: 2px;
+            background: rgba(255,255,255,0.06); overflow: hidden;
+        }
+        .density-meter-fill {
+            height: 100%; width: 50%; border-radius: 2px;
+            background: linear-gradient(90deg, #0ff, #0f6);
+            transition: width 1s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* ─── Section: Card Carousel ─── */
+        .carousel-section {
+            position: relative; min-height: 400vh;
+        }
+        .carousel-pinned {
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        .carousel-track {
+            display: flex; gap: 32px;
+            will-change: transform;
+        }
+        .carousel-card {
+            flex-shrink: 0; width: min(360px, 80vw); height: 480px;
+            border-radius: 20px; overflow: hidden; position: relative;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+        }
+        .carousel-card .canvas-container { width: 100%; height: 100%; }
+        .card-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 5;
+            padding: 24px; background: linear-gradient(transparent, rgba(5,5,8,0.9));
+        }
+        .card-overlay h4 {
+            font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px;
+        }
+        .card-overlay span {
+            font-size: 11px; color: rgba(200,200,212,0.5);
+            letter-spacing: 1px; text-transform: uppercase;
+        }
+
+        /* ─── Section: Wearable UI Demo ─── */
+        .wearable-section {
+            position: relative; min-height: 300vh;
+        }
+        .wearable-pinned {
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .wearable-bg { position: absolute; inset: 0; z-index: 0; }
+        .wearable-ui {
+            position: relative; z-index: 5;
+            width: min(320px, 85vw); height: 540px;
+            border-radius: 40px; overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.08);
+            box-shadow: 0 0 80px rgba(0,255,200,0.06), 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .wearable-screen {
+            position: relative; width: 100%; height: 100%;
+            background: #0a0a10;
+        }
+        .wearable-notch {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 120px; height: 28px; background: #050508;
+            border-radius: 0 0 16px 16px; z-index: 10;
+        }
+        .wearable-canvas-area { position: absolute; inset: 0; z-index: 1; }
+        .wearable-overlay {
+            position: absolute; inset: 0; z-index: 5;
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding: 24px; pointer-events: none;
+        }
+        .wearable-overlay > * { pointer-events: auto; }
+        .wearable-stat {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 16px; margin-bottom: 8px;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(12px);
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);
+        }
+        .wearable-stat span { font-size: 12px; color: rgba(200,200,212,0.5); }
+        .wearable-stat strong { font-size: 14px; color: #0fc; font-weight: 600; }
+        .wearable-btn-row {
+            display: flex; gap: 8px; margin-top: 8px;
+        }
+        .wearable-btn {
+            flex: 1; padding: 12px; border: none; border-radius: 12px;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            backdrop-filter: blur(12px); transition: all 0.15s;
+        }
+        .wearable-btn-primary {
+            background: rgba(0,255,200,0.15); color: #0fc;
+            border: 1px solid rgba(0,255,200,0.25);
+        }
+        .wearable-btn-secondary {
+            background: rgba(255,255,255,0.06); color: rgba(200,200,212,0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        /* ─── Section: CTA / Links ─── */
+        .cta-section {
+            position: relative; min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 80px 24px;
+        }
+        .cta-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.3; }
+        .cta-content { position: relative; z-index: 5; text-align: center; }
+        .cta-content h2 {
+            font-size: clamp(28px, 5vw, 56px); font-weight: 800; color: #fff;
+            letter-spacing: 3px; margin-bottom: 16px;
+        }
+        .cta-content p {
+            color: rgba(200,200,212,0.5); font-size: 16px; max-width: 500px;
+            margin: 0 auto 40px; line-height: 1.6;
+        }
+        .cta-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 48px; }
         .cta {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 28px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 32px; border-radius: 10px; text-decoration: none;
+            font-size: 14px; font-weight: 600; transition: all 0.2s;
         }
         .cta-primary {
-            background: linear-gradient(135deg, rgba(0,255,200,0.15), rgba(0,200,255,0.15));
-            border: 1px solid rgba(0,255,200,0.4);
-            color: #0fc;
+            background: linear-gradient(135deg, rgba(0,255,200,0.18), rgba(0,200,255,0.18));
+            border: 1px solid rgba(0,255,200,0.4); color: #0fc;
         }
-        .cta-primary:hover { background: rgba(0,255,200,0.2); border-color: rgba(0,255,200,0.6); }
+        .cta-primary:hover { background: rgba(0,255,200,0.25); border-color: rgba(0,255,200,0.6); }
         .cta-secondary {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.12);
-            color: #aaa;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); color: #aaa;
         }
         .cta-secondary:hover { background: rgba(255,255,255,0.08); color: #ddd; }
 
         .code-block {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 10px;
-            padding: 24px 28px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px; padding: 24px 28px;
             font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: 13px;
-            color: #b8b8c8;
-            text-align: left;
-            max-width: 520px;
-            width: 100%;
-            margin-bottom: 64px;
-            line-height: 1.7;
+            font-size: 13px; color: #b8b8c8; text-align: left;
+            max-width: 520px; width: 100%; line-height: 1.8;
         }
         .code-block .kw { color: #c792ea; }
         .code-block .fn { color: #82aaff; }
@@ -101,158 +307,768 @@
         .code-block .cmt { color: #546e7a; }
         .code-block .num { color: #f78c6c; }
 
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 16px;
-            max-width: 960px;
-            width: 100%;
-            margin: 0 auto;
-            padding: 0 24px 64px;
+        .link-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px; max-width: 720px; width: 100%; margin-top: 40px;
         }
-        .feature {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 10px;
-            padding: 24px;
+        .link-grid a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 16px 20px; border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px; text-decoration: none; color: #888; font-size: 13px;
+            transition: all 0.2s; background: rgba(255,255,255,0.02);
         }
-        .feature h3 {
-            font-size: 15px;
-            color: #e0e0e8;
-            margin-bottom: 8px;
-            font-weight: 600;
+        .link-grid a:hover { background: rgba(255,255,255,0.05); color: #ccc; border-color: rgba(255,255,255,0.12); }
+        .link-badge {
+            padding: 3px 8px; border-radius: 4px; font-size: 9px; letter-spacing: 1px;
+            text-transform: uppercase; font-weight: 700;
         }
-        .feature p {
-            font-size: 13px;
-            color: #777;
-            line-height: 1.5;
-        }
-        .feature .tag {
-            display: inline-block;
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            letter-spacing: 0.5px;
-        }
-        .tag-core { background: rgba(0,255,255,0.1); color: #0ff; }
-        .tag-new { background: rgba(0,255,100,0.1); color: #0f6; }
-
-        .links {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            padding: 0 24px 48px;
-        }
-        .links a {
-            display: block;
-            padding: 14px 24px;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 8px;
-            color: #999;
-            text-decoration: none;
-            font-size: 13px;
-            min-width: 340px;
-            text-align: center;
-            transition: all 0.2s;
-        }
-        .links a:hover { background: rgba(255,255,255,0.04); color: #ccc; border-color: rgba(255,255,255,0.15); }
-        .links .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 9px;
-            letter-spacing: 1px;
-            margin-right: 6px;
-            vertical-align: middle;
-        }
-        .badge-gpu { background: rgba(0,255,100,0.15); color: #0f6; }
-        .badge-gl { background: rgba(255,200,0,0.15); color: #fc0; }
+        .badge-gpu { background: rgba(0,255,100,0.12); color: #0f6; }
+        .badge-gl { background: rgba(255,200,0,0.12); color: #fc0; }
 
         footer {
-            text-align: center;
-            padding: 32px 24px;
-            border-top: 1px solid rgba(255,255,255,0.05);
-            font-size: 12px;
-            color: #444;
+            text-align: center; padding: 40px 24px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            font-size: 12px; color: #333;
         }
-        footer a { color: #666; text-decoration: none; }
-        footer a:hover { color: #999; }
+        footer a { color: #555; text-decoration: none; }
+        footer a:hover { color: #888; }
 
+        /* ─── Reduced Motion ─── */
         @media (prefers-reduced-motion: reduce) {
-            * { animation-duration: 0s !important; transition-duration: 0s !important; }
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
         }
     </style>
 </head>
 <body>
-    <section class="hero">
-        <span class="hero-badge">v2.0.0</span>
-        <h1>VIB3+ CORE</h1>
-        <p class="subtitle">
-            A 4D visualization engine with 24 geometry variants, 6D rotation,
-            three rendering systems, and integrations for React, Vue, Svelte,
-            Three.js, Figma, TouchDesigner, and OBS.
-        </p>
+    <a href="#main" class="sr-only">Skip to content</a>
+    <div class="scroll-progress" id="scrollProgress"></div>
 
-        <div class="cta-row">
-            <a class="cta cta-primary" href="docs/webgpu-live.html">Launch Live Demo</a>
-            <a class="cta cta-secondary" href="https://github.com/Domusgpt/Vib3-CORE-Documented01-">GitHub</a>
+    <!-- ════════════════════════════════════════════════════════
+         SECTION 1: Hero — Full-screen visualizer background
+         ════════════════════════════════════════════════════════ -->
+    <section class="hero-section" id="main">
+        <div class="hero-bg">
+            <div class="canvas-container" style="width:100%;height:100%;">
+                <canvas class="vib3-canvas" id="hero-canvas"></canvas>
+            </div>
         </div>
+        <div class="hero-content">
+            <span class="hero-badge">v2.0.0 &mdash; WebGPU Primary</span>
+            <h1 class="hero-title">VIB3+</h1>
+            <p class="hero-sub">
+                4D visualization engine. 24 geometries. 6D rotation.
+                Three rendering systems. Scroll to explore.
+            </p>
+        </div>
+        <div class="hero-scroll-hint">scroll</div>
+    </section>
 
-        <div class="code-block">
-            <span class="cmt">// npm install @vib3/sdk</span><br>
-            <span class="kw">import</span> { VIB3Engine } <span class="kw">from</span> <span class="str">'@vib3/sdk/core'</span>;<br><br>
-            <span class="kw">const</span> engine = <span class="kw">new</span> <span class="fn">VIB3Engine</span>();<br>
-            <span class="kw">await</span> engine.<span class="fn">initialize</span>();<br>
-            <span class="kw">await</span> engine.<span class="fn">switchSystem</span>(<span class="str">'quantum'</span>);<br>
-            engine.<span class="fn">setParameter</span>(<span class="str">'geometry'</span>, <span class="num">10</span>);<br>
-            engine.<span class="fn">setParameter</span>(<span class="str">'rot4dXW'</span>, <span class="num">1.57</span>);
+    <!-- ════════════════════════════════════════════════════════
+         SECTION 2: Coordinated Dual Instances
+         Two visualizers side-by-side, scroll drives opposite params
+         ════════════════════════════════════════════════════════ -->
+    <section class="coordinated-section" id="coordSection">
+        <div class="coordinated-pinned" id="coordPinned">
+            <div class="coord-panel" id="coordLeft">
+                <div class="canvas-container">
+                    <canvas class="vib3-canvas" id="coord-canvas-left"></canvas>
+                </div>
+                <div class="coord-label">System A &mdash; Quantum</div>
+            </div>
+            <div class="coord-panel" id="coordRight">
+                <div class="canvas-container">
+                    <canvas class="vib3-canvas" id="coord-canvas-right"></canvas>
+                </div>
+                <div class="coord-label">System B &mdash; Faceted</div>
+            </div>
+            <div class="coord-divider"></div>
+            <div class="coord-info" id="coordInfo">
+                <h2>Unified Motion</h2>
+                <p>Scroll drives both systems. As density rises on the left, it falls on the right. Geometry morphs in lockstep.</p>
+            </div>
         </div>
     </section>
 
-    <section class="features">
-        <div class="feature">
-            <span class="tag tag-core">CORE</span>
-            <h3>3 Visualization Systems</h3>
-            <p>Quantum lattices, Faceted geometric patterns, and Holographic 5-layer glassmorphic effects. Each with 24 geometry variants.</p>
-        </div>
-        <div class="feature">
-            <span class="tag tag-core">CORE</span>
-            <h3>6D Rotation</h3>
-            <p>Full control over 3 spatial planes (XY/XZ/YZ) and 3 hyperspace planes (XW/YW/ZW) via Clifford algebra rotors.</p>
-        </div>
-        <div class="feature">
-            <span class="tag tag-core">CORE</span>
-            <h3>Dual GPU Backends</h3>
-            <p>WebGL 2.0 primary with automatic WebGPU fallback. C++ WASM math core with JavaScript fallback.</p>
-        </div>
-        <div class="feature">
-            <span class="tag tag-new">v2.0</span>
-            <h3>Universal Spatial Input</h3>
-            <p>8 input sources (tilt, gyroscope, gamepad, mouse, MIDI, audio) mapped through 6 profiles (card tilt, VJ, XR).</p>
-        </div>
-        <div class="feature">
-            <span class="tag tag-new">v2.0</span>
-            <h3>Creative Tooling</h3>
-            <p>22 color presets, 14 easing transitions, 14 post-processing effects, keyframe timeline with BPM sync.</p>
-        </div>
-        <div class="feature">
-            <span class="tag tag-new">v2.0</span>
-            <h3>Platform Integrations</h3>
-            <p>React, Vue, Svelte components. Figma plugin. Three.js ShaderMaterial. TouchDesigner GLSL export. OBS mode.</p>
+    <!-- ════════════════════════════════════════════════════════
+         SECTION 3: Density Interaction Demo
+         Button click sweeps density in coordinated way
+         ════════════════════════════════════════════════════════ -->
+    <section class="density-section" id="densitySection">
+        <div class="density-pinned" id="densityPinned">
+            <div class="density-bg">
+                <div class="canvas-container" style="width:100%;height:100%;">
+                    <canvas class="vib3-canvas" id="density-bg-canvas"></canvas>
+                </div>
+            </div>
+            <div class="density-card" id="densityCard">
+                <h3>Interaction-Driven Parameters</h3>
+                <p>Click the button. The card visualizer drops density by 50% over 1 second while the background rises 25%. On release, both snap back.</p>
+                <button class="density-btn" id="densityBtn">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3" fill="currentColor"/></svg>
+                    Trigger Density Sweep
+                </button>
+                <div class="density-meter">
+                    <div class="density-meter-fill" id="densityFill"></div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <section class="links">
-        <a href="docs/webgpu-live.html"><span class="badge badge-gpu">WebGPU</span> Live 4D Visualization Engine</a>
-        <a href="docs/index.html">Gallery — Algorithmic Avant-Garde</a>
-        <a href="docs/test-hub.html">Test Hub — GPU Diagnostics + All Visualizations</a>
-        <a href="docs/vib3-exports/index.html"><span class="badge badge-gl">WebGL</span> Shader Exports — Real Renders</a>
+    <!-- ════════════════════════════════════════════════════════
+         SECTION 4: Card Carousel — Scroll-driven horizontal cards
+         Each card has its own visualizer, settings hand off between cards
+         ════════════════════════════════════════════════════════ -->
+    <section class="carousel-section" id="carouselSection">
+        <div class="carousel-pinned" id="carouselPinned">
+            <div class="carousel-track" id="carouselTrack">
+                <div class="carousel-card" data-geo="0" data-hue="180" data-system="quantum">
+                    <div class="canvas-container"><canvas class="vib3-canvas" id="card-canvas-0"></canvas></div>
+                    <div class="card-overlay"><h4>Tetrahedron</h4><span>Quantum &mdash; Base</span></div>
+                </div>
+                <div class="carousel-card" data-geo="9" data-hue="280" data-system="faceted">
+                    <div class="canvas-container"><canvas class="vib3-canvas" id="card-canvas-1"></canvas></div>
+                    <div class="card-overlay"><h4>Hypersphere Torus</h4><span>Faceted &mdash; Hypersphere</span></div>
+                </div>
+                <div class="carousel-card" data-geo="16" data-hue="30" data-system="holographic">
+                    <div class="canvas-container"><canvas class="vib3-canvas" id="card-canvas-2"></canvas></div>
+                    <div class="card-overlay"><h4>Hypertetra Crystal</h4><span>Holographic &mdash; Hypertetra</span></div>
+                </div>
+                <div class="carousel-card" data-geo="5" data-hue="120" data-system="quantum">
+                    <div class="canvas-container"><canvas class="vib3-canvas" id="card-canvas-3"></canvas></div>
+                    <div class="card-overlay"><h4>Fractal</h4><span>Quantum &mdash; Base</span></div>
+                </div>
+                <div class="carousel-card" data-geo="11" data-hue="0" data-system="faceted">
+                    <div class="canvas-container"><canvas class="vib3-canvas" id="card-canvas-4"></canvas></div>
+                    <div class="card-overlay"><h4>Hypersphere Klein</h4><span>Faceted &mdash; Hypersphere</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         SECTION 5: Wearable UI Demo — Watch-like device mockup
+         ════════════════════════════════════════════════════════ -->
+    <section class="wearable-section" id="wearableSection">
+        <div class="wearable-pinned" id="wearablePinned">
+            <div class="wearable-bg">
+                <div class="canvas-container" style="width:100%;height:100%;">
+                    <canvas class="vib3-canvas" id="wearable-bg-canvas"></canvas>
+                </div>
+            </div>
+            <div class="wearable-ui" id="wearableDevice">
+                <div class="wearable-screen">
+                    <div class="wearable-notch"></div>
+                    <div class="wearable-canvas-area">
+                        <canvas class="vib3-canvas" id="wearable-canvas"></canvas>
+                    </div>
+                    <div class="wearable-overlay">
+                        <div class="wearable-stat"><span>Geometry</span><strong id="wearGeo">Torus</strong></div>
+                        <div class="wearable-stat"><span>Density</span><strong id="wearDensity">24</strong></div>
+                        <div class="wearable-stat"><span>Rotation</span><strong id="wearRot">XW 0.0</strong></div>
+                        <div class="wearable-btn-row">
+                            <button class="wearable-btn wearable-btn-primary" id="wearBtnA">Next Shape</button>
+                            <button class="wearable-btn wearable-btn-secondary" id="wearBtnB">Randomize</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         SECTION 6: Final CTA with code example and links
+         ════════════════════════════════════════════════════════ -->
+    <section class="cta-section" id="ctaSection">
+        <div class="cta-bg">
+            <div class="canvas-container" style="width:100%;height:100%;">
+                <canvas class="vib3-canvas" id="cta-canvas"></canvas>
+            </div>
+        </div>
+        <div class="cta-content">
+            <h2>Start Building</h2>
+            <p>Three lines to a 4D visualizer. WebGPU primary, WebGL fallback, C++ WASM math core.</p>
+
+            <div class="cta-row">
+                <a class="cta cta-primary" href="docs/webgpu-live.html">Launch Live Demo</a>
+                <a class="cta cta-secondary" href="https://github.com/Domusgpt/Vib3-CORE-Documented01-">GitHub</a>
+            </div>
+
+            <div class="code-block">
+                <span class="cmt">// npm install @vib3/sdk</span><br>
+                <span class="kw">import</span> { VIB3Engine } <span class="kw">from</span> <span class="str">'@vib3/sdk/core'</span>;<br><br>
+                <span class="kw">const</span> engine = <span class="kw">new</span> <span class="fn">VIB3Engine</span>();<br>
+                <span class="kw">await</span> engine.<span class="fn">initialize</span>();<br>
+                <span class="kw">await</span> engine.<span class="fn">switchSystem</span>(<span class="str">'quantum'</span>);<br>
+                engine.<span class="fn">setParameter</span>(<span class="str">'geometry'</span>, <span class="num">10</span>);<br>
+                engine.<span class="fn">setParameter</span>(<span class="str">'rot4dXW'</span>, <span class="num">1.57</span>);
+            </div>
+
+            <div class="link-grid">
+                <a href="docs/webgpu-live.html"><span class="link-badge badge-gpu">WebGPU</span> Live 4D Engine</a>
+                <a href="docs/index.html">Gallery &mdash; Algorithmic Art</a>
+                <a href="docs/test-hub.html">Test Hub &mdash; GPU Diagnostics</a>
+                <a href="docs/vib3-exports/index.html"><span class="link-badge badge-gl">WebGL</span> Shader Exports</a>
+            </div>
+        </div>
     </section>
 
     <footer>
         <p>&copy; 2025-2026 <a href="https://parserator.com">Clear Seas Solutions LLC</a> / Paul Phillips &middot; MIT License</p>
     </footer>
+
+    <!-- ════════════════════════════════════════════════════════
+         VISUALIZER ENGINE + SCROLL CHOREOGRAPHY
+         ════════════════════════════════════════════════════════ -->
+    <script type="module">
+        // ── Import VIB3 Systems Directly (bypass CanvasManager for multi-instance) ──
+        import { FacetedSystem } from './src/faceted/FacetedSystem.js';
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        // ── Shared State ──
+        const state = {
+            instances: new Map(),
+            time: 0,
+            densityBase: { card: 40, bg: 40 },
+            heroGeo: 3,
+            animating: false,
+        };
+
+        // ── Canvas Visualizer: Lightweight Procedural Shader via 2D Canvas ──
+        // Uses Canvas2D as universal fallback that works everywhere without
+        // WebGL context limits. Each instance runs its own procedural render.
+        class Vib3Procedural {
+            constructor(canvasId, opts = {}) {
+                this.canvas = document.getElementById(canvasId);
+                if (!this.canvas) return;
+                this.ctx = this.canvas.getContext('2d');
+                this.params = {
+                    geometry: opts.geometry ?? 3,
+                    hue: opts.hue ?? 180,
+                    gridDensity: opts.gridDensity ?? 24,
+                    speed: opts.speed ?? 1.0,
+                    morphFactor: opts.morphFactor ?? 0.5,
+                    chaos: opts.chaos ?? 0.2,
+                    intensity: opts.intensity ?? 0.7,
+                    rot4dXW: opts.rot4dXW ?? 0,
+                    rot4dYW: opts.rot4dYW ?? 0,
+                    rot4dZW: opts.rot4dZW ?? 0,
+                    rot4dXY: opts.rot4dXY ?? 0,
+                    dimension: opts.dimension ?? 3.5,
+                };
+                this.active = true;
+                this.resize();
+                this._resizeObs = new ResizeObserver(() => this.resize());
+                this._resizeObs.observe(this.canvas.parentElement);
+            }
+
+            resize() {
+                if (!this.canvas) return;
+                const parent = this.canvas.parentElement;
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                this.canvas.width = parent.clientWidth * dpr;
+                this.canvas.height = parent.clientHeight * dpr;
+                this.canvas.style.width = '100%';
+                this.canvas.style.height = '100%';
+                this.w = this.canvas.width;
+                this.h = this.canvas.height;
+            }
+
+            setParam(name, value) { this.params[name] = value; }
+            setParams(obj) { Object.assign(this.params, obj); }
+
+            render(time) {
+                if (!this.active || !this.ctx) return;
+                const { ctx, w, h, params: p } = this;
+                const t = time * p.speed * 0.001;
+                const geo = Math.floor(p.geometry) % 24;
+                const baseGeo = geo % 8;
+                const coreType = Math.floor(geo / 8);
+
+                ctx.clearRect(0, 0, w, h);
+
+                // Background gradient
+                const bgGrad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w, h) * 0.7);
+                bgGrad.addColorStop(0, `hsla(${p.hue}, 40%, 6%, 1)`);
+                bgGrad.addColorStop(1, `hsla(${(p.hue + 40) % 360}, 30%, 2%, 1)`);
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, w, h);
+
+                const cx = w / 2;
+                const cy = h / 2;
+                const scale = Math.min(w, h) * 0.35;
+                const density = Math.max(4, Math.floor(p.gridDensity));
+                const rotXW = p.rot4dXW || 0;
+                const rotYW = p.rot4dYW || 0;
+                const dim = p.dimension || 3.5;
+
+                // Draw geometry-specific patterns
+                ctx.globalAlpha = p.intensity;
+
+                for (let i = 0; i < density; i++) {
+                    const frac = i / density;
+                    const angle = frac * Math.PI * 2 + t + rotXW;
+                    const hueShift = (p.hue + frac * 120 + coreType * 60) % 360;
+
+                    ctx.strokeStyle = `hsla(${hueShift}, 70%, 55%, ${0.15 + p.chaos * 0.3})`;
+                    ctx.lineWidth = 1 + p.morphFactor * 0.5;
+
+                    // 4D projection simulation
+                    const w4 = Math.sin(t * 0.5 + frac * 3.14 + rotYW) * 0.4;
+                    const projFactor = 1.0 / (dim - w4);
+
+                    ctx.beginPath();
+
+                    switch (baseGeo) {
+                        case 0: // Tetrahedron — triangle lattice
+                            for (let j = 0; j < 3; j++) {
+                                const a2 = angle + j * (Math.PI * 2 / 3);
+                                const r = scale * (0.3 + frac * 0.7) * projFactor;
+                                const x = cx + Math.cos(a2) * r;
+                                const y = cy + Math.sin(a2) * r;
+                                j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                            }
+                            ctx.closePath();
+                            break;
+                        case 1: // Hypercube — nested squares
+                            const sz = scale * (0.2 + frac * 0.6) * projFactor;
+                            const rot = t * 0.3 + frac * 0.5 + rotXW;
+                            ctx.save();
+                            ctx.translate(cx, cy);
+                            ctx.rotate(rot);
+                            ctx.rect(-sz/2, -sz/2, sz, sz);
+                            ctx.restore();
+                            break;
+                        case 2: // Sphere — concentric circles
+                            const sr = scale * frac * projFactor;
+                            ctx.arc(cx + Math.sin(t + frac * 2) * 10, cy + Math.cos(t + frac * 2) * 10, sr, 0, Math.PI * 2);
+                            break;
+                        case 3: // Torus — offset circles
+                            const tr = scale * 0.5 * projFactor;
+                            const tor = scale * 0.2 * (1 + frac * 0.5);
+                            const tx = cx + Math.cos(angle) * tr;
+                            const ty = cy + Math.sin(angle) * tr;
+                            ctx.arc(tx, ty, tor * projFactor, 0, Math.PI * 2);
+                            break;
+                        case 4: // Klein — figure-8 loops
+                            for (let k = 0; k <= 32; k++) {
+                                const kt = k / 32 * Math.PI * 2;
+                                const kr = scale * (0.3 + 0.15 * Math.sin(kt * 2 + t)) * projFactor;
+                                const kx = cx + Math.cos(kt + angle) * kr * (1 + 0.3 * Math.sin(kt + t));
+                                const ky = cy + Math.sin(kt + angle) * kr;
+                                k === 0 ? ctx.moveTo(kx, ky) : ctx.lineTo(kx, ky);
+                            }
+                            break;
+                        case 5: // Fractal — recursive lines
+                            const fl = scale * 0.5 * projFactor;
+                            const fa = angle + t * 0.2;
+                            const fx1 = cx + Math.cos(fa) * fl * frac;
+                            const fy1 = cy + Math.sin(fa) * fl * frac;
+                            const fx2 = cx + Math.cos(fa + 2.4) * fl * frac * 0.7;
+                            const fy2 = cy + Math.sin(fa + 2.4) * fl * frac * 0.7;
+                            ctx.moveTo(fx1, fy1);
+                            ctx.lineTo(fx2, fy2);
+                            ctx.lineTo(cx + Math.cos(fa + 4.8) * fl * frac * 0.5, cy + Math.sin(fa + 4.8) * fl * frac * 0.5);
+                            break;
+                        case 6: // Wave — sine curves
+                            for (let wx = 0; wx < w; wx += 4) {
+                                const wfrac = wx / w;
+                                const wy = cy + Math.sin(wfrac * density * 0.5 + t + frac * 3) * scale * 0.3 * projFactor * (0.5 + frac);
+                                wx === 0 ? ctx.moveTo(wx, wy) : ctx.lineTo(wx, wy);
+                            }
+                            break;
+                        case 7: // Crystal — octahedral lines
+                            const cl = scale * 0.4 * projFactor;
+                            const ca = angle + frac * 0.5;
+                            for (let ci = 0; ci < 6; ci++) {
+                                const ca2 = ca + ci * (Math.PI / 3);
+                                ctx.moveTo(cx, cy);
+                                ctx.lineTo(cx + Math.cos(ca2) * cl * (0.5 + frac * 0.5), cy + Math.sin(ca2) * cl * (0.5 + frac * 0.5));
+                            }
+                            break;
+                    }
+                    ctx.stroke();
+
+                    // Core type warp overlay
+                    if (coreType > 0 && i % 3 === 0) {
+                        ctx.strokeStyle = `hsla(${(hueShift + 180) % 360}, 60%, 45%, 0.08)`;
+                        ctx.beginPath();
+                        if (coreType === 1) { // Hypersphere
+                            ctx.arc(cx, cy, scale * frac * projFactor * 1.1, 0, Math.PI * 2);
+                        } else { // Hypertetra
+                            for (let vi = 0; vi < 5; vi++) {
+                                const va = frac * Math.PI * 2 / 5 * vi + t * 0.2;
+                                const vr = scale * 0.4 * projFactor;
+                                vi === 0 ? ctx.moveTo(cx + Math.cos(va) * vr, cy + Math.sin(va) * vr)
+                                         : ctx.lineTo(cx + Math.cos(va) * vr, cy + Math.sin(va) * vr);
+                            }
+                            ctx.closePath();
+                        }
+                        ctx.stroke();
+                    }
+                }
+
+                ctx.globalAlpha = 1;
+            }
+
+            dispose() {
+                this.active = false;
+                if (this._resizeObs) this._resizeObs.disconnect();
+            }
+        }
+
+        // ── Create All Instances ──
+        function createInstances() {
+            const instances = state.instances;
+
+            instances.set('hero', new Vib3Procedural('hero-canvas', {
+                geometry: 3, hue: 200, gridDensity: 30, speed: 0.6, intensity: 0.5, chaos: 0.15,
+                rot4dXW: 0.3, morphFactor: 0.8, dimension: 3.8
+            }));
+
+            instances.set('coordLeft', new Vib3Procedural('coord-canvas-left', {
+                geometry: 2, hue: 240, gridDensity: 28, speed: 0.8, intensity: 0.7, chaos: 0.1,
+                dimension: 3.5
+            }));
+            instances.set('coordRight', new Vib3Procedural('coord-canvas-right', {
+                geometry: 1, hue: 60, gridDensity: 28, speed: 0.8, intensity: 0.7, chaos: 0.1,
+                dimension: 3.5
+            }));
+
+            instances.set('densityBg', new Vib3Procedural('density-bg-canvas', {
+                geometry: 6, hue: 280, gridDensity: 40, speed: 0.5, intensity: 0.35, chaos: 0.05,
+                dimension: 4.0
+            }));
+
+            for (let i = 0; i < 5; i++) {
+                const card = document.querySelectorAll('.carousel-card')[i];
+                if (!card) continue;
+                const geo = parseInt(card.dataset.geo);
+                const hue = parseInt(card.dataset.hue);
+                instances.set(`card${i}`, new Vib3Procedural(`card-canvas-${i}`, {
+                    geometry: geo, hue, gridDensity: 20, speed: 0.7, intensity: 0.8, chaos: 0.15,
+                    morphFactor: 0.6, dimension: 3.5
+                }));
+            }
+
+            instances.set('wearableBg', new Vib3Procedural('wearable-bg-canvas', {
+                geometry: 7, hue: 160, gridDensity: 16, speed: 0.3, intensity: 0.2, chaos: 0.05,
+                dimension: 4.2
+            }));
+            instances.set('wearable', new Vib3Procedural('wearable-canvas', {
+                geometry: 3, hue: 180, gridDensity: 24, speed: 0.8, intensity: 0.85, chaos: 0.1,
+                dimension: 3.5
+            }));
+
+            instances.set('cta', new Vib3Procedural('cta-canvas', {
+                geometry: 5, hue: 140, gridDensity: 18, speed: 0.4, intensity: 0.25, chaos: 0.3,
+                dimension: 3.8
+            }));
+        }
+
+        // ── Render Loop ──
+        function renderLoop(timestamp) {
+            state.time = timestamp;
+            for (const inst of state.instances.values()) {
+                inst.render(timestamp);
+            }
+            requestAnimationFrame(renderLoop);
+        }
+
+        // ── Scroll Progress Bar ──
+        gsap.to('#scrollProgress', {
+            scaleX: 1,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: document.body,
+                start: 'top top',
+                end: 'bottom bottom',
+                scrub: 0.1,
+            },
+        });
+
+        // ── Hero: Scroll fades content, shifts geometry ──
+        gsap.to('.hero-content', {
+            opacity: 0,
+            y: -80,
+            ease: 'none',
+            scrollTrigger: {
+                trigger: '.hero-section',
+                start: 'top top',
+                end: 'bottom top',
+                scrub: 0.3,
+            },
+        });
+        ScrollTrigger.create({
+            trigger: '.hero-section',
+            start: 'top top',
+            end: 'bottom top',
+            scrub: 0.2,
+            onUpdate: (self) => {
+                const hero = state.instances.get('hero');
+                if (!hero) return;
+                const p = self.progress;
+                hero.setParams({
+                    rot4dXW: p * 3.14,
+                    rot4dYW: p * 1.5,
+                    gridDensity: 30 - p * 15,
+                    hue: 200 + p * 80,
+                    chaos: 0.15 + p * 0.4,
+                });
+            },
+        });
+
+        // ── Coordinated Section: Pin + mirror parameters ──
+        ScrollTrigger.create({
+            trigger: '#coordSection',
+            start: 'top top',
+            end: 'bottom bottom',
+            pin: '#coordPinned',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const p = self.progress;
+                const left = state.instances.get('coordLeft');
+                const right = state.instances.get('coordRight');
+                if (!left || !right) return;
+
+                // Left: density rises, hue shifts warm
+                left.setParams({
+                    gridDensity: 12 + p * 50,
+                    hue: 240 - p * 120,
+                    rot4dXW: p * 4.0,
+                    geometry: Math.floor(p * 8) % 8,
+                    chaos: 0.1 + p * 0.3,
+                    morphFactor: 0.5 + p * 1.0,
+                });
+
+                // Right: density falls, hue shifts cool (mirror)
+                right.setParams({
+                    gridDensity: 60 - p * 50,
+                    hue: 60 + p * 120,
+                    rot4dXW: -p * 4.0,
+                    geometry: 8 + Math.floor(p * 8) % 8,
+                    chaos: 0.4 - p * 0.3,
+                    morphFactor: 1.5 - p * 1.0,
+                });
+
+                // Fade info overlay
+                const info = document.getElementById('coordInfo');
+                if (info) {
+                    info.style.opacity = p < 0.1 ? 1 : Math.max(0, 1 - (p - 0.1) * 5);
+                }
+            },
+        });
+
+        // ── Density Interaction: Pin + button ──
+        ScrollTrigger.create({
+            trigger: '#densitySection',
+            start: 'top top',
+            end: 'bottom bottom',
+            pin: '#densityPinned',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const bg = state.instances.get('densityBg');
+                if (!bg) return;
+                const p = self.progress;
+                bg.setParams({
+                    rot4dXW: p * 2.5,
+                    hue: 280 + p * 60,
+                    gridDensity: state.densityBase.bg,
+                });
+            },
+        });
+
+        // Density button interaction
+        const densityBtn = document.getElementById('densityBtn');
+        const densityFill = document.getElementById('densityFill');
+        if (densityBtn) {
+            let sweepActive = false;
+            function densitySweep() {
+                if (sweepActive) return;
+                sweepActive = true;
+                const bg = state.instances.get('densityBg');
+
+                // Animate: card density down, bg density up over 1s
+                gsap.to(state.densityBase, {
+                    card: 20, bg: 55,
+                    duration: 1,
+                    ease: 'power2.out',
+                    onUpdate: () => {
+                        if (bg) bg.setParam('gridDensity', state.densityBase.bg);
+                        if (densityFill) densityFill.style.width = (state.densityBase.card / 80 * 100) + '%';
+                    },
+                    onComplete: () => {
+                        // Overshoot for 0.5s
+                        gsap.to(state.densityBase, {
+                            card: 15, bg: 62,
+                            duration: 0.5,
+                            ease: 'power1.in',
+                            onUpdate: () => {
+                                if (bg) bg.setParam('gridDensity', state.densityBase.bg);
+                                if (densityFill) densityFill.style.width = (state.densityBase.card / 80 * 100) + '%';
+                            },
+                            onComplete: () => {
+                                // Snap back
+                                gsap.to(state.densityBase, {
+                                    card: 40, bg: 40,
+                                    duration: 0.8,
+                                    ease: 'elastic.out(1, 0.5)',
+                                    onUpdate: () => {
+                                        if (bg) bg.setParam('gridDensity', state.densityBase.bg);
+                                        if (densityFill) densityFill.style.width = (state.densityBase.card / 80 * 100) + '%';
+                                    },
+                                    onComplete: () => { sweepActive = false; },
+                                });
+                            },
+                        });
+                    },
+                });
+            }
+            densityBtn.addEventListener('click', densitySweep);
+            densityBtn.addEventListener('touchstart', (e) => { e.preventDefault(); densitySweep(); });
+        }
+
+        // ── Carousel: Horizontal scroll with card hand-off ──
+        const track = document.getElementById('carouselTrack');
+        const cards = document.querySelectorAll('.carousel-card');
+        if (track && cards.length > 0) {
+            const totalScroll = (cards.length - 1) * (360 + 32);
+
+            ScrollTrigger.create({
+                trigger: '#carouselSection',
+                start: 'top top',
+                end: 'bottom bottom',
+                pin: '#carouselPinned',
+                scrub: 0.4,
+                onUpdate: (self) => {
+                    const p = self.progress;
+                    track.style.transform = `translateX(${-p * totalScroll}px)`;
+
+                    // Cross-fade card parameters as one exits and next enters
+                    const activeIdx = Math.min(Math.floor(p * cards.length), cards.length - 1);
+                    const nextIdx = Math.min(activeIdx + 1, cards.length - 1);
+                    const localP = (p * cards.length) - activeIdx;
+
+                    cards.forEach((card, i) => {
+                        const inst = state.instances.get(`card${i}`);
+                        if (!inst) return;
+                        const isActive = i === activeIdx;
+                        const isNext = i === nextIdx && activeIdx !== nextIdx;
+
+                        // Active card: rotate out
+                        if (isActive) {
+                            inst.setParams({
+                                rot4dXW: localP * 2.0,
+                                intensity: 0.8 - localP * 0.3,
+                            });
+                            card.style.opacity = 1 - localP * 0.15;
+                        }
+                        // Next card: inherit outgoing hue and morph in
+                        if (isNext) {
+                            const outHue = parseInt(cards[activeIdx].dataset.hue);
+                            const inHue = parseInt(card.dataset.hue);
+                            inst.setParams({
+                                hue: outHue + (inHue - outHue) * localP,
+                                rot4dXW: (1 - localP) * -1.0,
+                                intensity: 0.5 + localP * 0.3,
+                            });
+                            card.style.opacity = 0.7 + localP * 0.3;
+                        }
+                    });
+                },
+            });
+        }
+
+        // ── Wearable: Scroll drives rotation, buttons change geometry ──
+        let wearableGeoIdx = 3;
+        const geoNames = ['Tetrahedron', 'Hypercube', 'Sphere', 'Torus', 'Klein', 'Fractal', 'Wave', 'Crystal'];
+
+        ScrollTrigger.create({
+            trigger: '#wearableSection',
+            start: 'top top',
+            end: 'bottom bottom',
+            pin: '#wearablePinned',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const p = self.progress;
+                const wearable = state.instances.get('wearable');
+                const wearableBg = state.instances.get('wearableBg');
+                if (!wearable) return;
+
+                const rot = p * Math.PI * 4;
+                wearable.setParams({
+                    rot4dXW: rot,
+                    rot4dYW: p * 2.0,
+                    gridDensity: 16 + p * 30,
+                    hue: 180 + p * 100,
+                });
+
+                if (wearableBg) {
+                    wearableBg.setParams({
+                        rot4dXW: -rot * 0.3,
+                        hue: 160 + p * 40,
+                        gridDensity: 16 - p * 8,
+                        intensity: 0.15 + p * 0.1,
+                    });
+                }
+
+                // Update HUD
+                document.getElementById('wearRot').textContent = `XW ${rot.toFixed(1)}`;
+                document.getElementById('wearDensity').textContent = Math.round(16 + p * 30);
+            },
+        });
+
+        // Wearable buttons
+        document.getElementById('wearBtnA')?.addEventListener('click', () => {
+            wearableGeoIdx = (wearableGeoIdx + 1) % 8;
+            const w = state.instances.get('wearable');
+            if (w) {
+                gsap.to(w.params, {
+                    geometry: wearableGeoIdx,
+                    duration: 0.6,
+                    ease: 'power2.inOut',
+                });
+            }
+            document.getElementById('wearGeo').textContent = geoNames[wearableGeoIdx];
+        });
+
+        document.getElementById('wearBtnB')?.addEventListener('click', () => {
+            const w = state.instances.get('wearable');
+            if (w) {
+                gsap.to(w.params, {
+                    hue: Math.random() * 360,
+                    chaos: Math.random() * 0.5,
+                    gridDensity: 10 + Math.random() * 40,
+                    morphFactor: Math.random() * 1.5,
+                    duration: 1.2,
+                    ease: 'power2.inOut',
+                });
+            }
+        });
+
+        // ── CTA section: gentle drift ──
+        ScrollTrigger.create({
+            trigger: '#ctaSection',
+            start: 'top bottom',
+            end: 'bottom bottom',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const cta = state.instances.get('cta');
+                if (!cta) return;
+                cta.setParams({
+                    rot4dXW: self.progress * 1.5,
+                    hue: 140 + self.progress * 60,
+                });
+            },
+        });
+
+        // ── Boot ──
+        createInstances();
+        requestAnimationFrame(renderLoop);
+    </script>
 </body>
 </html>
