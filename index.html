@@ -105,6 +105,7 @@
 
         /* ═══════════════════════════════════════════
            SECTION 2: SYSTEM TRINITY — Three Voices
+           Single canvas, system swaps on scroll
            ═══════════════════════════════════════════ */
         .trinity {
             position: relative; min-height: 500vh;
@@ -113,11 +114,10 @@
             height: 100vh; width: 100%; position: relative;
             overflow: hidden; background: #050508;
         }
-        .trinity-panel {
-            position: absolute; inset: 0;
-            overflow: hidden; will-change: clip-path, opacity;
+        .trinity-flash {
+            position: absolute; inset: 0; z-index: 5;
+            background: #050508; opacity: 0; pointer-events: none;
         }
-        .trinity-panel .canvas-wrap { width: 100%; height: 100%; }
         .trinity-label {
             position: absolute; z-index: 10;
             bottom: 15%; left: 50%; transform: translateX(-50%);
@@ -390,7 +390,7 @@
 
     <!-- ═══════════════════════════════════════════════════
          SECTION 1: HERO — Quantum Emergence
-         Full-screen Quantum system shader
+         Full-screen Quantum system shader (1 GPU context)
          ═══════════════════════════════════════════════════ -->
     <section class="hero" id="main">
         <div class="hero-bg">
@@ -415,33 +415,25 @@
 
     <!-- ═══════════════════════════════════════════════════
          SECTION 2: SYSTEM TRINITY — Three Voices
-         Full-screen cross-fade through all 3 systems
+         SINGLE canvas — systems swap on scroll (1 GPU context)
          ═══════════════════════════════════════════════════ -->
     <section class="trinity" id="trinitySection">
         <div class="trinity-pinned" id="trinityPinned">
-            <!-- Layer 0: Quantum (starts visible) -->
-            <div class="trinity-panel" id="triQ" style="z-index:3; clip-path: inset(0 0 0 0);">
-                <div class="canvas-wrap"><canvas class="vib3-canvas" id="tri-quantum"></canvas></div>
-                <div class="trinity-label" id="triQLbl">
-                    <h2>Quantum</h2>
-                    <p>Complex lattice interference &middot; Volumetric shimmer &middot; 24 geometries</p>
-                </div>
+            <div class="canvas-wrap" style="width:100%;height:100%;">
+                <canvas class="vib3-canvas" id="trinity-canvas"></canvas>
             </div>
-            <!-- Layer 1: Holographic (hidden initially) -->
-            <div class="trinity-panel" id="triH" style="z-index:2; clip-path: inset(0 100% 0 0);">
-                <div class="canvas-wrap"><canvas class="vib3-canvas" id="tri-holographic"></canvas></div>
-                <div class="trinity-label" id="triHLbl">
-                    <h2>Holographic</h2>
-                    <p>Five-layer glassmorphism &middot; Role-based rendering &middot; Moir&eacute; interference</p>
-                </div>
+            <div class="trinity-flash" id="trinityFlash"></div>
+            <div class="trinity-label" id="triQLbl">
+                <h2>Quantum</h2>
+                <p>Complex lattice interference &middot; Volumetric shimmer &middot; 24 geometries</p>
             </div>
-            <!-- Layer 2: Faceted (hidden initially) -->
-            <div class="trinity-panel" id="triF" style="z-index:1; clip-path: inset(0 100% 0 0);">
-                <div class="canvas-wrap"><canvas class="vib3-canvas" id="tri-faceted"></canvas></div>
-                <div class="trinity-label" id="triFLbl">
-                    <h2>Faceted</h2>
-                    <p>Precise lattice geometry &middot; Clean projection &middot; HSL saturation control</p>
-                </div>
+            <div class="trinity-label" id="triHLbl">
+                <h2>Holographic</h2>
+                <p>Five-layer glassmorphism &middot; Role-based rendering &middot; Moir&eacute; interference</p>
+            </div>
+            <div class="trinity-label" id="triFLbl">
+                <h2>Faceted</h2>
+                <p>Precise lattice geometry &middot; Clean projection &middot; HSL saturation control</p>
             </div>
             <div class="trinity-counter" id="triCounter">
                 <span class="active">01</span> / 03
@@ -456,7 +448,7 @@
 
     <!-- ═══════════════════════════════════════════════════
          SECTION 3: CONVERGENCE — Coordinated Triptych
-         Three panels side-by-side, scroll drives coordinated waves
+         Three panels side-by-side (Canvas2D — 0 GPU contexts)
          ═══════════════════════════════════════════════════ -->
     <section class="convergence" id="convSection">
         <div class="convergence-pinned" id="convPinned">
@@ -483,7 +475,7 @@
 
     <!-- ═══════════════════════════════════════════════════
          SECTION 4: ENERGY TRANSFER — Interactive Demo
-         Button triggers choreographed shader energy exchange
+         Canvas2D bg + Faceted GPU card (1 GPU context, lazy)
          ═══════════════════════════════════════════════════ -->
     <section class="energy" id="energySection">
         <div class="energy-pinned" id="energyPinned">
@@ -512,7 +504,7 @@
 
     <!-- ═══════════════════════════════════════════════════
          SECTION 5: GEOMETRY CASCADE — Horizontal Card Scroll
-         Mixed-system cards with color bleeding
+         Canvas2D cards (0 GPU contexts)
          ═══════════════════════════════════════════════════ -->
     <section class="cascade" id="cascadeSection">
         <div class="cascade-pinned" id="cascadePinned">
@@ -547,6 +539,7 @@
 
     <!-- ═══════════════════════════════════════════════════
          SECTION 6: CTA
+         Canvas2D bg (0 GPU contexts)
          ═══════════════════════════════════════════════════ -->
     <section class="cta-section" id="ctaSection">
         <div class="cta-bg">
@@ -584,7 +577,16 @@
     </footer>
 
     <!-- ═══════════════════════════════════════════════════════════
-         ENGINE BOOT + GSAP CHOREOGRAPHY
+         ENGINE BOOT + GPU CONTEXT POOL + GSAP CHOREOGRAPHY
+
+         GPU CONTEXT BUDGET:
+           Hero ............ 1 (Quantum)
+           Trinity ......... 1 (swaps Q → H → F on scroll)
+           Convergence ..... 0 (Canvas2D)
+           Energy card ..... 1 (Faceted, lazy)
+           Cascade ......... 0 (Canvas2D)
+           CTA ............. 0 (Canvas2D)
+           MAX CONCURRENT .. 1-2 (safe for mobile)
          ═══════════════════════════════════════════════════════════ -->
     <script type="module">
         import { QuantumEngine } from './src/quantum/QuantumEngine.js';
@@ -593,13 +595,100 @@
 
         gsap.registerPlugin(ScrollTrigger);
 
-        /* ─────────────────────────────────────────
-           ADAPTER: Quantum (GPU)
-           ───────────────────────────────────────── */
+        /* ═══════════════════════════════════════════
+           GPU CONTEXT POOL
+           Max 2 simultaneous WebGL contexts.
+           Handles dispose + loseContext + canvas reset.
+           ═══════════════════════════════════════════ */
+        class ContextPool {
+            constructor(max = 2) {
+                this.max = max;
+                this.slots = new Map();
+            }
+
+            has(key) { return this.slots.has(key); }
+            get(key) { return this.slots.get(key)?.adapter || null; }
+
+            acquire(key, canvasId, Factory, opts) {
+                if (this.slots.has(key)) return this.slots.get(key).adapter;
+
+                // Evict oldest if at capacity
+                while (this.slots.size >= this.max) {
+                    const oldest = this.slots.keys().next().value;
+                    this.release(oldest);
+                }
+
+                // Replace canvas element for a clean WebGL state
+                this._resetCanvas(canvasId);
+
+                // Create adapter
+                try {
+                    const adapter = new Factory(canvasId, opts);
+                    if (!adapter.active) {
+                        console.warn(`[ContextPool] ${key} init failed on #${canvasId}`);
+                        return null;
+                    }
+                    this.slots.set(key, { adapter, canvasId });
+                    console.log(`[ContextPool] acquired "${key}" on #${canvasId} (${this.slots.size}/${this.max})`);
+                    return adapter;
+                } catch (e) {
+                    console.warn(`[ContextPool] ${key} threw:`, e);
+                    return null;
+                }
+            }
+
+            release(key) {
+                const entry = this.slots.get(key);
+                if (!entry) return;
+                try { entry.adapter.dispose(); } catch (e) {}
+                this._loseContext(entry.canvasId);
+                this.slots.delete(key);
+                console.log(`[ContextPool] released "${key}" (${this.slots.size}/${this.max})`);
+            }
+
+            releaseAll() {
+                for (const key of [...this.slots.keys()]) this.release(key);
+            }
+
+            _loseContext(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                try {
+                    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                    if (gl && !gl.isContextLost()) {
+                        const ext = gl.getExtension('WEBGL_lose_context');
+                        if (ext) ext.loseContext();
+                    }
+                } catch (e) {}
+            }
+
+            _resetCanvas(canvasId) {
+                const old = document.getElementById(canvasId);
+                if (!old) return;
+                this._loseContext(canvasId);
+                const fresh = document.createElement('canvas');
+                fresh.id = canvasId;
+                fresh.className = old.className;
+                if (old.style.cssText) fresh.style.cssText = old.style.cssText;
+                // Copy dimensions so the new system starts at proper size
+                const parent = old.parentElement;
+                if (parent) {
+                    const dpr = Math.min(devicePixelRatio || 1, 2);
+                    fresh.width = parent.clientWidth * dpr;
+                    fresh.height = parent.clientHeight * dpr;
+                }
+                old.parentNode.replaceChild(fresh, old);
+            }
+        }
+
+        /* ═══════════════════════════════════════════
+           ADAPTER: Quantum (1 GPU context)
+           ═══════════════════════════════════════════ */
         class Vib3Quantum {
             constructor(canvasId, opts = {}) {
                 const canvas = document.getElementById(canvasId);
                 if (!canvas) { this.active = false; return; }
+                this.canvas = canvas;
                 this.active = true;
                 this.params = {
                     geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
@@ -611,11 +700,12 @@
                     this.engine = new QuantumEngine({ canvas, autoStart: true });
                     this.engine.updateParameters(this.params);
                 } catch (e) {
-                    console.warn('Quantum init failed, falling back to Canvas2D', e);
+                    console.warn('Quantum init failed', e);
                     this.active = false; return;
                 }
                 this._resizeObs = new ResizeObserver(() => {
                     const p = canvas.parentElement;
+                    if (!p) return;
                     const dpr = Math.min(devicePixelRatio || 1, 2);
                     this.engine.resize(p.clientWidth, p.clientHeight, dpr);
                 });
@@ -624,16 +714,21 @@
             setParam(k, v) { this.params[k] = v; this.engine?.updateParameter(k, v); }
             setParams(o) { Object.assign(this.params, o); this.engine?.updateParameters(o); }
             render() { if (this.active) this.engine?.updateParameters(this.params); }
-            dispose() { this.active = false; this._resizeObs?.disconnect(); this.engine?.dispose(); }
+            dispose() {
+                this.active = false;
+                this._resizeObs?.disconnect();
+                try { this.engine?.dispose(); } catch (e) {}
+            }
         }
 
-        /* ─────────────────────────────────────────
-           ADAPTER: Holographic (GPU)
-           ───────────────────────────────────────── */
+        /* ═══════════════════════════════════════════
+           ADAPTER: Holographic (1 GPU context in single-canvas mode)
+           ═══════════════════════════════════════════ */
         class Vib3Holographic {
             constructor(canvasId, opts = {}) {
                 const canvas = document.getElementById(canvasId);
                 if (!canvas) { this.active = false; return; }
+                this.canvas = canvas;
                 this.active = true;
                 this.params = {
                     geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
@@ -647,11 +742,12 @@
                         this.system.updateParameter(k, v);
                     }
                 } catch (e) {
-                    console.warn('Holographic init failed, falling back to Canvas2D', e);
+                    console.warn('Holographic init failed', e);
                     this.active = false; return;
                 }
                 this._resizeObs = new ResizeObserver(() => {
                     const p = canvas.parentElement;
+                    if (!p) return;
                     const dpr = Math.min(devicePixelRatio || 1, 2);
                     this.system.resize(p.clientWidth, p.clientHeight, dpr);
                 });
@@ -666,16 +762,21 @@
                 if (!this.active) return;
                 for (const [k, v] of Object.entries(this.params)) this.system?.updateParameter(k, v);
             }
-            dispose() { this.active = false; this._resizeObs?.disconnect(); this.system?.dispose(); }
+            dispose() {
+                this.active = false;
+                this._resizeObs?.disconnect();
+                try { this.system?.dispose(); } catch (e) {}
+            }
         }
 
-        /* ─────────────────────────────────────────
-           ADAPTER: Faceted (GPU)
-           ───────────────────────────────────────── */
+        /* ═══════════════════════════════════════════
+           ADAPTER: Faceted (1 GPU context)
+           ═══════════════════════════════════════════ */
         class Vib3Faceted {
             constructor(canvasId, opts = {}) {
                 const canvas = document.getElementById(canvasId);
                 if (!canvas) { this.active = false; return; }
+                this.canvas = canvas;
                 this.active = true;
                 this.params = {
                     geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
@@ -695,6 +796,7 @@
                 }
                 this._resizeObs = new ResizeObserver(() => {
                     const p = canvas.parentElement;
+                    if (!p) return;
                     const dpr = Math.min(devicePixelRatio || 1, 2);
                     this.faceted.resize(p.clientWidth, p.clientHeight, dpr);
                 });
@@ -704,14 +806,15 @@
             setParams(o) { Object.assign(this.params, o); this.faceted?.updateParameters(o); }
             render() { if (this.active) this.faceted?.updateParameters(this.params); }
             dispose() {
-                this.active = false; this._resizeObs?.disconnect();
-                this.faceted?.stop(); this.faceted?.dispose();
+                this.active = false;
+                this._resizeObs?.disconnect();
+                try { this.faceted?.stop(); this.faceted?.dispose(); } catch (e) {}
             }
         }
 
-        /* ─────────────────────────────────────────
-           ADAPTER: Canvas2D Procedural (fallback)
-           ───────────────────────────────────────── */
+        /* ═══════════════════════════════════════════
+           ADAPTER: Canvas2D Procedural (no GPU context)
+           ═══════════════════════════════════════════ */
         class Vib3Canvas2D {
             constructor(canvasId, opts = {}) {
                 this.canvas = document.getElementById(canvasId);
@@ -785,89 +888,133 @@
             dispose() { this.active = false; this._ro?.disconnect(); }
         }
 
-        /* ════════════════════════════════════════════
-           STATE & INSTANCES
-           ════════════════════════════════════════════ */
-        const S = { instances: new Map(), time: 0 };
+        /* ═══════════════════════════════════════════
+           STATE
+           ═══════════════════════════════════════════ */
+        const pool = new ContextPool(2);
+        const c2d = new Map();
 
-        function boot() {
-            const I = S.instances;
+        // Configuration
+        const heroOpts = {
+            geometry: 3, hue: 220, gridDensity: 32, speed: 0.5,
+            intensity: 0.6, chaos: 0.1, morphFactor: 0.9,
+            rot4dXW: 0.2, dimension: 3.8, saturation: 0.85
+        };
+        const trinityOpts = [
+            { geometry: 2, hue: 200, gridDensity: 28, speed: 0.7, intensity: 0.75, chaos: 0.15, morphFactor: 0.7, dimension: 3.5 },
+            { geometry: 4, hue: 320, gridDensity: 20, speed: 0.6, intensity: 0.8, chaos: 0.2, morphFactor: 0.6, dimension: 3.6 },
+            { geometry: 1, hue: 60, gridDensity: 24, speed: 0.8, intensity: 0.7, chaos: 0.1, morphFactor: 1.0, dimension: 3.4 },
+        ];
+        const energyCardOpts = {
+            geometry: 7, hue: 180, gridDensity: 30, speed: 0.8,
+            intensity: 0.6, chaos: 0.1, morphFactor: 0.8, dimension: 3.5
+        };
 
-            // ── HERO: Quantum (full-screen, immersive) ──
-            I.set('hero', new Vib3Quantum('hero-canvas', {
-                geometry: 3, hue: 220, gridDensity: 32, speed: 0.5,
-                intensity: 0.6, chaos: 0.1, morphFactor: 0.9,
-                rot4dXW: 0.2, dimension: 3.8, saturation: 0.85
-            }));
+        const triFactories = [Vib3Quantum, Vib3Holographic, Vib3Faceted];
+        let triCurrent = -1;
+        let triSwapLock = false;
 
-            // ── TRINITY: One of each system (full-screen, stacked) ──
-            I.set('triQ', new Vib3Quantum('tri-quantum', {
-                geometry: 2, hue: 200, gridDensity: 28, speed: 0.7,
-                intensity: 0.75, chaos: 0.15, morphFactor: 0.7, dimension: 3.5
-            }));
-            I.set('triH', new Vib3Holographic('tri-holographic', {
-                geometry: 4, hue: 320, gridDensity: 20, speed: 0.6,
-                intensity: 0.8, chaos: 0.2, morphFactor: 0.6, dimension: 3.6
-            }));
-            I.set('triF', new Vib3Faceted('tri-faceted', {
-                geometry: 1, hue: 60, gridDensity: 24, speed: 0.8,
-                intensity: 0.7, chaos: 0.1, morphFactor: 1.0, dimension: 3.4
-            }));
+        /* ═══════════════════════════════════════════
+           LIFECYCLE FUNCTIONS
+           ═══════════════════════════════════════════ */
+        function createHero() {
+            return pool.acquire('hero', 'hero-canvas', Vib3Quantum, heroOpts);
+        }
 
-            // ── CONVERGENCE: Three panels (Canvas2D to save contexts) ──
-            I.set('convQ', new Vib3Canvas2D('conv-canvas-q', {
+        function createTriSystem(idx) {
+            if (pool.has('trinity')) pool.release('trinity');
+            const adapter = pool.acquire('trinity', 'trinity-canvas', triFactories[idx], trinityOpts[idx]);
+            triCurrent = adapter ? idx : -1;
+            return adapter;
+        }
+
+        function swapTriSystem(newIdx) {
+            if (newIdx === triCurrent || triSwapLock) return;
+            triSwapLock = true;
+            const flash = document.getElementById('trinityFlash');
+
+            // Animate labels
+            updateTriLabels(newIdx);
+            updateTriCounter(newIdx);
+
+            // Brief dark flash to mask the GPU swap
+            gsap.to(flash, { opacity: 0.9, duration: 0.1, ease: 'power2.in', onComplete: () => {
+                createTriSystem(newIdx);
+                // Wait 1 frame for the new shader to compile + render, then reveal
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        gsap.to(flash, { opacity: 0, duration: 0.25, ease: 'power2.out', onComplete: () => {
+                            triSwapLock = false;
+                        }});
+                    });
+                });
+            }});
+        }
+
+        function updateTriLabels(activeIdx) {
+            ['#triQLbl', '#triHLbl', '#triFLbl'].forEach((lbl, i) => {
+                const h2 = document.querySelector(`${lbl} h2`);
+                const p = document.querySelector(`${lbl} p`);
+                if (i === activeIdx) {
+                    gsap.to(h2, { opacity: 1, y: 0, duration: 0.7, delay: 0.12, ease: 'power3.out' });
+                    gsap.to(p, { opacity: 1, y: 0, duration: 0.6, delay: 0.2, ease: 'power2.out' });
+                } else {
+                    gsap.to(h2, { opacity: 0, y: -20, duration: 0.25, ease: 'power2.in' });
+                    gsap.to(p, { opacity: 0, y: -10, duration: 0.2, ease: 'power2.in' });
+                }
+            });
+        }
+
+        function updateTriCounter(idx) {
+            const counter = document.getElementById('triCounter');
+            if (counter) counter.innerHTML = `<span class="active">0${idx+1}</span> / 03`;
+            document.querySelectorAll('.ring-dot').forEach((d, i) => {
+                d.classList.toggle('active', i === idx);
+            });
+        }
+
+        /* ═══════════════════════════════════════════
+           CANVAS 2D INSTANCES (no GPU contexts)
+           ═══════════════════════════════════════════ */
+        function initCanvas2D() {
+            c2d.set('convQ', new Vib3Canvas2D('conv-canvas-q', {
                 geometry: 0, hue: 200, gridDensity: 20, speed: 0.8, intensity: 0.7, chaos: 0.15
             }));
-            I.set('convH', new Vib3Canvas2D('conv-canvas-h', {
+            c2d.set('convH', new Vib3Canvas2D('conv-canvas-h', {
                 geometry: 3, hue: 300, gridDensity: 22, speed: 0.6, intensity: 0.7, chaos: 0.2
             }));
-            I.set('convF', new Vib3Canvas2D('conv-canvas-f', {
+            c2d.set('convF', new Vib3Canvas2D('conv-canvas-f', {
                 geometry: 1, hue: 60, gridDensity: 18, speed: 0.7, intensity: 0.7, chaos: 0.1
             }));
-
-            // ── ENERGY: Faceted card + Canvas2D background ──
-            I.set('energyBg', new Vib3Canvas2D('energy-bg-canvas', {
+            c2d.set('energyBg', new Vib3Canvas2D('energy-bg-canvas', {
                 geometry: 6, hue: 270, gridDensity: 16, speed: 0.3,
                 intensity: 0.2, chaos: 0.05, dimension: 4.0
             }));
-            I.set('energyCard', new Vib3Faceted('energy-card-canvas', {
-                geometry: 7, hue: 180, gridDensity: 30, speed: 0.8,
-                intensity: 0.6, chaos: 0.1, morphFactor: 0.8, dimension: 3.5
-            }));
-
-            // ── CASCADE: Canvas2D cards ──
             document.querySelectorAll('.cascade-card').forEach((card, i) => {
-                I.set(`cas${i}`, new Vib3Canvas2D(`cas-${i}`, {
+                c2d.set(`cas${i}`, new Vib3Canvas2D(`cas-${i}`, {
                     geometry: parseInt(card.dataset.geo),
                     hue: parseInt(card.dataset.hue),
                     gridDensity: 18, speed: 0.6, intensity: 0.75, chaos: 0.15,
                     morphFactor: 0.6, dimension: 3.5
                 }));
             });
-
-            // ── CTA: Canvas2D background ──
-            I.set('cta', new Vib3Canvas2D('cta-canvas', {
+            c2d.set('cta', new Vib3Canvas2D('cta-canvas', {
                 geometry: 5, hue: 160, gridDensity: 14, speed: 0.3,
                 intensity: 0.2, chaos: 0.25, dimension: 4.0
             }));
         }
 
-        /* ════════════════════════════════════════════
-           RENDER LOOP (Canvas2D instances only — GPU self-renders)
-           ════════════════════════════════════════════ */
+        /* ═══════════════════════════════════════════
+           RENDER LOOP (Canvas2D only — GPU systems self-render)
+           ═══════════════════════════════════════════ */
         function renderLoop(ts) {
-            S.time = ts;
-            for (const inst of S.instances.values()) {
-                if (inst instanceof Vib3Canvas2D) inst.render(ts);
-                // GPU adapters sync params via render() when GSAP mutates .params
-                else inst.render(ts);
-            }
+            for (const inst of c2d.values()) inst.render(ts);
             requestAnimationFrame(renderLoop);
         }
 
-        /* ════════════════════════════════════════════
+        /* ═══════════════════════════════════════════
            GSAP CHOREOGRAPHY
-           ════════════════════════════════════════════ */
+           ═══════════════════════════════════════════ */
 
         // ── Scroll Progress ──
         gsap.to('#scrollProgress', {
@@ -880,11 +1027,8 @@
         // ═══════════════════════════════════════
         function heroEntrance() {
             const tl = gsap.timeline({ delay: 0.3 });
-
-            // Badge drops in
             tl.to('#heroBadge', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' });
 
-            // Title chars reveal
             const title = document.getElementById('heroTitle');
             const text = title.textContent;
             title.innerHTML = text.split('').map(c =>
@@ -893,12 +1037,8 @@
             tl.to('#heroTitle .char', {
                 opacity: 1, y: 0, duration: 0.6, stagger: 0.08, ease: 'power4.out'
             }, '-=0.4');
-
-            // Subtitle + system label
             tl.to('#heroSub', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.3');
             tl.to('#heroSystemLabel', { opacity: 1, duration: 0.5 }, '-=0.3');
-
-            // Scroll hint
             tl.to('#heroScroll', { opacity: 1, duration: 0.6 }, '-=0.2');
         }
 
@@ -909,10 +1049,8 @@
             scrub: 0.3,
             onUpdate: (self) => {
                 const p = self.progress;
-                const hero = S.instances.get('hero');
+                const hero = pool.get('hero');
                 if (!hero) return;
-
-                // Sweep: geometry morphs, hue shifts, rotation accelerates, chaos rises
                 hero.setParams({
                     rot4dXW: p * Math.PI * 1.5,
                     rot4dYW: p * Math.PI * 0.8,
@@ -927,7 +1065,7 @@
             }
         });
 
-        // Hero content fade
+        // Hero content fade on scroll
         gsap.to('#heroContent', {
             opacity: 0, y: -100, ease: 'none',
             scrollTrigger: { trigger: '.hero', start: '30% top', end: 'bottom top', scrub: 0.3 }
@@ -938,123 +1076,95 @@
         });
 
         // ═══════════════════════════════════════
-        // TRINITY: Full-screen system cross-fades
+        // TRINITY: Single canvas, system swaps at 33%/66%
+        // Lifecycle: onEnter creates, onLeave destroys
         // ═══════════════════════════════════════
-        const triPanels = [
-            { el: '#triQ', lbl: '#triQLbl', inst: 'triQ', idx: 0 },
-            { el: '#triH', lbl: '#triHLbl', inst: 'triH', idx: 1 },
-            { el: '#triF', lbl: '#triFLbl', inst: 'triF', idx: 2 },
-        ];
-        let triCurrent = -1;
-
         ScrollTrigger.create({
             trigger: '#trinitySection',
             start: 'top top', end: 'bottom bottom',
             pin: '#trinityPinned',
             scrub: 0.4,
+            onEnter: () => {
+                // Entering trinity from above — dispose hero, create Quantum
+                pool.release('hero');
+                createTriSystem(0);
+                updateTriLabels(0);
+                updateTriCounter(0);
+            },
+            onLeave: () => {
+                // Scrolled past trinity — release GPU
+                pool.release('trinity');
+                triCurrent = -1;
+            },
+            onEnterBack: () => {
+                // Scrolling back up into trinity from convergence — create Faceted
+                createTriSystem(2);
+                updateTriLabels(2);
+                updateTriCounter(2);
+            },
+            onLeaveBack: () => {
+                // Scrolling back up past trinity — restore hero
+                pool.release('trinity');
+                triCurrent = -1;
+                createHero();
+            },
             onUpdate: (self) => {
                 const p = self.progress;
+                const newIdx = p < 0.33 ? 0 : p < 0.66 ? 1 : 2;
 
-                // Phase transitions: 0-0.3 Quantum, 0.3-0.4 transition, 0.4-0.65 Holographic,
-                // 0.65-0.75 transition, 0.75-1.0 Faceted
-                let activeIdx, localP;
-                if (p < 0.33) { activeIdx = 0; localP = p / 0.33; }
-                else if (p < 0.66) { activeIdx = 1; localP = (p - 0.33) / 0.33; }
-                else { activeIdx = 2; localP = (p - 0.66) / 0.34; }
-
-                // Clip-path reveals: current panel slides in from right
-                triPanels.forEach((panel, i) => {
-                    const el = document.querySelector(panel.el);
-                    if (!el) return;
-
-                    if (i < activeIdx) {
-                        // Past panels: fully visible (behind)
-                        el.style.clipPath = 'inset(0 0 0 0)';
-                        el.style.opacity = '1';
-                    } else if (i === activeIdx) {
-                        // Active panel: revealed
-                        el.style.clipPath = 'inset(0 0 0 0)';
-                        el.style.opacity = '1';
-                    } else if (i === activeIdx + 1) {
-                        // Next panel: partially revealed based on progress within current phase
-                        const revealProgress = Math.max(0, (localP - 0.6) / 0.4);
-                        const insetRight = (1 - revealProgress) * 100;
-                        el.style.clipPath = `inset(0 ${insetRight}% 0 0)`;
-                        el.style.opacity = '1';
-                    } else {
-                        // Future panels: hidden
-                        el.style.clipPath = 'inset(0 100% 0 0)';
-                    }
-                });
-
-                // Update counter + dots
-                if (activeIdx !== triCurrent) {
-                    triCurrent = activeIdx;
-                    const counter = document.getElementById('triCounter');
-                    if (counter) counter.innerHTML = `<span class="active">0${activeIdx+1}</span> / 03`;
-                    document.querySelectorAll('.ring-dot').forEach((d, i) => {
-                        d.classList.toggle('active', i === activeIdx);
-                    });
-
-                    // Animate label in
-                    triPanels.forEach((panel, i) => {
-                        const h2 = document.querySelector(`${panel.lbl} h2`);
-                        const pp = document.querySelector(`${panel.lbl} p`);
-                        if (i === activeIdx) {
-                            gsap.to(h2, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' });
-                            gsap.to(pp, { opacity: 1, y: 0, duration: 0.6, delay: 0.15, ease: 'power2.out' });
-                        } else {
-                            gsap.set(h2, { opacity: 0, y: 40 });
-                            gsap.set(pp, { opacity: 0, y: 20 });
-                        }
-                    });
+                // Swap system at boundaries
+                if (newIdx !== triCurrent && !triSwapLock) {
+                    swapTriSystem(newIdx);
                 }
 
-                // Drive shader parameters per system during active phase
-                const inst = S.instances.get(triPanels[activeIdx].inst);
-                if (inst) {
-                    const sweep = localP;
-                    if (activeIdx === 0) {
-                        // Quantum: geometry evolves, rotation sweeps, density rises
-                        inst.setParams({
-                            geometry: Math.floor(sweep * 7),
-                            rot4dXW: sweep * Math.PI * 2,
-                            rot4dYW: sweep * Math.PI,
-                            gridDensity: 20 + sweep * 40,
-                            hue: 200 + sweep * 80,
-                            chaos: 0.1 + sweep * 0.3,
-                            morphFactor: 0.5 + sweep * 1.0,
-                        });
-                    } else if (activeIdx === 1) {
-                        // Holographic: warm colors, dramatic 4D spins, high morph
-                        inst.setParams({
-                            geometry: 8 + Math.floor(sweep * 7),
-                            rot4dXW: sweep * Math.PI * 3,
-                            rot4dZW: sweep * Math.PI * 1.5,
-                            gridDensity: 16 + sweep * 30,
-                            hue: 300 + sweep * 60,
-                            chaos: 0.15 + sweep * 0.35,
-                            morphFactor: 0.6 + sweep * 0.8,
-                            intensity: 0.7 + sweep * 0.25,
-                        });
-                    } else {
-                        // Faceted: clean precision, geometry converges
-                        inst.setParams({
-                            geometry: 16 + Math.floor(sweep * 7),
-                            rot4dXW: sweep * Math.PI * 2.5,
-                            rot4dYW: sweep * Math.PI * 0.5,
-                            gridDensity: 18 + sweep * 35,
-                            hue: 40 + sweep * 120,
-                            chaos: 0.05 + sweep * 0.2,
-                            morphFactor: 0.8 + sweep * 0.7,
-                        });
-                    }
+                // Drive shader parameters on active system
+                const adapter = pool.get('trinity');
+                if (!adapter) return;
+
+                const localP = newIdx === 0 ? p / 0.33
+                             : newIdx === 1 ? (p - 0.33) / 0.33
+                             : (p - 0.66) / 0.34;
+
+                if (triCurrent === 0) {
+                    // Quantum: geometry evolves, rotation sweeps, density rises
+                    adapter.setParams({
+                        geometry: Math.floor(localP * 7),
+                        rot4dXW: localP * Math.PI * 2,
+                        rot4dYW: localP * Math.PI,
+                        gridDensity: 20 + localP * 40,
+                        hue: 200 + localP * 80,
+                        chaos: 0.1 + localP * 0.3,
+                        morphFactor: 0.5 + localP * 1.0,
+                    });
+                } else if (triCurrent === 1) {
+                    // Holographic: warm colors, dramatic 4D spins
+                    adapter.setParams({
+                        geometry: 8 + Math.floor(localP * 7),
+                        rot4dXW: localP * Math.PI * 3,
+                        rot4dZW: localP * Math.PI * 1.5,
+                        gridDensity: 16 + localP * 30,
+                        hue: 300 + localP * 60,
+                        chaos: 0.15 + localP * 0.35,
+                        morphFactor: 0.6 + localP * 0.8,
+                        intensity: 0.7 + localP * 0.25,
+                    });
+                } else {
+                    // Faceted: clean precision, geometry converges
+                    adapter.setParams({
+                        geometry: 16 + Math.floor(localP * 7),
+                        rot4dXW: localP * Math.PI * 2.5,
+                        rot4dYW: localP * Math.PI * 0.5,
+                        gridDensity: 18 + localP * 35,
+                        hue: 40 + localP * 120,
+                        chaos: 0.05 + localP * 0.2,
+                        morphFactor: 0.8 + localP * 0.7,
+                    });
                 }
             }
         });
 
         // ═══════════════════════════════════════
-        // CONVERGENCE: Coordinated parameter waves
+        // CONVERGENCE: Canvas2D coordinated waves
         // ═══════════════════════════════════════
         ScrollTrigger.create({
             trigger: '#convSection',
@@ -1063,17 +1173,12 @@
             scrub: 0.3,
             onUpdate: (self) => {
                 const p = self.progress;
-                const q = S.instances.get('convQ');
-                const h = S.instances.get('convH');
-                const f = S.instances.get('convF');
+                const q = c2d.get('convQ');
+                const h = c2d.get('convH');
+                const f = c2d.get('convF');
                 if (!q || !h || !f) return;
 
                 const overlay = document.getElementById('convOverlay');
-
-                // Phase 1 (0-0.25): Divergent — each system runs independently
-                // Phase 2 (0.25-0.5): Wave — color sweeps left→center→right with delay
-                // Phase 3 (0.5-0.75): Convergence — all match
-                // Phase 4 (0.75-1.0): Burst — diverge with new identities
 
                 if (p < 0.25) {
                     // Divergent: each has own parameters
@@ -1090,7 +1195,6 @@
                         geometry: 1 + Math.floor(lp * 4), hue: 60 + lp * 20,
                         rot4dXW: lp * 2.5, gridDensity: 18 + lp * 10, chaos: 0.1
                     });
-
                     if (overlay) {
                         overlay.querySelector('h2').style.opacity = Math.max(0, 1 - lp * 3);
                         overlay.querySelector('p').style.opacity = Math.max(0, 1 - lp * 3);
@@ -1101,7 +1205,6 @@
                     const lp = (p - 0.25) / 0.25;
                     const waveHue = 180 + Math.sin(lp * Math.PI * 2) * 80;
                     const qDelay = 0, hDelay = 0.15, fDelay = 0.3;
-
                     q.setParams({
                         hue: waveHue + Math.sin((lp - qDelay) * Math.PI * 3) * 60,
                         rot4dXW: 2 + lp * 4, gridDensity: 30 + Math.sin(lp * Math.PI * 4) * 15,
@@ -1127,65 +1230,41 @@
                 } else if (p < 0.75) {
                     // Convergence — all 3 unify
                     const lp = (p - 0.5) / 0.25;
-                    const uniGeo = 3;
-                    const uniHue = 180;
-                    const uniDensity = 28;
-                    const uniRot = lp * Math.PI * 4;
-                    const uniMorph = 1.2;
-                    const uniChaos = 0.15;
                     const shared = {
-                        geometry: uniGeo, hue: uniHue, gridDensity: uniDensity,
-                        rot4dXW: uniRot, rot4dYW: lp * 2,
-                        morphFactor: uniMorph, chaos: uniChaos, intensity: 0.8,
+                        geometry: 3, hue: 180, gridDensity: 28,
+                        rot4dXW: lp * Math.PI * 4, rot4dYW: lp * 2,
+                        morphFactor: 1.2, chaos: 0.15, intensity: 0.8,
                     };
                     q.setParams(shared); h.setParams(shared); f.setParams(shared);
-
                     if (overlay) {
                         const convTitle = document.getElementById('convTitle');
                         const convSub = document.getElementById('convSub');
-                        if (convTitle) {
-                            convTitle.textContent = 'Unified';
-                            convTitle.style.opacity = Math.min(1, lp * 3);
-                        }
-                        if (convSub) {
-                            convSub.textContent = 'Three engines. One heartbeat.';
-                            convSub.style.opacity = Math.min(1, lp * 3);
-                        }
+                        if (convTitle) { convTitle.textContent = 'Unified'; convTitle.style.opacity = Math.min(1, lp * 3); }
+                        if (convSub) { convSub.textContent = 'Three engines. One heartbeat.'; convSub.style.opacity = Math.min(1, lp * 3); }
                     }
 
                 } else {
-                    // Burst divergence — each takes on dramatic new identity
+                    // Burst divergence — dramatic new identities
                     const lp = (p - 0.75) / 0.25;
                     const rot = Math.PI * 4 + lp * Math.PI * 3;
-
                     q.setParams({
-                        geometry: 16 + Math.floor(lp * 7),
-                        hue: 0 + lp * 180,
+                        geometry: 16 + Math.floor(lp * 7), hue: lp * 180,
                         rot4dXW: rot, rot4dYW: lp * 4,
-                        gridDensity: 28 + lp * 40,
-                        chaos: 0.15 + lp * 0.6,
-                        morphFactor: 1.2 + lp * 0.8,
-                        intensity: 0.8 + lp * 0.2,
+                        gridDensity: 28 + lp * 40, chaos: 0.15 + lp * 0.6,
+                        morphFactor: 1.2 + lp * 0.8, intensity: 0.8 + lp * 0.2,
                     });
                     h.setParams({
-                        geometry: 8 + Math.floor(lp * 7),
-                        hue: 300 + lp * 60,
+                        geometry: 8 + Math.floor(lp * 7), hue: 300 + lp * 60,
                         rot4dXW: -rot * 0.8, rot4dYW: -lp * 3,
-                        gridDensity: 28 - lp * 10,
-                        chaos: 0.15 + lp * 0.4,
-                        morphFactor: 1.2 - lp * 0.5,
-                        intensity: 0.8 + lp * 0.15,
+                        gridDensity: 28 - lp * 10, chaos: 0.15 + lp * 0.4,
+                        morphFactor: 1.2 - lp * 0.5, intensity: 0.8 + lp * 0.15,
                     });
                     f.setParams({
-                        geometry: Math.floor(lp * 7),
-                        hue: 60 + lp * 200,
+                        geometry: Math.floor(lp * 7), hue: 60 + lp * 200,
                         rot4dXW: rot * 1.2, rot4dZW: lp * Math.PI,
-                        gridDensity: 28 + lp * 25,
-                        chaos: 0.15 + lp * 0.5,
-                        morphFactor: 1.2 + lp * 0.6,
-                        intensity: 0.8 + lp * 0.2,
+                        gridDensity: 28 + lp * 25, chaos: 0.15 + lp * 0.5,
+                        morphFactor: 1.2 + lp * 0.6, intensity: 0.8 + lp * 0.2,
                     });
-
                     if (overlay) {
                         overlay.querySelector('h2').style.opacity = Math.max(0, 1 - lp * 4);
                         overlay.querySelector('p').style.opacity = Math.max(0, 1 - lp * 4);
@@ -1199,8 +1278,20 @@
         gsap.set('#convSub', { opacity: 1 });
 
         // ═══════════════════════════════════════
-        // ENERGY TRANSFER: Card entrance + button
+        // ENERGY TRANSFER: Lazy GPU card + Canvas2D bg
         // ═══════════════════════════════════════
+
+        // Lazy lifecycle for GPU card
+        ScrollTrigger.create({
+            trigger: '#energySection',
+            start: 'top 80%', end: 'bottom top',
+            onEnter: () => pool.acquire('energyCard', 'energy-card-canvas', Vib3Faceted, energyCardOpts),
+            onLeave: () => pool.release('energyCard'),
+            onEnterBack: () => pool.acquire('energyCard', 'energy-card-canvas', Vib3Faceted, energyCardOpts),
+            onLeaveBack: () => pool.release('energyCard'),
+        });
+
+        // Pin + scroll animation
         ScrollTrigger.create({
             trigger: '#energySection',
             start: 'top top', end: 'bottom bottom',
@@ -1208,10 +1299,8 @@
             scrub: 0.3,
             onUpdate: (self) => {
                 const p = self.progress;
-                const bg = S.instances.get('energyBg');
+                const bg = c2d.get('energyBg');
                 if (!bg) return;
-
-                // Background gently evolves
                 bg.setParams({
                     rot4dXW: p * 3,
                     hue: 270 + p * 50,
@@ -1221,15 +1310,13 @@
             }
         });
 
-        // Card entrance animation
+        // Card entrance
         ScrollTrigger.create({
             trigger: '#energySection',
             start: 'top 60%',
             once: true,
             onEnter: () => {
-                gsap.to('#energyCard', {
-                    opacity: 1, y: 0, duration: 1, ease: 'power3.out'
-                });
+                gsap.to('#energyCard', { opacity: 1, y: 0, duration: 1, ease: 'power3.out' });
             }
         });
 
@@ -1241,42 +1328,45 @@
             function energySweep() {
                 if (sweeping) return;
                 sweeping = true;
-                const card = S.instances.get('energyCard');
-                const bg = S.instances.get('energyBg');
+                const card = pool.get('energyCard');
+                const bg = c2d.get('energyBg');
+                if (!card && !bg) { sweeping = false; return; }
 
-                const tl = gsap.timeline({
-                    onComplete: () => { sweeping = false; }
-                });
+                const tl = gsap.timeline({ onComplete: () => { sweeping = false; } });
 
-                // Phase 1: Card drains — intensity collapses, density drops
-                tl.to(card?.params || {}, {
-                    intensity: 0.05, gridDensity: 4, chaos: 0.6, hue: 320,
-                    duration: 0.8, ease: 'power3.in',
-                    onUpdate: () => card?.render(),
-                }, 0);
-
+                // Phase 1: Card drains — intensity collapses
+                if (card) {
+                    tl.to(card.params, {
+                        intensity: 0.05, gridDensity: 4, chaos: 0.6, hue: 320,
+                        duration: 0.8, ease: 'power3.in',
+                        onUpdate: () => card.render(),
+                    }, 0);
+                }
                 // Phase 1: Background surges — absorbs energy
-                tl.to(bg?.params || {}, {
-                    intensity: 0.8, gridDensity: 55, chaos: 0.5, hue: 180,
-                    morphFactor: 1.5,
-                    duration: 0.8, ease: 'power2.out',
-                    onUpdate: () => bg?.render(),
-                }, 0);
-
-                // Meter drops
+                if (bg) {
+                    tl.to(bg.params, {
+                        intensity: 0.8, gridDensity: 55, chaos: 0.5, hue: 180, morphFactor: 1.5,
+                        duration: 0.8, ease: 'power2.out',
+                        onUpdate: () => bg.render(),
+                    }, 0);
+                }
                 tl.to(energyFill, { width: '5%', duration: 0.8, ease: 'power3.in' }, 0);
 
                 // Phase 2: Color swap + geometry morph
-                tl.to(card?.params || {}, {
-                    hue: 270, geometry: 5, rot4dXW: Math.PI,
-                    duration: 0.6, ease: 'power2.inOut',
-                    onUpdate: () => card?.render(),
-                }, 0.8);
-                tl.to(bg?.params || {}, {
-                    hue: 60, geometry: 3,
-                    duration: 0.6, ease: 'power2.inOut',
-                    onUpdate: () => bg?.render(),
-                }, 0.8);
+                if (card) {
+                    tl.to(card.params, {
+                        hue: 270, geometry: 5, rot4dXW: Math.PI,
+                        duration: 0.6, ease: 'power2.inOut',
+                        onUpdate: () => card.render(),
+                    }, 0.8);
+                }
+                if (bg) {
+                    tl.to(bg.params, {
+                        hue: 60, geometry: 3,
+                        duration: 0.6, ease: 'power2.inOut',
+                        onUpdate: () => bg.render(),
+                    }, 0.8);
+                }
 
                 // Phase 3: Card element morphs
                 tl.to('#energyCard', {
@@ -1291,18 +1381,22 @@
                 }, 1.4);
 
                 // Phase 4: Elastic snap-back
-                tl.to(card?.params || {}, {
-                    intensity: 0.6, gridDensity: 30, chaos: 0.1,
-                    hue: 180, geometry: 7, rot4dXW: 0,
-                    duration: 1.2, ease: 'elastic.out(1, 0.5)',
-                    onUpdate: () => card?.render(),
-                }, 1.5);
-                tl.to(bg?.params || {}, {
-                    intensity: 0.2, gridDensity: 16, chaos: 0.05,
-                    hue: 270, morphFactor: 0.5, geometry: 6,
-                    duration: 1.2, ease: 'elastic.out(1, 0.5)',
-                    onUpdate: () => bg?.render(),
-                }, 1.5);
+                if (card) {
+                    tl.to(card.params, {
+                        intensity: 0.6, gridDensity: 30, chaos: 0.1,
+                        hue: 180, geometry: 7, rot4dXW: 0,
+                        duration: 1.2, ease: 'elastic.out(1, 0.5)',
+                        onUpdate: () => card.render(),
+                    }, 1.5);
+                }
+                if (bg) {
+                    tl.to(bg.params, {
+                        intensity: 0.2, gridDensity: 16, chaos: 0.05,
+                        hue: 270, morphFactor: 0.5, geometry: 6,
+                        duration: 1.2, ease: 'elastic.out(1, 0.5)',
+                        onUpdate: () => bg.render(),
+                    }, 1.5);
+                }
                 tl.to(energyFill, { width: '50%', duration: 1, ease: 'elastic.out(1, 0.5)' }, 1.5);
             }
 
@@ -1311,12 +1405,11 @@
         }
 
         // ═══════════════════════════════════════
-        // CASCADE: Horizontal card scroll + reveal
+        // CASCADE: Horizontal card scroll (Canvas2D)
         // ═══════════════════════════════════════
         const cascadeCards = document.querySelectorAll('.cascade-card');
         const cascadeTrack = document.getElementById('cascadeTrack');
 
-        // Staggered card entrance
         ScrollTrigger.create({
             trigger: '#cascadeSection',
             start: 'top 80%',
@@ -1330,7 +1423,7 @@
         });
 
         if (cascadeTrack && cascadeCards.length > 0) {
-            const cardW = 340 + 28; // card width + gap
+            const cardW = 340 + 28;
             const totalScroll = (cascadeCards.length - 1) * cardW;
 
             ScrollTrigger.create({
@@ -1342,17 +1435,14 @@
                     const p = self.progress;
                     cascadeTrack.style.transform = `translateX(${-p * totalScroll}px)`;
 
-                    // Color bleeding: active card's hue bleeds into neighbors
                     const activeIdx = Math.min(Math.floor(p * cascadeCards.length), cascadeCards.length - 1);
                     const activeHue = parseInt(cascadeCards[activeIdx].dataset.hue);
                     const localP = (p * cascadeCards.length) - activeIdx;
 
                     cascadeCards.forEach((card, i) => {
-                        const inst = S.instances.get(`cas${i}`);
+                        const inst = c2d.get(`cas${i}`);
                         if (!inst) return;
-
                         if (i === activeIdx) {
-                            // Active: sweep rotation, pulse intensity
                             inst.setParams({
                                 rot4dXW: localP * Math.PI,
                                 intensity: 0.75 + Math.sin(localP * Math.PI) * 0.15,
@@ -1360,7 +1450,6 @@
                             });
                             card.style.transform = `scale(${1 + Math.sin(localP * Math.PI) * 0.03})`;
                         } else if (Math.abs(i - activeIdx) === 1) {
-                            // Neighbor: receive color bleed
                             const ownHue = parseInt(card.dataset.hue);
                             const bleedAmount = i < activeIdx ? (1 - localP) * 0.3 : localP * 0.3;
                             inst.setParams({
@@ -1377,14 +1466,14 @@
         }
 
         // ═══════════════════════════════════════
-        // CTA: Gentle drift
+        // CTA: Gentle drift (Canvas2D)
         // ═══════════════════════════════════════
         ScrollTrigger.create({
             trigger: '#ctaSection',
             start: 'top bottom', end: 'bottom bottom',
             scrub: 0.3,
             onUpdate: (self) => {
-                const cta = S.instances.get('cta');
+                const cta = c2d.get('cta');
                 if (!cta) return;
                 cta.setParams({
                     rot4dXW: self.progress * 2,
@@ -1394,12 +1483,23 @@
             }
         });
 
-        /* ════════════════════════════════════════════
-           BOOT
-           ════════════════════════════════════════════ */
-        boot();
-        heroEntrance();
+        /* ═══════════════════════════════════════════
+           BOOT — Only 1 GPU context at startup
+           ═══════════════════════════════════════════ */
+        createHero();       // 1 GPU context (Quantum on hero-canvas)
+        initCanvas2D();     // 0 GPU contexts (all Canvas2D)
+        heroEntrance();     // GSAP text animations
         requestAnimationFrame(renderLoop);
+
+        // Clean up on page hide (mobile tab switching)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                pool.releaseAll();
+            } else {
+                // Restore based on current scroll position
+                ScrollTrigger.refresh();
+            }
+        });
     </script>
 </body>
 </html>
