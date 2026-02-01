@@ -11,6 +11,9 @@ importers:
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
+      ajv-formats:
+        specifier: ^3.0.1
+        version: 3.0.1(ajv@8.17.1)
     devDependencies:
       '@playwright/test':
         specifier: ^1.58.0
@@ -29,13 +32,16 @@ importers:
         version: 20.19.30
       '@vitest/coverage-v8':
         specifier: ^1.6.1
-        version: 1.6.1(vitest@1.6.1(@types/node@20.19.30)(happy-dom@20.3.7))
+        version: 1.6.1(vitest@1.6.1(@types/node@20.19.30)(happy-dom@20.4.0))
       eslint:
         specifier: ^9.6.0
         version: 9.39.2
       happy-dom:
-        specifier: ^20.3.7
-        version: 20.3.7
+        specifier: ^20.4.0
+        version: 20.4.0
+      playwright:
+        specifier: ^1.58.0
+        version: 1.58.0
       puppeteer-core:
         specifier: ^24.36.0
         version: 24.36.0
@@ -53,7 +59,7 @@ importers:
         version: 5.4.21(@types/node@20.19.30)
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.30)(happy-dom@20.3.7)
+        version: 1.6.1(@types/node@20.19.30)(happy-dom@20.4.0)
 
 packages:
 
@@ -1014,6 +1020,14 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
+  ajv-formats@3.0.1:
+    resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
+    peerDependencies:
+      ajv: ^8.0.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
+
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
 
@@ -1479,8 +1493,8 @@ packages:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
 
-  happy-dom@20.3.7:
-    resolution: {integrity: sha512-sb5IzoRl1WJKsUSRe+IloJf3z1iDq5PQ7Yk/ULMsZ5IAQEs9ZL7RsFfiKBXU7nK9QmO+iz0e59EH8r8jexTZ/g==}
+  happy-dom@20.4.0:
+    resolution: {integrity: sha512-RDeQm3dT9n0A5f/TszjUmNCLEuPnMGv3Tv4BmNINebz/h17PA6LMBcxJ5FrcqltNBMh9jA/8ufgDdBYUdBt+eg==}
     engines: {node: '>=20.0.0'}
 
   has-flag@4.0.0:
@@ -2911,7 +2925,7 @@ snapshots:
       '@types/node': 20.19.30
     optional: true
 
-  '@vitest/coverage-v8@1.6.1(vitest@1.6.1(@types/node@20.19.30)(happy-dom@20.3.7))':
+  '@vitest/coverage-v8@1.6.1(vitest@1.6.1(@types/node@20.19.30)(happy-dom@20.4.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -2926,7 +2940,7 @@ snapshots:
       std-env: 3.10.0
       strip-literal: 2.1.1
       test-exclude: 6.0.0
-      vitest: 1.6.1(@types/node@20.19.30)(happy-dom@20.3.7)
+      vitest: 1.6.1(@types/node@20.19.30)(happy-dom@20.4.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -3002,6 +3016,10 @@ snapshots:
   acorn@8.15.0: {}
 
   agent-base@7.1.4: {}
+
+  ajv-formats@3.0.1(ajv@8.17.1):
+    optionalDependencies:
+      ajv: 8.17.1
 
   ajv@6.12.6:
     dependencies:
@@ -3558,7 +3576,7 @@ snapshots:
 
   gopd@1.2.0: {}
 
-  happy-dom@20.3.7:
+  happy-dom@20.4.0:
     dependencies:
       '@types/node': 20.19.30
       '@types/whatwg-mimetype': 3.0.2
@@ -4226,7 +4244,7 @@ snapshots:
       '@types/node': 20.19.30
       fsevents: 2.3.3
 
-  vitest@1.6.1(@types/node@20.19.30)(happy-dom@20.3.7):
+  vitest@1.6.1(@types/node@20.19.30)(happy-dom@20.4.0):
     dependencies:
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1
@@ -4250,7 +4268,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.30
-      happy-dom: 20.3.7
+      happy-dom: 20.4.0
     transitivePeerDependencies:
       - less
       - lightningcss
