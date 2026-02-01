@@ -19,7 +19,7 @@ import { SpatialInputSystem } from '../reactivity/SpatialInputSystem.js';
 export class VIB3Engine {
     /**
      * @param {object} [options]
-     * @param {boolean} [options.preferWebGPU=false] - Try WebGPU for supported systems
+     * @param {boolean} [options.preferWebGPU=true] - Prefer WebGPU with WebGL fallback
      * @param {boolean} [options.debug=false] - Enable debug logging
      * @param {object|ReactivityConfig} [options.reactivityConfig] - Initial reactivity config
      */
@@ -30,8 +30,8 @@ export class VIB3Engine {
         this.initialized = false;
         this.canvasManager = null;
 
-        /** @type {boolean} Whether to prefer WebGPU for systems that support it */
-        this.preferWebGPU = options.preferWebGPU || false;
+        /** @type {boolean} Whether to prefer WebGPU (default: true, falls back to WebGL) */
+        this.preferWebGPU = options.preferWebGPU !== false;
 
         /** @type {boolean} Debug mode */
         this.debug = options.debug || false;
@@ -103,24 +103,38 @@ export class VIB3Engine {
             switch (systemName) {
                 case 'quantum':
                     system = new QuantumEngine();
+                    if (this.preferWebGPU) {
+                        try {
+                            const bridgeOk = await system.initWithBridge({
+                                preferWebGPU: true,
+                                debug: this.debug
+                            });
+                            if (bridgeOk) {
+                                console.log('Quantum: WebGPU bridge active');
+                                break;
+                            }
+                        } catch (_e) { /* fall through */ }
+                        console.warn('Quantum: WebGPU bridge failed, falling back to WebGL');
+                        system = new QuantumEngine();
+                    }
                     break;
 
                 case 'faceted':
                     system = new FacetedSystem();
-
-                    // Use bridge mode if WebGPU is preferred
                     if (this.preferWebGPU) {
                         const canvas = document.getElementById('content-canvas');
                         if (canvas) {
-                            const bridgeSuccess = await system.initWithBridge(canvas, {
-                                preferWebGPU: true,
-                                debug: this.debug
-                            });
-                            if (bridgeSuccess) {
-                                break;
-                            }
-                            // Fall through to direct WebGL if bridge fails
-                            console.warn('Faceted bridge init failed, using direct WebGL');
+                            try {
+                                const bridgeOk = await system.initWithBridge(canvas, {
+                                    preferWebGPU: true,
+                                    debug: this.debug
+                                });
+                                if (bridgeOk) {
+                                    console.log('Faceted: WebGPU bridge active');
+                                    break;
+                                }
+                            } catch (_e) { /* fall through */ }
+                            console.warn('Faceted: WebGPU bridge failed, falling back to WebGL');
                             system = new FacetedSystem();
                         }
                     }
@@ -133,6 +147,20 @@ export class VIB3Engine {
 
                 case 'holographic':
                     system = new RealHolographicSystem();
+                    if (this.preferWebGPU) {
+                        try {
+                            const bridgeOk = await system.initWithBridge({
+                                preferWebGPU: true,
+                                debug: this.debug
+                            });
+                            if (bridgeOk) {
+                                console.log('Holographic: WebGPU bridge active');
+                                break;
+                            }
+                        } catch (_e) { /* fall through */ }
+                        console.warn('Holographic: WebGPU bridge failed, falling back to WebGL');
+                        system = new RealHolographicSystem();
+                    }
                     break;
 
                 default:

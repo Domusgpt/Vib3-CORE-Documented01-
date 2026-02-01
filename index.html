@@ -1,29 +1,1405 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIB3+ CORE</title>
-    <meta http-equiv="refresh" content="3; url=docs/webgpu-live.html">
+    <title>VIB3+ CORE — 4D Visualization Engine</title>
+    <meta name="description" content="VIB3+ is a 4D visualization SDK with 24 geometry variants, 6D rotation, and three rendering systems. WebGL + WebGPU.">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
     <style>
-        body { background: #0a0a12; color: #e0e0e0; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; gap: 12px; padding: 20px; }
-        h1 { font-size: 18px; color: #0ff; letter-spacing: 6px; text-transform: uppercase; margin-bottom: 8px; font-weight: 300; }
-        a { display: block; padding: 14px 24px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #0ff; text-decoration: none; font-size: 13px; min-width: 320px; text-align: center; transition: all 0.2s; }
-        a:hover, a:active { background: rgba(0,255,255,0.08); border-color: rgba(0,255,255,0.4); }
-        a.primary { border-color: rgba(0,255,100,0.4); color: #0f6; background: rgba(0,255,100,0.06); font-weight: bold; }
-        a.primary:hover { background: rgba(0,255,100,0.12); }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 9px; letter-spacing: 1px; margin-right: 6px; vertical-align: middle; }
-        .badge.gpu { background: rgba(0,255,100,0.2); color: #0f6; }
-        .badge.gl { background: rgba(255,200,0,0.2); color: #fc0; }
-        .dim { color: #555; font-size: 10px; margin-top: 8px; }
+        /* ─── Reset & Base ─── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: auto; }
+        body {
+            background: #050508;
+            color: #c8c8d4;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            overflow-x: hidden;
+        }
+        .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+
+        /* ─── Scroll Progress ─── */
+        .scroll-progress {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px; z-index: 9999;
+            background: linear-gradient(90deg, #0ff, #7b3ff2, #ff006e, #0ff);
+            background-size: 300% 100%;
+            transform-origin: left; transform: scaleX(0);
+            will-change: transform;
+            animation: progressHue 6s linear infinite;
+        }
+        @keyframes progressHue {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+
+        /* ─── Canvas ─── */
+        .vib3-canvas {
+            display: block; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0;
+        }
+        .canvas-wrap {
+            position: relative; overflow: hidden;
+            background: #0a0a10;
+        }
+
+        /* ═══════════════════════════════════════════
+           SECTION 1: HERO — Quantum Emergence
+           ═══════════════════════════════════════════ */
+        .hero {
+            position: relative; height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .hero-bg { position: absolute; inset: 0; z-index: 0; }
+        .hero-content {
+            position: relative; z-index: 2; text-align: center;
+            padding: 0 24px;
+        }
+        .hero-badge {
+            display: inline-block; padding: 5px 16px;
+            border: 1px solid rgba(0,255,200,0.35); border-radius: 100px;
+            font-size: 11px; color: #0fc; letter-spacing: 2px;
+            text-transform: uppercase; margin-bottom: 24px;
+            backdrop-filter: blur(8px); background: rgba(0,255,200,0.04);
+            opacity: 0; transform: translateY(-20px);
+        }
+        h1.hero-title {
+            font-size: clamp(48px, 10vw, 120px); font-weight: 900;
+            letter-spacing: 8px; line-height: 1;
+            color: #fff; overflow: hidden;
+        }
+        .hero-title .char {
+            display: inline-block;
+            opacity: 0; transform: translateY(100%);
+        }
+        .hero-sub {
+            font-size: clamp(14px, 2vw, 20px); color: rgba(200,200,212,0.5);
+            max-width: 600px; margin: 24px auto 0; line-height: 1.7;
+            opacity: 0; transform: translateY(20px);
+        }
+        .hero-system-label {
+            margin-top: 16px; font-size: 11px; letter-spacing: 4px;
+            text-transform: uppercase; color: rgba(0,255,200,0.4);
+            opacity: 0;
+        }
+        .hero-scroll {
+            position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+            z-index: 2; display: flex; flex-direction: column; align-items: center;
+            gap: 8px; opacity: 0;
+        }
+        .hero-scroll span {
+            font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+            color: rgba(255,255,255,0.2);
+        }
+        .scroll-line {
+            width: 1px; height: 40px;
+            background: linear-gradient(180deg, rgba(0,255,200,0.4), transparent);
+            animation: scrollPulse 2s ease-in-out infinite;
+        }
+        @keyframes scrollPulse {
+            0%, 100% { opacity: 0.3; transform: scaleY(1); }
+            50% { opacity: 0.7; transform: scaleY(1.3); }
+        }
+
+        /* ═══════════════════════════════════════════
+           SECTION 2: SYSTEM TRINITY — Three Voices
+           ═══════════════════════════════════════════ */
+        .trinity {
+            position: relative; min-height: 500vh;
+        }
+        .trinity-pinned {
+            height: 100vh; width: 100%; position: relative;
+            overflow: hidden; background: #050508;
+        }
+        .trinity-panel {
+            position: absolute; inset: 0;
+            overflow: hidden; will-change: clip-path, opacity;
+        }
+        .trinity-panel .canvas-wrap { width: 100%; height: 100%; }
+        .trinity-label {
+            position: absolute; z-index: 10;
+            bottom: 15%; left: 50%; transform: translateX(-50%);
+            text-align: center; pointer-events: none;
+        }
+        .trinity-label h2 {
+            font-size: clamp(32px, 6vw, 72px); font-weight: 900;
+            letter-spacing: 6px; text-transform: uppercase;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+            opacity: 0; transform: translateY(40px);
+        }
+        .trinity-label p {
+            font-size: 13px; color: rgba(200,200,212,0.4);
+            letter-spacing: 2px; margin-top: 8px;
+            opacity: 0; transform: translateY(20px);
+        }
+        .trinity-counter {
+            position: absolute; top: 40px; right: 40px; z-index: 20;
+            font-size: 13px; letter-spacing: 3px; color: rgba(255,255,255,0.15);
+            font-weight: 600;
+        }
+        .trinity-counter .active { color: #0fc; }
+        .trinity-progress-ring {
+            position: absolute; top: 50%; left: 40px; transform: translateY(-50%);
+            z-index: 20; display: flex; flex-direction: column; gap: 12px;
+        }
+        .ring-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .ring-dot.active {
+            background: #0fc; border-color: #0fc;
+            box-shadow: 0 0 12px rgba(0,255,200,0.4);
+        }
+
+        /* ═══════════════════════════════════════════
+           SECTION 3: CONVERGENCE — Coordinated Triptych
+           ═══════════════════════════════════════════ */
+        .convergence {
+            position: relative; min-height: 400vh;
+        }
+        .convergence-pinned {
+            height: 100vh; width: 100%; position: relative;
+            display: flex; overflow: hidden;
+        }
+        .conv-panel {
+            flex: 1; position: relative; overflow: hidden;
+            border-right: 1px solid rgba(255,255,255,0.03);
+        }
+        .conv-panel:last-child { border-right: none; }
+        .conv-panel .canvas-wrap { width: 100%; height: 100%; }
+        .conv-tag {
+            position: absolute; bottom: 24px; left: 50%;
+            transform: translateX(-50%); z-index: 5;
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            padding: 6px 16px; border-radius: 100px;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.06);
+            white-space: nowrap;
+        }
+        .conv-overlay {
+            position: absolute; inset: 0; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; pointer-events: none;
+        }
+        .conv-overlay h2 {
+            font-size: clamp(24px, 4vw, 48px); font-weight: 800;
+            color: #fff; letter-spacing: 3px;
+            text-shadow: 0 0 60px rgba(0,255,200,0.2);
+            opacity: 0;
+        }
+        .conv-overlay p {
+            color: rgba(200,200,212,0.4); font-size: 14px;
+            margin-top: 8px; max-width: 500px;
+            opacity: 0;
+        }
+
+        /* ═══════════════════════════════════════════
+           SECTION 4: ENERGY TRANSFER — Interactive
+           ═══════════════════════════════════════════ */
+        .energy {
+            position: relative; min-height: 250vh;
+        }
+        .energy-pinned {
+            height: 100vh; position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .energy-bg { position: absolute; inset: 0; z-index: 0; }
+        .energy-card {
+            position: relative; z-index: 5;
+            width: min(480px, 90vw); padding: 48px;
+            background: rgba(8,8,16,0.6); backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 24px; text-align: center;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+            transform: translateY(60px); opacity: 0;
+        }
+        .energy-card-canvas {
+            position: absolute; inset: 0; border-radius: 24px; overflow: hidden;
+            z-index: -1; opacity: 0.4;
+        }
+        .energy-card h3 {
+            font-size: 22px; font-weight: 700; color: #e8e8f0;
+            margin-bottom: 8px;
+        }
+        .energy-card p {
+            font-size: 13px; color: rgba(200,200,212,0.45); line-height: 1.7;
+            margin-bottom: 28px;
+        }
+        .energy-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 16px 36px; border: none; border-radius: 14px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+            background: linear-gradient(135deg, rgba(123,63,242,0.25), rgba(0,255,200,0.15));
+            color: #0fc; border: 1px solid rgba(0,255,200,0.25);
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            letter-spacing: 1px;
+        }
+        .energy-btn:hover {
+            background: linear-gradient(135deg, rgba(123,63,242,0.35), rgba(0,255,200,0.25));
+            border-color: rgba(0,255,200,0.5);
+            transform: scale(1.03);
+            box-shadow: 0 0 30px rgba(0,255,200,0.15);
+        }
+        .energy-btn:active { transform: scale(0.97); }
+        .energy-btn svg { flex-shrink: 0; }
+        .energy-meter {
+            margin-top: 24px; height: 3px; border-radius: 2px;
+            background: rgba(255,255,255,0.04); overflow: hidden;
+        }
+        .energy-meter-fill {
+            height: 100%; width: 50%; border-radius: 2px;
+            background: linear-gradient(90deg, #7b3ff2, #0fc);
+            transition: width 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* ═══════════════════════════════════════════
+           SECTION 5: GEOMETRY CASCADE — Card Scroll
+           ═══════════════════════════════════════════ */
+        .cascade {
+            position: relative; min-height: 400vh;
+        }
+        .cascade-pinned {
+            height: 100vh; display: flex; align-items: center;
+            justify-content: center; position: relative; overflow: hidden;
+        }
+        .cascade-track {
+            display: flex; gap: 28px; will-change: transform;
+            padding: 0 calc(50vw - 180px);
+        }
+        .cascade-card {
+            flex-shrink: 0; width: min(340px, 75vw); height: 460px;
+            border-radius: 24px; overflow: hidden; position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+            opacity: 0; transform: translateY(40px) scale(0.95);
+            will-change: transform, opacity;
+        }
+        .cascade-card .canvas-wrap { width: 100%; height: 100%; }
+        .cascade-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 5;
+            padding: 28px; background: linear-gradient(transparent, rgba(5,5,8,0.92));
+        }
+        .cascade-overlay h4 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .cascade-overlay .cascade-sys {
+            font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+            padding: 3px 10px; border-radius: 100px; display: inline-block;
+        }
+        .sys-quantum { color: #0ff; border: 1px solid rgba(0,255,255,0.25); background: rgba(0,255,255,0.06); }
+        .sys-holographic { color: #ff006e; border: 1px solid rgba(255,0,110,0.25); background: rgba(255,0,110,0.06); }
+        .sys-faceted { color: #0fc; border: 1px solid rgba(0,255,200,0.25); background: rgba(0,255,200,0.06); }
+
+        /* ═══════════════════════════════════════════
+           SECTION 6: CTA
+           ═══════════════════════════════════════════ */
+        .cta-section {
+            position: relative; min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 80px 24px;
+        }
+        .cta-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.25; }
+        .cta-content { position: relative; z-index: 5; text-align: center; }
+        .cta-content h2 {
+            font-size: clamp(28px, 5vw, 56px); font-weight: 900; color: #fff;
+            letter-spacing: 4px; margin-bottom: 16px;
+        }
+        .cta-content p {
+            color: rgba(200,200,212,0.45); font-size: 16px; max-width: 500px;
+            margin: 0 auto 40px; line-height: 1.7;
+        }
+        .cta-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 48px; }
+        .cta {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 32px; border-radius: 10px; text-decoration: none;
+            font-size: 14px; font-weight: 600; transition: all 0.2s;
+        }
+        .cta-primary {
+            background: linear-gradient(135deg, rgba(0,255,200,0.18), rgba(123,63,242,0.18));
+            border: 1px solid rgba(0,255,200,0.4); color: #0fc;
+        }
+        .cta-primary:hover { background: rgba(0,255,200,0.25); border-color: rgba(0,255,200,0.6); }
+        .cta-ghost {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #888;
+        }
+        .cta-ghost:hover { background: rgba(255,255,255,0.07); color: #ccc; }
+
+        .code-block {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px; padding: 28px 32px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px; color: #b8b8c8; text-align: left;
+            max-width: 520px; width: 100%; line-height: 1.9;
+        }
+        .code-block .kw { color: #c792ea; }
+        .code-block .fn { color: #82aaff; }
+        .code-block .str { color: #c3e88d; }
+        .code-block .cmt { color: #546e7a; }
+        .code-block .num { color: #f78c6c; }
+
+        .link-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px; max-width: 680px; width: 100%; margin-top: 40px;
+        }
+        .link-grid a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 14px 18px; border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px; text-decoration: none; color: #777; font-size: 13px;
+            transition: all 0.2s; background: rgba(255,255,255,0.015);
+        }
+        .link-grid a:hover { background: rgba(255,255,255,0.04); color: #bbb; border-color: rgba(255,255,255,0.1); }
+        .link-badge {
+            padding: 3px 8px; border-radius: 4px; font-size: 9px; letter-spacing: 1px;
+            text-transform: uppercase; font-weight: 700;
+        }
+        .badge-gpu { background: rgba(0,255,100,0.1); color: #0f6; }
+        .badge-gl { background: rgba(255,200,0,0.1); color: #fc0; }
+
+        footer {
+            text-align: center; padding: 40px 24px;
+            border-top: 1px solid rgba(255,255,255,0.03);
+            font-size: 12px; color: #2a2a2a;
+        }
+        footer a { color: #444; text-decoration: none; }
+        footer a:hover { color: #888; }
+
+        /* ─── Reduced Motion ─── */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        /* ─── Mobile ─── */
+        @media (max-width: 768px) {
+            .convergence-pinned { flex-direction: column; }
+            .conv-panel { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.03); }
+            .trinity-progress-ring { display: none; }
+        }
     </style>
 </head>
 <body>
-    <h1>VIB3+ CORE</h1>
-    <a class="primary" href="docs/webgpu-live.html"><span class="badge gpu">WebGPU</span> Live 4D Visualization Engine</a>
-    <a href="docs/index.html">Gallery &mdash; Algorithmic Avant-Garde</a>
-    <a href="docs/test-hub.html">Test Hub &mdash; GPU Diagnostics + All Visualizations</a>
-    <a href="docs/vib3-exports/index.html">Shader Exports &mdash; Real WebGL Renders</a>
-    <p class="dim">Auto-redirecting to WebGPU live in 3s...</p>
+    <a href="#main" class="sr-only">Skip to content</a>
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 1: HERO — Quantum Emergence
+         Full-screen Quantum system shader
+         ═══════════════════════════════════════════════════ -->
+    <section class="hero" id="main">
+        <div class="hero-bg">
+            <div class="canvas-wrap" style="width:100%;height:100%;">
+                <canvas class="vib3-canvas" id="hero-canvas"></canvas>
+            </div>
+        </div>
+        <div class="hero-content" id="heroContent">
+            <span class="hero-badge" id="heroBadge">v2.0.0 &mdash; Three Systems &middot; 24 Geometries &middot; 6D Rotation</span>
+            <h1 class="hero-title" id="heroTitle">VIB3+</h1>
+            <p class="hero-sub" id="heroSub">
+                The fourth dimension, rendered. Three rendering systems.
+                24 geometry variants. Six degrees of rotation freedom.
+            </p>
+            <div class="hero-system-label" id="heroSystemLabel">Quantum Lattice Engine</div>
+        </div>
+        <div class="hero-scroll" id="heroScroll">
+            <span>explore</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 2: SYSTEM TRINITY — Three Voices
+         Full-screen cross-fade through all 3 systems
+         ═══════════════════════════════════════════════════ -->
+    <section class="trinity" id="trinitySection">
+        <div class="trinity-pinned" id="trinityPinned">
+            <!-- Layer 0: Quantum (starts visible) -->
+            <div class="trinity-panel" id="triQ" style="z-index:3; clip-path: inset(0 0 0 0);">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="tri-quantum"></canvas></div>
+                <div class="trinity-label" id="triQLbl">
+                    <h2>Quantum</h2>
+                    <p>Complex lattice interference &middot; Volumetric shimmer &middot; 24 geometries</p>
+                </div>
+            </div>
+            <!-- Layer 1: Holographic (hidden initially) -->
+            <div class="trinity-panel" id="triH" style="z-index:2; clip-path: inset(0 100% 0 0);">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="tri-holographic"></canvas></div>
+                <div class="trinity-label" id="triHLbl">
+                    <h2>Holographic</h2>
+                    <p>Five-layer glassmorphism &middot; Role-based rendering &middot; Moir&eacute; interference</p>
+                </div>
+            </div>
+            <!-- Layer 2: Faceted (hidden initially) -->
+            <div class="trinity-panel" id="triF" style="z-index:1; clip-path: inset(0 100% 0 0);">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="tri-faceted"></canvas></div>
+                <div class="trinity-label" id="triFLbl">
+                    <h2>Faceted</h2>
+                    <p>Precise lattice geometry &middot; Clean projection &middot; HSL saturation control</p>
+                </div>
+            </div>
+            <div class="trinity-counter" id="triCounter">
+                <span class="active">01</span> / 03
+            </div>
+            <div class="trinity-progress-ring" id="triRing">
+                <div class="ring-dot active" data-idx="0"></div>
+                <div class="ring-dot" data-idx="1"></div>
+                <div class="ring-dot" data-idx="2"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 3: CONVERGENCE — Coordinated Triptych
+         Three panels side-by-side, scroll drives coordinated waves
+         ═══════════════════════════════════════════════════ -->
+    <section class="convergence" id="convSection">
+        <div class="convergence-pinned" id="convPinned">
+            <div class="conv-panel" id="convLeft">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="conv-canvas-q"></canvas></div>
+                <div class="conv-tag">Quantum</div>
+            </div>
+            <div class="conv-panel" id="convCenter">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="conv-canvas-h"></canvas></div>
+                <div class="conv-tag">Holographic</div>
+            </div>
+            <div class="conv-panel" id="convRight">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="conv-canvas-f"></canvas></div>
+                <div class="conv-tag">Faceted</div>
+            </div>
+            <div class="conv-overlay" id="convOverlay">
+                <div>
+                    <h2 id="convTitle">Convergence</h2>
+                    <p id="convSub">Three systems. One unified motion. Scroll to synchronize.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 4: ENERGY TRANSFER — Interactive Demo
+         Button triggers choreographed shader energy exchange
+         ═══════════════════════════════════════════════════ -->
+    <section class="energy" id="energySection">
+        <div class="energy-pinned" id="energyPinned">
+            <div class="energy-bg">
+                <div class="canvas-wrap" style="width:100%;height:100%;">
+                    <canvas class="vib3-canvas" id="energy-bg-canvas"></canvas>
+                </div>
+            </div>
+            <div class="energy-card" id="energyCard">
+                <div class="energy-card-canvas">
+                    <canvas class="vib3-canvas" id="energy-card-canvas"></canvas>
+                </div>
+                <h3>Energy Transfer</h3>
+                <p>Click to drain the card shader into the background.
+                   Watch color, density, and geometry morph between elements.</p>
+                <button class="energy-btn" id="energyBtn">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="3" fill="currentColor"/></svg>
+                    Trigger Sweep
+                </button>
+                <div class="energy-meter">
+                    <div class="energy-meter-fill" id="energyFill"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 5: GEOMETRY CASCADE — Horizontal Card Scroll
+         Mixed-system cards with color bleeding
+         ═══════════════════════════════════════════════════ -->
+    <section class="cascade" id="cascadeSection">
+        <div class="cascade-pinned" id="cascadePinned">
+            <div class="cascade-track" id="cascadeTrack">
+                <div class="cascade-card" data-geo="0" data-hue="190" data-sys="quantum">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-0"></canvas></div>
+                    <div class="cascade-overlay"><h4>Tetrahedron</h4><span class="cascade-sys sys-quantum">Quantum &middot; Base</span></div>
+                </div>
+                <div class="cascade-card" data-geo="9" data-hue="300" data-sys="holographic">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-1"></canvas></div>
+                    <div class="cascade-overlay"><h4>Hypersphere Torus</h4><span class="cascade-sys sys-holographic">Holographic &middot; Hypersphere</span></div>
+                </div>
+                <div class="cascade-card" data-geo="16" data-hue="35" data-sys="faceted">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-2"></canvas></div>
+                    <div class="cascade-overlay"><h4>Hypertetra Tetra</h4><span class="cascade-sys sys-faceted">Faceted &middot; Hypertetra</span></div>
+                </div>
+                <div class="cascade-card" data-geo="5" data-hue="130" data-sys="quantum">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-3"></canvas></div>
+                    <div class="cascade-overlay"><h4>Fractal</h4><span class="cascade-sys sys-quantum">Quantum &middot; Base</span></div>
+                </div>
+                <div class="cascade-card" data-geo="11" data-hue="260" data-sys="holographic">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-4"></canvas></div>
+                    <div class="cascade-overlay"><h4>Hypersphere Klein</h4><span class="cascade-sys sys-holographic">Holographic &middot; Hypersphere</span></div>
+                </div>
+                <div class="cascade-card" data-geo="7" data-hue="60" data-sys="faceted">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-5"></canvas></div>
+                    <div class="cascade-overlay"><h4>Crystal</h4><span class="cascade-sys sys-faceted">Faceted &middot; Base</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 6: CTA
+         ═══════════════════════════════════════════════════ -->
+    <section class="cta-section" id="ctaSection">
+        <div class="cta-bg">
+            <div class="canvas-wrap" style="width:100%;height:100%;">
+                <canvas class="vib3-canvas" id="cta-canvas"></canvas>
+            </div>
+        </div>
+        <div class="cta-content">
+            <h2>Start Building</h2>
+            <p>Three lines to a 4D visualizer. WebGPU primary, WebGL fallback, C++ WASM math core.</p>
+            <div class="cta-row">
+                <a class="cta cta-primary" href="docs/webgpu-live.html">Launch Live Demo</a>
+                <a class="cta cta-ghost" href="https://github.com/Domusgpt/Vib3-CORE-Documented01-">GitHub</a>
+            </div>
+            <div class="code-block">
+                <span class="cmt">// npm install @vib3/sdk</span><br>
+                <span class="kw">import</span> { VIB3Engine } <span class="kw">from</span> <span class="str">'@vib3/sdk/core'</span>;<br><br>
+                <span class="kw">const</span> engine = <span class="kw">new</span> <span class="fn">VIB3Engine</span>();<br>
+                <span class="kw">await</span> engine.<span class="fn">initialize</span>();<br>
+                <span class="kw">await</span> engine.<span class="fn">switchSystem</span>(<span class="str">'quantum'</span>);<br>
+                engine.<span class="fn">setParameter</span>(<span class="str">'geometry'</span>, <span class="num">16</span>);<br>
+                engine.<span class="fn">setParameter</span>(<span class="str">'rot4dXW'</span>, <span class="num">1.57</span>);
+            </div>
+            <div class="link-grid">
+                <a href="docs/webgpu-live.html"><span class="link-badge badge-gpu">WebGPU</span> Live 4D Engine</a>
+                <a href="docs/index.html">Gallery &mdash; Algorithmic Art</a>
+                <a href="docs/test-hub.html">Test Hub &mdash; GPU Diagnostics</a>
+                <a href="docs/vib3-exports/index.html"><span class="link-badge badge-gl">WebGL</span> Shader Exports</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025-2026 <a href="https://parserator.com">Clear Seas Solutions LLC</a> / Paul Phillips &middot; MIT License</p>
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         ENGINE BOOT + GSAP CHOREOGRAPHY
+         ═══════════════════════════════════════════════════════════ -->
+    <script type="module">
+        import { QuantumEngine } from './src/quantum/QuantumEngine.js';
+        import { RealHolographicSystem } from './src/holograms/RealHolographicSystem.js';
+        import { FacetedSystem } from './src/faceted/FacetedSystem.js';
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        /* ─────────────────────────────────────────
+           ADAPTER: Quantum (GPU)
+           ───────────────────────────────────────── */
+        class Vib3Quantum {
+            constructor(canvasId, opts = {}) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) { this.active = false; return; }
+                this.active = true;
+                this.params = {
+                    geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
+                    morphFactor: 0.5, chaos: 0.2, intensity: 0.7, saturation: 0.8,
+                    rot4dXW: 0, rot4dYW: 0, rot4dZW: 0, rot4dXY: 0, rot4dXZ: 0, rot4dYZ: 0,
+                    dimension: 3.5, ...opts
+                };
+                try {
+                    this.engine = new QuantumEngine({ canvas, autoStart: true });
+                    this.engine.updateParameters(this.params);
+                } catch (e) {
+                    console.warn('Quantum init failed, falling back to Canvas2D', e);
+                    this.active = false; return;
+                }
+                this._resizeObs = new ResizeObserver(() => {
+                    const p = canvas.parentElement;
+                    const dpr = Math.min(devicePixelRatio || 1, 2);
+                    this.engine.resize(p.clientWidth, p.clientHeight, dpr);
+                });
+                this._resizeObs.observe(canvas.parentElement);
+            }
+            setParam(k, v) { this.params[k] = v; this.engine?.updateParameter(k, v); }
+            setParams(o) { Object.assign(this.params, o); this.engine?.updateParameters(o); }
+            render() { if (this.active) this.engine?.updateParameters(this.params); }
+            dispose() { this.active = false; this._resizeObs?.disconnect(); this.engine?.dispose(); }
+        }
+
+        /* ─────────────────────────────────────────
+           ADAPTER: Holographic (GPU)
+           ───────────────────────────────────────── */
+        class Vib3Holographic {
+            constructor(canvasId, opts = {}) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) { this.active = false; return; }
+                this.active = true;
+                this.params = {
+                    geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
+                    morphFactor: 0.5, chaos: 0.2, intensity: 0.7, saturation: 0.8,
+                    rot4dXW: 0, rot4dYW: 0, rot4dZW: 0, rot4dXY: 0, rot4dXZ: 0, rot4dYZ: 0,
+                    dimension: 3.5, ...opts
+                };
+                try {
+                    this.system = new RealHolographicSystem({ canvas });
+                    for (const [k, v] of Object.entries(this.params)) {
+                        this.system.updateParameter(k, v);
+                    }
+                } catch (e) {
+                    console.warn('Holographic init failed, falling back to Canvas2D', e);
+                    this.active = false; return;
+                }
+                this._resizeObs = new ResizeObserver(() => {
+                    const p = canvas.parentElement;
+                    const dpr = Math.min(devicePixelRatio || 1, 2);
+                    this.system.resize(p.clientWidth, p.clientHeight, dpr);
+                });
+                this._resizeObs.observe(canvas.parentElement);
+            }
+            setParam(k, v) { this.params[k] = v; this.system?.updateParameter(k, v); }
+            setParams(o) {
+                Object.assign(this.params, o);
+                for (const [k, v] of Object.entries(o)) this.system?.updateParameter(k, v);
+            }
+            render() {
+                if (!this.active) return;
+                for (const [k, v] of Object.entries(this.params)) this.system?.updateParameter(k, v);
+            }
+            dispose() { this.active = false; this._resizeObs?.disconnect(); this.system?.dispose(); }
+        }
+
+        /* ─────────────────────────────────────────
+           ADAPTER: Faceted (GPU)
+           ───────────────────────────────────────── */
+        class Vib3Faceted {
+            constructor(canvasId, opts = {}) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) { this.active = false; return; }
+                this.active = true;
+                this.params = {
+                    geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
+                    morphFactor: 0.5, chaos: 0.2, intensity: 0.7, saturation: 0.8,
+                    rot4dXW: 0, rot4dYW: 0, rot4dZW: 0, rot4dXY: 0, rot4dXZ: 0, rot4dYZ: 0,
+                    dimension: 3.5, ...opts
+                };
+                try {
+                    this.faceted = new FacetedSystem();
+                    const ok = this.faceted.initialize(canvas);
+                    if (!ok) { this.active = false; return; }
+                    this.faceted.updateParameters(this.params);
+                    this.faceted.start();
+                } catch (e) {
+                    console.warn('Faceted init failed', e);
+                    this.active = false; return;
+                }
+                this._resizeObs = new ResizeObserver(() => {
+                    const p = canvas.parentElement;
+                    const dpr = Math.min(devicePixelRatio || 1, 2);
+                    this.faceted.resize(p.clientWidth, p.clientHeight, dpr);
+                });
+                this._resizeObs.observe(canvas.parentElement);
+            }
+            setParam(k, v) { this.params[k] = v; this.faceted?.updateParameters({ [k]: v }); }
+            setParams(o) { Object.assign(this.params, o); this.faceted?.updateParameters(o); }
+            render() { if (this.active) this.faceted?.updateParameters(this.params); }
+            dispose() {
+                this.active = false; this._resizeObs?.disconnect();
+                this.faceted?.stop(); this.faceted?.dispose();
+            }
+        }
+
+        /* ─────────────────────────────────────────
+           ADAPTER: Canvas2D Procedural (fallback)
+           ───────────────────────────────────────── */
+        class Vib3Canvas2D {
+            constructor(canvasId, opts = {}) {
+                this.canvas = document.getElementById(canvasId);
+                if (!this.canvas) { this.active = false; return; }
+                this.ctx = this.canvas.getContext('2d');
+                this.active = true;
+                this.params = {
+                    geometry: 3, hue: 180, gridDensity: 24, speed: 1.0,
+                    morphFactor: 0.5, chaos: 0.2, intensity: 0.7,
+                    rot4dXW: 0, rot4dYW: 0, dimension: 3.5, ...opts
+                };
+                this.resize();
+                this._ro = new ResizeObserver(() => this.resize());
+                this._ro.observe(this.canvas.parentElement);
+            }
+            resize() {
+                if (!this.canvas) return;
+                const p = this.canvas.parentElement;
+                const dpr = Math.min(devicePixelRatio || 1, 2);
+                this.canvas.width = p.clientWidth * dpr;
+                this.canvas.height = p.clientHeight * dpr;
+                this.w = this.canvas.width; this.h = this.canvas.height;
+            }
+            setParam(k, v) { this.params[k] = v; }
+            setParams(o) { Object.assign(this.params, o); }
+            render(time) {
+                if (!this.active || !this.ctx) return;
+                const { ctx, w, h, params: p } = this;
+                const t = time * p.speed * 0.001;
+                const geo = Math.floor(p.geometry) % 24;
+                const base = geo % 8, core = Math.floor(geo / 8);
+                ctx.clearRect(0, 0, w, h);
+                const bg = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w,h)*0.7);
+                bg.addColorStop(0, `hsla(${p.hue}, 40%, 6%, 1)`);
+                bg.addColorStop(1, `hsla(${(p.hue+40)%360}, 30%, 2%, 1)`);
+                ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+                const cx = w/2, cy = h/2, sc = Math.min(w,h)*0.35;
+                const density = Math.max(4, Math.floor(p.gridDensity));
+                const dim = p.dimension || 3.5;
+                ctx.globalAlpha = p.intensity;
+                for (let i = 0; i < density; i++) {
+                    const f = i / density;
+                    const ang = f * Math.PI * 2 + t + (p.rot4dXW||0);
+                    const hShift = (p.hue + f * 120 + core * 60) % 360;
+                    ctx.strokeStyle = `hsla(${hShift}, 65%, 52%, ${0.12 + p.chaos*0.3})`;
+                    ctx.lineWidth = 1 + p.morphFactor * 0.5;
+                    const w4 = Math.sin(t*0.5 + f*3.14 + (p.rot4dYW||0)) * 0.4;
+                    const pf = 1.0 / (dim - w4);
+                    ctx.beginPath();
+                    switch (base) {
+                        case 0: for(let j=0;j<3;j++){const a=ang+j*2.094;const r=sc*(0.3+f*0.7)*pf;j===0?ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}ctx.closePath();break;
+                        case 1: {const s=sc*(0.2+f*0.6)*pf;ctx.save();ctx.translate(cx,cy);ctx.rotate(t*0.3+f*0.5+(p.rot4dXW||0));ctx.rect(-s/2,-s/2,s,s);ctx.restore();break;}
+                        case 2: ctx.arc(cx+Math.sin(t+f*2)*10,cy+Math.cos(t+f*2)*10,sc*f*pf,0,Math.PI*2);break;
+                        case 3: {const tr=sc*0.5*pf,to=sc*0.2*(1+f*0.5);ctx.arc(cx+Math.cos(ang)*tr,cy+Math.sin(ang)*tr,to*pf,0,Math.PI*2);break;}
+                        case 4: for(let k=0;k<=32;k++){const kt=k/32*Math.PI*2;const kr=sc*(0.3+0.15*Math.sin(kt*2+t))*pf;const kx=cx+Math.cos(kt+ang)*kr*(1+0.3*Math.sin(kt+t));const ky=cy+Math.sin(kt+ang)*kr;k===0?ctx.moveTo(kx,ky):ctx.lineTo(kx,ky);}break;
+                        case 5: {const fl=sc*0.5*pf,fa=ang+t*0.2;ctx.moveTo(cx+Math.cos(fa)*fl*f,cy+Math.sin(fa)*fl*f);ctx.lineTo(cx+Math.cos(fa+2.4)*fl*f*0.7,cy+Math.sin(fa+2.4)*fl*f*0.7);ctx.lineTo(cx+Math.cos(fa+4.8)*fl*f*0.5,cy+Math.sin(fa+4.8)*fl*f*0.5);break;}
+                        case 6: for(let x=0;x<w;x+=4){const wf=x/w;const wy=cy+Math.sin(wf*density*0.5+t+f*3)*sc*0.3*pf*(0.5+f);x===0?ctx.moveTo(x,wy):ctx.lineTo(x,wy);}break;
+                        case 7: {const cl=sc*0.4*pf,ca=ang+f*0.5;for(let ci=0;ci<6;ci++){const a2=ca+ci*Math.PI/3;ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a2)*cl*(0.5+f*0.5),cy+Math.sin(a2)*cl*(0.5+f*0.5));}break;}
+                    }
+                    ctx.stroke();
+                    if (core > 0 && i % 3 === 0) {
+                        ctx.strokeStyle = `hsla(${(hShift+180)%360}, 55%, 40%, 0.07)`;
+                        ctx.beginPath();
+                        if (core === 1) ctx.arc(cx, cy, sc*f*pf*1.1, 0, Math.PI*2);
+                        else { for(let v=0;v<5;v++){const a=f*Math.PI*2/5*v+t*0.2;const r=sc*0.4*pf;v===0?ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}ctx.closePath(); }
+                        ctx.stroke();
+                    }
+                }
+                ctx.globalAlpha = 1;
+            }
+            dispose() { this.active = false; this._ro?.disconnect(); }
+        }
+
+        /* ════════════════════════════════════════════
+           STATE & INSTANCES
+           ════════════════════════════════════════════ */
+        const S = { instances: new Map(), time: 0 };
+
+        function boot() {
+            const I = S.instances;
+
+            // ── HERO: Quantum (full-screen, immersive) ──
+            I.set('hero', new Vib3Quantum('hero-canvas', {
+                geometry: 3, hue: 220, gridDensity: 32, speed: 0.5,
+                intensity: 0.6, chaos: 0.1, morphFactor: 0.9,
+                rot4dXW: 0.2, dimension: 3.8, saturation: 0.85
+            }));
+
+            // ── TRINITY: One of each system (full-screen, stacked) ──
+            I.set('triQ', new Vib3Quantum('tri-quantum', {
+                geometry: 2, hue: 200, gridDensity: 28, speed: 0.7,
+                intensity: 0.75, chaos: 0.15, morphFactor: 0.7, dimension: 3.5
+            }));
+            I.set('triH', new Vib3Holographic('tri-holographic', {
+                geometry: 4, hue: 320, gridDensity: 20, speed: 0.6,
+                intensity: 0.8, chaos: 0.2, morphFactor: 0.6, dimension: 3.6
+            }));
+            I.set('triF', new Vib3Faceted('tri-faceted', {
+                geometry: 1, hue: 60, gridDensity: 24, speed: 0.8,
+                intensity: 0.7, chaos: 0.1, morphFactor: 1.0, dimension: 3.4
+            }));
+
+            // ── CONVERGENCE: Three panels (Canvas2D to save contexts) ──
+            I.set('convQ', new Vib3Canvas2D('conv-canvas-q', {
+                geometry: 0, hue: 200, gridDensity: 20, speed: 0.8, intensity: 0.7, chaos: 0.15
+            }));
+            I.set('convH', new Vib3Canvas2D('conv-canvas-h', {
+                geometry: 3, hue: 300, gridDensity: 22, speed: 0.6, intensity: 0.7, chaos: 0.2
+            }));
+            I.set('convF', new Vib3Canvas2D('conv-canvas-f', {
+                geometry: 1, hue: 60, gridDensity: 18, speed: 0.7, intensity: 0.7, chaos: 0.1
+            }));
+
+            // ── ENERGY: Faceted card + Canvas2D background ──
+            I.set('energyBg', new Vib3Canvas2D('energy-bg-canvas', {
+                geometry: 6, hue: 270, gridDensity: 16, speed: 0.3,
+                intensity: 0.2, chaos: 0.05, dimension: 4.0
+            }));
+            I.set('energyCard', new Vib3Faceted('energy-card-canvas', {
+                geometry: 7, hue: 180, gridDensity: 30, speed: 0.8,
+                intensity: 0.6, chaos: 0.1, morphFactor: 0.8, dimension: 3.5
+            }));
+
+            // ── CASCADE: Canvas2D cards ──
+            document.querySelectorAll('.cascade-card').forEach((card, i) => {
+                I.set(`cas${i}`, new Vib3Canvas2D(`cas-${i}`, {
+                    geometry: parseInt(card.dataset.geo),
+                    hue: parseInt(card.dataset.hue),
+                    gridDensity: 18, speed: 0.6, intensity: 0.75, chaos: 0.15,
+                    morphFactor: 0.6, dimension: 3.5
+                }));
+            });
+
+            // ── CTA: Canvas2D background ──
+            I.set('cta', new Vib3Canvas2D('cta-canvas', {
+                geometry: 5, hue: 160, gridDensity: 14, speed: 0.3,
+                intensity: 0.2, chaos: 0.25, dimension: 4.0
+            }));
+        }
+
+        /* ════════════════════════════════════════════
+           RENDER LOOP (Canvas2D instances only — GPU self-renders)
+           ════════════════════════════════════════════ */
+        function renderLoop(ts) {
+            S.time = ts;
+            for (const inst of S.instances.values()) {
+                if (inst instanceof Vib3Canvas2D) inst.render(ts);
+                // GPU adapters sync params via render() when GSAP mutates .params
+                else inst.render(ts);
+            }
+            requestAnimationFrame(renderLoop);
+        }
+
+        /* ════════════════════════════════════════════
+           GSAP CHOREOGRAPHY
+           ════════════════════════════════════════════ */
+
+        // ── Scroll Progress ──
+        gsap.to('#scrollProgress', {
+            scaleX: 1, ease: 'none',
+            scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 0.1 }
+        });
+
+        // ═══════════════════════════════════════
+        // HERO: Entrance + Scroll Choreography
+        // ═══════════════════════════════════════
+        function heroEntrance() {
+            const tl = gsap.timeline({ delay: 0.3 });
+
+            // Badge drops in
+            tl.to('#heroBadge', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' });
+
+            // Title chars reveal
+            const title = document.getElementById('heroTitle');
+            const text = title.textContent;
+            title.innerHTML = text.split('').map(c =>
+                c === ' ' ? ' ' : `<span class="char">${c}</span>`
+            ).join('');
+            tl.to('#heroTitle .char', {
+                opacity: 1, y: 0, duration: 0.6, stagger: 0.08, ease: 'power4.out'
+            }, '-=0.4');
+
+            // Subtitle + system label
+            tl.to('#heroSub', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.3');
+            tl.to('#heroSystemLabel', { opacity: 1, duration: 0.5 }, '-=0.3');
+
+            // Scroll hint
+            tl.to('#heroScroll', { opacity: 1, duration: 0.6 }, '-=0.2');
+        }
+
+        // Hero scroll — dramatic parameter sweep
+        ScrollTrigger.create({
+            trigger: '.hero',
+            start: 'top top', end: 'bottom top',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const p = self.progress;
+                const hero = S.instances.get('hero');
+                if (!hero) return;
+
+                // Sweep: geometry morphs, hue shifts, rotation accelerates, chaos rises
+                hero.setParams({
+                    rot4dXW: p * Math.PI * 1.5,
+                    rot4dYW: p * Math.PI * 0.8,
+                    rot4dZW: p * 0.5,
+                    gridDensity: 32 + p * 30,
+                    hue: 220 + p * 100,
+                    chaos: 0.1 + p * 0.5,
+                    intensity: 0.6 + p * 0.3,
+                    morphFactor: 0.9 + p * 0.8,
+                    geometry: Math.floor(p * 6),
+                });
+            }
+        });
+
+        // Hero content fade
+        gsap.to('#heroContent', {
+            opacity: 0, y: -100, ease: 'none',
+            scrollTrigger: { trigger: '.hero', start: '30% top', end: 'bottom top', scrub: 0.3 }
+        });
+        gsap.to('#heroScroll', {
+            opacity: 0, ease: 'none',
+            scrollTrigger: { trigger: '.hero', start: '10% top', end: '30% top', scrub: 0.3 }
+        });
+
+        // ═══════════════════════════════════════
+        // TRINITY: Full-screen system cross-fades
+        // ═══════════════════════════════════════
+        const triPanels = [
+            { el: '#triQ', lbl: '#triQLbl', inst: 'triQ', idx: 0 },
+            { el: '#triH', lbl: '#triHLbl', inst: 'triH', idx: 1 },
+            { el: '#triF', lbl: '#triFLbl', inst: 'triF', idx: 2 },
+        ];
+        let triCurrent = -1;
+
+        ScrollTrigger.create({
+            trigger: '#trinitySection',
+            start: 'top top', end: 'bottom bottom',
+            pin: '#trinityPinned',
+            scrub: 0.4,
+            onUpdate: (self) => {
+                const p = self.progress;
+
+                // Phase transitions: 0-0.3 Quantum, 0.3-0.4 transition, 0.4-0.65 Holographic,
+                // 0.65-0.75 transition, 0.75-1.0 Faceted
+                let activeIdx, localP;
+                if (p < 0.33) { activeIdx = 0; localP = p / 0.33; }
+                else if (p < 0.66) { activeIdx = 1; localP = (p - 0.33) / 0.33; }
+                else { activeIdx = 2; localP = (p - 0.66) / 0.34; }
+
+                // Clip-path reveals: current panel slides in from right
+                triPanels.forEach((panel, i) => {
+                    const el = document.querySelector(panel.el);
+                    if (!el) return;
+
+                    if (i < activeIdx) {
+                        // Past panels: fully visible (behind)
+                        el.style.clipPath = 'inset(0 0 0 0)';
+                        el.style.opacity = '1';
+                    } else if (i === activeIdx) {
+                        // Active panel: revealed
+                        el.style.clipPath = 'inset(0 0 0 0)';
+                        el.style.opacity = '1';
+                    } else if (i === activeIdx + 1) {
+                        // Next panel: partially revealed based on progress within current phase
+                        const revealProgress = Math.max(0, (localP - 0.6) / 0.4);
+                        const insetRight = (1 - revealProgress) * 100;
+                        el.style.clipPath = `inset(0 ${insetRight}% 0 0)`;
+                        el.style.opacity = '1';
+                    } else {
+                        // Future panels: hidden
+                        el.style.clipPath = 'inset(0 100% 0 0)';
+                    }
+                });
+
+                // Update counter + dots
+                if (activeIdx !== triCurrent) {
+                    triCurrent = activeIdx;
+                    const counter = document.getElementById('triCounter');
+                    if (counter) counter.innerHTML = `<span class="active">0${activeIdx+1}</span> / 03`;
+                    document.querySelectorAll('.ring-dot').forEach((d, i) => {
+                        d.classList.toggle('active', i === activeIdx);
+                    });
+
+                    // Animate label in
+                    triPanels.forEach((panel, i) => {
+                        const h2 = document.querySelector(`${panel.lbl} h2`);
+                        const pp = document.querySelector(`${panel.lbl} p`);
+                        if (i === activeIdx) {
+                            gsap.to(h2, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' });
+                            gsap.to(pp, { opacity: 1, y: 0, duration: 0.6, delay: 0.15, ease: 'power2.out' });
+                        } else {
+                            gsap.set(h2, { opacity: 0, y: 40 });
+                            gsap.set(pp, { opacity: 0, y: 20 });
+                        }
+                    });
+                }
+
+                // Drive shader parameters per system during active phase
+                const inst = S.instances.get(triPanels[activeIdx].inst);
+                if (inst) {
+                    const sweep = localP;
+                    if (activeIdx === 0) {
+                        // Quantum: geometry evolves, rotation sweeps, density rises
+                        inst.setParams({
+                            geometry: Math.floor(sweep * 7),
+                            rot4dXW: sweep * Math.PI * 2,
+                            rot4dYW: sweep * Math.PI,
+                            gridDensity: 20 + sweep * 40,
+                            hue: 200 + sweep * 80,
+                            chaos: 0.1 + sweep * 0.3,
+                            morphFactor: 0.5 + sweep * 1.0,
+                        });
+                    } else if (activeIdx === 1) {
+                        // Holographic: warm colors, dramatic 4D spins, high morph
+                        inst.setParams({
+                            geometry: 8 + Math.floor(sweep * 7),
+                            rot4dXW: sweep * Math.PI * 3,
+                            rot4dZW: sweep * Math.PI * 1.5,
+                            gridDensity: 16 + sweep * 30,
+                            hue: 300 + sweep * 60,
+                            chaos: 0.15 + sweep * 0.35,
+                            morphFactor: 0.6 + sweep * 0.8,
+                            intensity: 0.7 + sweep * 0.25,
+                        });
+                    } else {
+                        // Faceted: clean precision, geometry converges
+                        inst.setParams({
+                            geometry: 16 + Math.floor(sweep * 7),
+                            rot4dXW: sweep * Math.PI * 2.5,
+                            rot4dYW: sweep * Math.PI * 0.5,
+                            gridDensity: 18 + sweep * 35,
+                            hue: 40 + sweep * 120,
+                            chaos: 0.05 + sweep * 0.2,
+                            morphFactor: 0.8 + sweep * 0.7,
+                        });
+                    }
+                }
+            }
+        });
+
+        // ═══════════════════════════════════════
+        // CONVERGENCE: Coordinated parameter waves
+        // ═══════════════════════════════════════
+        ScrollTrigger.create({
+            trigger: '#convSection',
+            start: 'top top', end: 'bottom bottom',
+            pin: '#convPinned',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const p = self.progress;
+                const q = S.instances.get('convQ');
+                const h = S.instances.get('convH');
+                const f = S.instances.get('convF');
+                if (!q || !h || !f) return;
+
+                const overlay = document.getElementById('convOverlay');
+
+                // Phase 1 (0-0.25): Divergent — each system runs independently
+                // Phase 2 (0.25-0.5): Wave — color sweeps left→center→right with delay
+                // Phase 3 (0.5-0.75): Convergence — all match
+                // Phase 4 (0.75-1.0): Burst — diverge with new identities
+
+                if (p < 0.25) {
+                    // Divergent: each has own parameters
+                    const lp = p / 0.25;
+                    q.setParams({
+                        geometry: Math.floor(lp * 5), hue: 200 + lp * 40,
+                        rot4dXW: lp * 2, gridDensity: 16 + lp * 20, chaos: 0.1 + lp * 0.2
+                    });
+                    h.setParams({
+                        geometry: 3 + Math.floor(lp * 3), hue: 300 - lp * 30,
+                        rot4dXW: -lp * 1.5, gridDensity: 22 - lp * 5, chaos: 0.2
+                    });
+                    f.setParams({
+                        geometry: 1 + Math.floor(lp * 4), hue: 60 + lp * 20,
+                        rot4dXW: lp * 2.5, gridDensity: 18 + lp * 10, chaos: 0.1
+                    });
+
+                    if (overlay) {
+                        overlay.querySelector('h2').style.opacity = Math.max(0, 1 - lp * 3);
+                        overlay.querySelector('p').style.opacity = Math.max(0, 1 - lp * 3);
+                    }
+
+                } else if (p < 0.5) {
+                    // Color wave propagation
+                    const lp = (p - 0.25) / 0.25;
+                    const waveHue = 180 + Math.sin(lp * Math.PI * 2) * 80;
+                    const qDelay = 0, hDelay = 0.15, fDelay = 0.3;
+
+                    q.setParams({
+                        hue: waveHue + Math.sin((lp - qDelay) * Math.PI * 3) * 60,
+                        rot4dXW: 2 + lp * 4, gridDensity: 30 + Math.sin(lp * Math.PI * 4) * 15,
+                        geometry: 3 + Math.floor(Math.sin(lp * Math.PI) * 3),
+                        chaos: 0.2 + Math.sin(lp * Math.PI * 2) * 0.2,
+                        morphFactor: 0.8 + Math.sin(lp * Math.PI) * 0.6,
+                    });
+                    h.setParams({
+                        hue: waveHue + Math.sin((lp - hDelay) * Math.PI * 3) * 60,
+                        rot4dXW: -1.5 + lp * 3, gridDensity: 20 + Math.sin((lp - hDelay) * Math.PI * 4) * 15,
+                        geometry: 6 + Math.floor(Math.sin((lp - hDelay) * Math.PI) * 3),
+                        chaos: 0.2 + Math.sin((lp - hDelay) * Math.PI * 2) * 0.2,
+                        morphFactor: 0.6 + Math.sin((lp - hDelay) * Math.PI) * 0.6,
+                    });
+                    f.setParams({
+                        hue: waveHue + Math.sin((lp - fDelay) * Math.PI * 3) * 60,
+                        rot4dXW: 2.5 + lp * 3, gridDensity: 25 + Math.sin((lp - fDelay) * Math.PI * 4) * 15,
+                        geometry: 1 + Math.floor(Math.sin((lp - fDelay) * Math.PI) * 3),
+                        chaos: 0.1 + Math.sin((lp - fDelay) * Math.PI * 2) * 0.2,
+                        morphFactor: 1.0 + Math.sin((lp - fDelay) * Math.PI) * 0.5,
+                    });
+
+                } else if (p < 0.75) {
+                    // Convergence — all 3 unify
+                    const lp = (p - 0.5) / 0.25;
+                    const uniGeo = 3;
+                    const uniHue = 180;
+                    const uniDensity = 28;
+                    const uniRot = lp * Math.PI * 4;
+                    const uniMorph = 1.2;
+                    const uniChaos = 0.15;
+                    const shared = {
+                        geometry: uniGeo, hue: uniHue, gridDensity: uniDensity,
+                        rot4dXW: uniRot, rot4dYW: lp * 2,
+                        morphFactor: uniMorph, chaos: uniChaos, intensity: 0.8,
+                    };
+                    q.setParams(shared); h.setParams(shared); f.setParams(shared);
+
+                    if (overlay) {
+                        const convTitle = document.getElementById('convTitle');
+                        const convSub = document.getElementById('convSub');
+                        if (convTitle) {
+                            convTitle.textContent = 'Unified';
+                            convTitle.style.opacity = Math.min(1, lp * 3);
+                        }
+                        if (convSub) {
+                            convSub.textContent = 'Three engines. One heartbeat.';
+                            convSub.style.opacity = Math.min(1, lp * 3);
+                        }
+                    }
+
+                } else {
+                    // Burst divergence — each takes on dramatic new identity
+                    const lp = (p - 0.75) / 0.25;
+                    const rot = Math.PI * 4 + lp * Math.PI * 3;
+
+                    q.setParams({
+                        geometry: 16 + Math.floor(lp * 7),
+                        hue: 0 + lp * 180,
+                        rot4dXW: rot, rot4dYW: lp * 4,
+                        gridDensity: 28 + lp * 40,
+                        chaos: 0.15 + lp * 0.6,
+                        morphFactor: 1.2 + lp * 0.8,
+                        intensity: 0.8 + lp * 0.2,
+                    });
+                    h.setParams({
+                        geometry: 8 + Math.floor(lp * 7),
+                        hue: 300 + lp * 60,
+                        rot4dXW: -rot * 0.8, rot4dYW: -lp * 3,
+                        gridDensity: 28 - lp * 10,
+                        chaos: 0.15 + lp * 0.4,
+                        morphFactor: 1.2 - lp * 0.5,
+                        intensity: 0.8 + lp * 0.15,
+                    });
+                    f.setParams({
+                        geometry: Math.floor(lp * 7),
+                        hue: 60 + lp * 200,
+                        rot4dXW: rot * 1.2, rot4dZW: lp * Math.PI,
+                        gridDensity: 28 + lp * 25,
+                        chaos: 0.15 + lp * 0.5,
+                        morphFactor: 1.2 + lp * 0.6,
+                        intensity: 0.8 + lp * 0.2,
+                    });
+
+                    if (overlay) {
+                        overlay.querySelector('h2').style.opacity = Math.max(0, 1 - lp * 4);
+                        overlay.querySelector('p').style.opacity = Math.max(0, 1 - lp * 4);
+                    }
+                }
+            }
+        });
+
+        // Initial convergence overlay
+        gsap.set('#convTitle', { opacity: 1 });
+        gsap.set('#convSub', { opacity: 1 });
+
+        // ═══════════════════════════════════════
+        // ENERGY TRANSFER: Card entrance + button
+        // ═══════════════════════════════════════
+        ScrollTrigger.create({
+            trigger: '#energySection',
+            start: 'top top', end: 'bottom bottom',
+            pin: '#energyPinned',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const p = self.progress;
+                const bg = S.instances.get('energyBg');
+                if (!bg) return;
+
+                // Background gently evolves
+                bg.setParams({
+                    rot4dXW: p * 3,
+                    hue: 270 + p * 50,
+                    gridDensity: 16 + p * 10,
+                    intensity: 0.2 + p * 0.15,
+                });
+            }
+        });
+
+        // Card entrance animation
+        ScrollTrigger.create({
+            trigger: '#energySection',
+            start: 'top 60%',
+            once: true,
+            onEnter: () => {
+                gsap.to('#energyCard', {
+                    opacity: 1, y: 0, duration: 1, ease: 'power3.out'
+                });
+            }
+        });
+
+        // Energy transfer button
+        const energyBtn = document.getElementById('energyBtn');
+        const energyFill = document.getElementById('energyFill');
+        if (energyBtn) {
+            let sweeping = false;
+            function energySweep() {
+                if (sweeping) return;
+                sweeping = true;
+                const card = S.instances.get('energyCard');
+                const bg = S.instances.get('energyBg');
+
+                const tl = gsap.timeline({
+                    onComplete: () => { sweeping = false; }
+                });
+
+                // Phase 1: Card drains — intensity collapses, density drops
+                tl.to(card?.params || {}, {
+                    intensity: 0.05, gridDensity: 4, chaos: 0.6, hue: 320,
+                    duration: 0.8, ease: 'power3.in',
+                    onUpdate: () => card?.render(),
+                }, 0);
+
+                // Phase 1: Background surges — absorbs energy
+                tl.to(bg?.params || {}, {
+                    intensity: 0.8, gridDensity: 55, chaos: 0.5, hue: 180,
+                    morphFactor: 1.5,
+                    duration: 0.8, ease: 'power2.out',
+                    onUpdate: () => bg?.render(),
+                }, 0);
+
+                // Meter drops
+                tl.to(energyFill, { width: '5%', duration: 0.8, ease: 'power3.in' }, 0);
+
+                // Phase 2: Color swap + geometry morph
+                tl.to(card?.params || {}, {
+                    hue: 270, geometry: 5, rot4dXW: Math.PI,
+                    duration: 0.6, ease: 'power2.inOut',
+                    onUpdate: () => card?.render(),
+                }, 0.8);
+                tl.to(bg?.params || {}, {
+                    hue: 60, geometry: 3,
+                    duration: 0.6, ease: 'power2.inOut',
+                    onUpdate: () => bg?.render(),
+                }, 0.8);
+
+                // Phase 3: Card element morphs
+                tl.to('#energyCard', {
+                    scale: 0.96, borderColor: 'rgba(123,63,242,0.4)',
+                    boxShadow: '0 0 60px rgba(123,63,242,0.2)',
+                    duration: 0.5, ease: 'power2.in',
+                }, 0);
+                tl.to('#energyCard', {
+                    scale: 1, borderColor: 'rgba(255,255,255,0.06)',
+                    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+                    duration: 0.8, ease: 'elastic.out(1, 0.4)',
+                }, 1.4);
+
+                // Phase 4: Elastic snap-back
+                tl.to(card?.params || {}, {
+                    intensity: 0.6, gridDensity: 30, chaos: 0.1,
+                    hue: 180, geometry: 7, rot4dXW: 0,
+                    duration: 1.2, ease: 'elastic.out(1, 0.5)',
+                    onUpdate: () => card?.render(),
+                }, 1.5);
+                tl.to(bg?.params || {}, {
+                    intensity: 0.2, gridDensity: 16, chaos: 0.05,
+                    hue: 270, morphFactor: 0.5, geometry: 6,
+                    duration: 1.2, ease: 'elastic.out(1, 0.5)',
+                    onUpdate: () => bg?.render(),
+                }, 1.5);
+                tl.to(energyFill, { width: '50%', duration: 1, ease: 'elastic.out(1, 0.5)' }, 1.5);
+            }
+
+            energyBtn.addEventListener('click', energySweep);
+            energyBtn.addEventListener('touchstart', (e) => { e.preventDefault(); energySweep(); });
+        }
+
+        // ═══════════════════════════════════════
+        // CASCADE: Horizontal card scroll + reveal
+        // ═══════════════════════════════════════
+        const cascadeCards = document.querySelectorAll('.cascade-card');
+        const cascadeTrack = document.getElementById('cascadeTrack');
+
+        // Staggered card entrance
+        ScrollTrigger.create({
+            trigger: '#cascadeSection',
+            start: 'top 80%',
+            once: true,
+            onEnter: () => {
+                gsap.to('.cascade-card', {
+                    opacity: 1, y: 0, scale: 1,
+                    duration: 0.8, stagger: 0.12, ease: 'power3.out'
+                });
+            }
+        });
+
+        if (cascadeTrack && cascadeCards.length > 0) {
+            const cardW = 340 + 28; // card width + gap
+            const totalScroll = (cascadeCards.length - 1) * cardW;
+
+            ScrollTrigger.create({
+                trigger: '#cascadeSection',
+                start: 'top top', end: 'bottom bottom',
+                pin: '#cascadePinned',
+                scrub: 0.4,
+                onUpdate: (self) => {
+                    const p = self.progress;
+                    cascadeTrack.style.transform = `translateX(${-p * totalScroll}px)`;
+
+                    // Color bleeding: active card's hue bleeds into neighbors
+                    const activeIdx = Math.min(Math.floor(p * cascadeCards.length), cascadeCards.length - 1);
+                    const activeHue = parseInt(cascadeCards[activeIdx].dataset.hue);
+                    const localP = (p * cascadeCards.length) - activeIdx;
+
+                    cascadeCards.forEach((card, i) => {
+                        const inst = S.instances.get(`cas${i}`);
+                        if (!inst) return;
+
+                        if (i === activeIdx) {
+                            // Active: sweep rotation, pulse intensity
+                            inst.setParams({
+                                rot4dXW: localP * Math.PI,
+                                intensity: 0.75 + Math.sin(localP * Math.PI) * 0.15,
+                                morphFactor: 0.6 + localP * 0.4,
+                            });
+                            card.style.transform = `scale(${1 + Math.sin(localP * Math.PI) * 0.03})`;
+                        } else if (Math.abs(i - activeIdx) === 1) {
+                            // Neighbor: receive color bleed
+                            const ownHue = parseInt(card.dataset.hue);
+                            const bleedAmount = i < activeIdx ? (1 - localP) * 0.3 : localP * 0.3;
+                            inst.setParams({
+                                hue: ownHue + (activeHue - ownHue) * bleedAmount,
+                                intensity: 0.6,
+                            });
+                            card.style.transform = 'scale(1)';
+                        } else {
+                            card.style.transform = 'scale(1)';
+                        }
+                    });
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════
+        // CTA: Gentle drift
+        // ═══════════════════════════════════════
+        ScrollTrigger.create({
+            trigger: '#ctaSection',
+            start: 'top bottom', end: 'bottom bottom',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const cta = S.instances.get('cta');
+                if (!cta) return;
+                cta.setParams({
+                    rot4dXW: self.progress * 2,
+                    hue: 160 + self.progress * 80,
+                    intensity: 0.2 + self.progress * 0.1,
+                });
+            }
+        });
+
+        /* ════════════════════════════════════════════
+           BOOT
+           ════════════════════════════════════════════ */
+        boot();
+        heroEntrance();
+        requestAnimationFrame(renderLoop);
+    </script>
 </body>
 </html>

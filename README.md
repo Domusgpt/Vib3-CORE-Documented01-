@@ -4,7 +4,7 @@
 
 [![Tests](https://img.shields.io/badge/tests-693%2B%20passing-brightgreen)](#testing)
 [![Version](https://img.shields.io/badge/version-2.0.0-blue)](#)
-[![License](https://img.shields.io/badge/license-Proprietary-red)](#license)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
 
@@ -39,20 +39,43 @@
 
 ---
 
-## Installation
+## Quick Start
 
 ```bash
-# Install dependencies
+# Scaffold a new project
+npx @vib3/sdk init my-app
+cd my-app
 npm install
+npm run dev
+```
 
-# Start dev server
-npm run dev:web
+Or add to an existing project:
 
-# Build for production
-npm run build:web
+```bash
+npm install @vib3/sdk
+```
 
-# Run tests
-npm test
+```javascript
+import { VIB3Engine } from '@vib3/sdk/core';
+
+const engine = new VIB3Engine();
+await engine.initialize();
+await engine.switchSystem('quantum');
+engine.setParameter('geometry', 10);
+engine.setParameter('hue', 200);
+```
+
+### Development (this repo)
+
+```bash
+npm install
+npm run dev          # Start dev server
+npm run build:web    # Build for production
+npm run build:lib    # Build UMD + ESM for CDN/npm
+npm test             # Run unit tests
+npm run test:e2e     # Run E2E tests (Playwright)
+npm run storybook    # Component browser
+npm run verify:shaders  # Verify shader sync
 ```
 
 **Requirements:** Node.js 18.19+
@@ -391,9 +414,7 @@ Q6: Core types? → b) base, hypersphere, hypertetrahedron
 
 ## License
 
-**Proprietary** - © 2025 Paul Phillips - Clear Seas Solutions LLC
-
-All Rights Reserved
+[MIT](LICENSE) — © 2025-2026 Paul Phillips / Clear Seas Solutions LLC
 
 ---
 

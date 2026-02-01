@@ -18,6 +18,10 @@ export class QuantumEngine {
         this.isActive = false;
         this.autoStart = options.autoStart ?? true;
 
+        // Canvas override for single-canvas multi-instance mode
+        /** @type {HTMLCanvasElement|null} */
+        this.canvasOverride = options.canvas || null;
+
         // Bridge rendering state
         /** @type {MultiCanvasBridge|null} */
         this._multiCanvasBridge = null;
@@ -63,9 +67,28 @@ export class QuantumEngine {
     }
     
     /**
-     * Create quantum visualizers for all 5 layers
+     * Create quantum visualizers for all 5 layers, or a single content-layer
+     * visualizer when canvasOverride is provided.
      */
     createVisualizers() {
+        // Single-canvas override mode: lightweight content-only layer
+        if (this.canvasOverride) {
+            try {
+                const visualizer = new QuantumHolographicVisualizer(
+                    this.canvasOverride, 'content', 1.0, 0
+                );
+                if (visualizer.gl) {
+                    this.visualizers.push(visualizer);
+                    console.log('🌌 Created quantum single-canvas visualizer (content layer)');
+                } else {
+                    console.warn('⚠️ No WebGL context for quantum canvasOverride');
+                }
+            } catch (error) {
+                console.warn('Failed to create quantum single-canvas visualizer:', error);
+            }
+            return;
+        }
+
         const layers = [
             { id: 'quantum-background-canvas', role: 'background', reactivity: 0.4 },
             { id: 'quantum-shadow-canvas', role: 'shadow', reactivity: 0.6 },
@@ -73,7 +96,7 @@ export class QuantumEngine {
             { id: 'quantum-highlight-canvas', role: 'highlight', reactivity: 1.3 },
             { id: 'quantum-accent-canvas', role: 'accent', reactivity: 1.6 }
         ];
-        
+
         layers.forEach(layer => {
             try {
                 // Canvas elements should already exist in HTML
@@ -82,7 +105,7 @@ export class QuantumEngine {
                     console.warn(`⚠️ Canvas ${layer.id} not found in DOM - skipping`);
                     return;
                 }
-                
+
                 const visualizer = new QuantumHolographicVisualizer(layer.id, layer.role, layer.reactivity, 0);
                 if (visualizer.gl) {
                     this.visualizers.push(visualizer);
@@ -94,7 +117,7 @@ export class QuantumEngine {
                 console.warn(`Failed to create quantum layer ${layer.id}:`, error);
             }
         });
-        
+
         console.log(`✅ Created ${this.visualizers.length} quantum visualizers with enhanced effects`);
     }
 
@@ -248,25 +271,29 @@ export class QuantumEngine {
      */
     setActive(active) {
         this.isActive = active;
-        
+
         if (active) {
-            // Show quantum layers
-            const quantumLayers = document.getElementById('quantumLayers');
-            if (quantumLayers) {
-                quantumLayers.style.display = 'block';
+            // Show quantum layers (skip in single-canvas override mode)
+            if (!this.canvasOverride) {
+                const quantumLayers = document.getElementById('quantumLayers');
+                if (quantumLayers) {
+                    quantumLayers.style.display = 'block';
+                }
             }
-            
+
             // Enable audio if global audio is enabled
             if (window.audioEnabled && !this.audioEnabled) {
                 this.enableAudio();
             }
-            
+
             console.log('🔮 Quantum System ACTIVATED - Audio frequency reactivity mode');
         } else {
-            // Hide quantum layers
-            const quantumLayers = document.getElementById('quantumLayers');
-            if (quantumLayers) {
-                quantumLayers.style.display = 'none';
+            // Hide quantum layers (skip in single-canvas override mode)
+            if (!this.canvasOverride) {
+                const quantumLayers = document.getElementById('quantumLayers');
+                if (quantumLayers) {
+                    quantumLayers.style.display = 'none';
+                }
             }
             console.log('🔮 Quantum System DEACTIVATED');
         }
@@ -307,6 +334,10 @@ export class QuantumEngine {
     setupGestureVelocityReactivity() {
         if (!this.useBuiltInReactivity) {
             console.log('🌌 Quantum built-in reactivity DISABLED - ReactivityManager active');
+            return;
+        }
+        if (this.canvasOverride) {
+            console.log('🌌 Quantum gesture reactivity skipped (single-canvas override mode)');
             return;
         }
         
@@ -786,6 +817,36 @@ export class QuantumEngine {
     // ============================================
     // RendererContract Compliance Methods
     // ============================================
+
+    /**
+     * Initialize or re-initialize with optional canvas override (RendererContract.init).
+     * Accepts the same context shape as FacetedSystem for consistency:
+     *   { canvas: HTMLCanvasElement } or { canvasId: 'my-canvas' }
+     *
+     * @param {Object} [context]
+     * @param {HTMLCanvasElement} [context.canvas] - Canvas element override
+     * @param {string} [context.canvasId] - Canvas ID to look up
+     * @param {boolean} [context.preferWebGPU] - Try WebGPU bridge
+     * @returns {Promise<boolean>|boolean} Success status
+     */
+    initWithCanvas(context = {}) {
+        const canvasEl = context.canvas ||
+            (context.canvasId ? document.getElementById(context.canvasId) : null);
+
+        if (canvasEl) {
+            this.canvasOverride = canvasEl;
+        }
+
+        // Tear down any existing visualizers before re-init
+        this.visualizers.forEach(v => v.destroy && v.destroy());
+        this.visualizers = [];
+
+        this.createVisualizers();
+
+        if (!this.autoStart) return this.visualizers.length > 0;
+        this.startRenderLoop();
+        return this.visualizers.length > 0;
+    }
 
     /**
      * Handle canvas resize (RendererContract.resize)

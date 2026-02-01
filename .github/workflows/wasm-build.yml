@@ -1,0 +1,48 @@
+name: WASM Build
+
+on:
+  push:
+    paths:
+      - 'cpp/**'
+  pull_request:
+    paths:
+      - 'cpp/**'
+  workflow_dispatch:
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '3.1.51'
+
+      - name: Verify Emscripten
+        run: emcc --version
+
+      - name: Build WASM (Release)
+        working-directory: cpp
+        run: |
+          mkdir -p build
+          cd build
+          emcmake cmake .. -DCMAKE_BUILD_TYPE=Release
+          emmake make -j$(nproc)
+
+      - name: Verify output
+        run: |
+          ls -la wasm/
+          test -f wasm/vib3_core.js
+          test -f wasm/vib3_core.wasm
+          echo "WASM build successful"
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vib3-wasm
+          path: |
+            wasm/vib3_core.js
+            wasm/vib3_core.wasm
+          retention-days: 30

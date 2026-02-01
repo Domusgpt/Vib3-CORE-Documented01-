@@ -3,8 +3,10 @@
  * Extracted from working system, no debugging mess
  */
 export class HolographicVisualizer {
-    constructor(canvasId, role = 'content', reactivity = 1.0, variant = 0) {
-        this.canvas = document.getElementById(canvasId);
+    constructor(canvasIdOrElement, role = 'content', reactivity = 1.0, variant = 0) {
+        this.canvas = (canvasIdOrElement instanceof HTMLCanvasElement)
+            ? canvasIdOrElement
+            : document.getElementById(canvasIdOrElement);
         this.role = role;
         this.reactivity = reactivity;
         this.variant = variant;

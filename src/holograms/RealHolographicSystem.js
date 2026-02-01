@@ -8,12 +8,16 @@ import { MultiCanvasBridge } from '../render/MultiCanvasBridge.js';
 import { shaderLoader } from '../render/ShaderLoader.js';
 
 export class RealHolographicSystem {
-    constructor() {
+    constructor(options = {}) {
         this.visualizers = [];
         this.currentVariant = 0;
         this.baseVariants = 30; // Original 30 variations
         this.totalVariants = 30;
         this.isActive = false;
+
+        // Canvas override for single-canvas multi-instance mode
+        /** @type {HTMLCanvasElement|null} */
+        this.canvasOverride = options.canvas || null;
 
         // Bridge rendering state
         /** @type {MultiCanvasBridge|null} */
@@ -65,6 +69,24 @@ export class RealHolographicSystem {
     }
     
     createVisualizers() {
+        // Single-canvas override mode: lightweight content-only layer
+        if (this.canvasOverride) {
+            try {
+                const visualizer = new HolographicVisualizer(
+                    this.canvasOverride, 'content', 1.0, this.currentVariant
+                );
+                if (visualizer.gl) {
+                    this.visualizers.push(visualizer);
+                    console.log('✅ Created holographic single-canvas visualizer (content layer)');
+                } else {
+                    console.warn('⚠️ No WebGL context for holographic canvasOverride');
+                }
+            } catch (error) {
+                console.warn('Failed to create holographic single-canvas visualizer:', error);
+            }
+            return;
+        }
+
         // Create the 5 visualizers using HOLO canvas IDs
         const layers = [
             { id: 'holo-background-canvas', role: 'background', reactivity: 0.5 },
@@ -73,7 +95,7 @@ export class RealHolographicSystem {
             { id: 'holo-highlight-canvas', role: 'highlight', reactivity: 1.1 },
             { id: 'holo-accent-canvas', role: 'accent', reactivity: 1.5 }
         ];
-        
+
         let successfulLayers = 0;
         layers.forEach(layer => {
             try {
@@ -83,10 +105,10 @@ export class RealHolographicSystem {
                     console.error(`❌ Canvas not found: ${layer.id}`);
                     return;
                 }
-                
+
                 console.log(`🔍 Creating holographic visualizer for: ${layer.id}`);
                 const visualizer = new HolographicVisualizer(layer.id, layer.role, layer.reactivity, this.currentVariant);
-                
+
                 if (visualizer.gl) {
                     this.visualizers.push(visualizer);
                     successfulLayers++;
@@ -98,7 +120,7 @@ export class RealHolographicSystem {
                 console.error(`❌ Failed to create REAL holographic layer ${layer.id}:`, error);
             }
         });
-        
+
         console.log(`✅ Created ${successfulLayers}/5 REAL holographic layers`);
 
         if (successfulLayers === 0) {
@@ -253,24 +275,28 @@ export class RealHolographicSystem {
 
     setActive(active) {
         this.isActive = active;
-        
+
         if (active) {
-            // Show holographic layers (from clean interface)
-            const holoLayers = document.getElementById('holographicLayers');
-            if (holoLayers) {
-                holoLayers.style.display = 'block';
+            // Show holographic layers (skip in single-canvas override mode)
+            if (!this.canvasOverride) {
+                const holoLayers = document.getElementById('holographicLayers');
+                if (holoLayers) {
+                    holoLayers.style.display = 'block';
+                }
             }
-            
+
             // Start audio only if globally enabled and not already started
             if (!this.audioEnabled && window.audioEnabled === true) {
                 this.initAudio();
             }
             console.log('🌌 REAL Active Holograms ACTIVATED with audio reactivity');
         } else {
-            // Hide holographic layers
-            const holoLayers = document.getElementById('holographicLayers');
-            if (holoLayers) {
-                holoLayers.style.display = 'none';
+            // Hide holographic layers (skip in single-canvas override mode)
+            if (!this.canvasOverride) {
+                const holoLayers = document.getElementById('holographicLayers');
+                if (holoLayers) {
+                    holoLayers.style.display = 'none';
+                }
             }
             console.log('🌌 REAL Active Holograms DEACTIVATED');
         }
@@ -629,6 +655,11 @@ export class RealHolographicSystem {
         // Holographic system is purely audio-reactive now
         console.log('✨ Holographic system: AUDIO-ONLY mode (no mouse/touch reactivity)');
 
+        if (this.canvasOverride) {
+            console.log('✨ Holographic reactivity skipped (single-canvas override mode)');
+            return;
+        }
+
         // If ReactivityManager is active, it handles all interactivity
         if (!this.useBuiltInReactivity) {
             console.log('✨ Holographic built-in reactivity DISABLED - ReactivityManager active');
@@ -829,13 +860,27 @@ export class RealHolographicSystem {
 
     /**
      * Initialize the renderer (RendererContract.init)
-     * For Holographic, initialization happens in constructor
-     * This method allows re-initialization with new context
+     * For Holographic, initialization happens in constructor.
+     * This method allows re-initialization with a new context, including
+     * a canvas override for single-canvas multi-instance mode.
+     *
      * @param {Object} [context] - Optional context
+     * @param {HTMLCanvasElement} [context.canvas] - Canvas element override
+     * @param {string} [context.canvasId] - Canvas ID to look up
      * @returns {boolean} Success status
      */
     init(context = {}) {
-        // If already initialized, just return success
+        const canvasEl = context.canvas ||
+            (context.canvasId ? document.getElementById(context.canvasId) : null);
+
+        if (canvasEl) {
+            this.canvasOverride = canvasEl;
+            // Tear down existing visualizers before re-init
+            this.visualizers.forEach(v => v.destroy && v.destroy());
+            this.visualizers = [];
+        }
+
+        // If already initialized (and no new canvas), just return success
         if (this.visualizers.length > 0) {
             return true;
         }

@@ -14,7 +14,7 @@ export type BackendType = 'webgl' | 'webgpu' | 'direct-webgl' | null;
 
 /** VIB3Engine constructor options */
 export interface VIB3EngineOptions {
-    /** Try WebGPU for systems that support it (default: false) */
+    /** Prefer WebGPU with WebGL fallback (default: true) */
     preferWebGPU?: boolean;
     /** Enable debug logging (default: false) */
     debug?: boolean;

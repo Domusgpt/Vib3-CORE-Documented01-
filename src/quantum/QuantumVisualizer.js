@@ -7,8 +7,10 @@
 import { GeometryLibrary } from '../geometry/GeometryLibrary.js';
 
 export class QuantumHolographicVisualizer {
-    constructor(canvasId, role, reactivity, variant) {
-        this.canvas = document.getElementById(canvasId);
+    constructor(canvasIdOrElement, role, reactivity, variant) {
+        this.canvas = (canvasIdOrElement instanceof HTMLCanvasElement)
+            ? canvasIdOrElement
+            : document.getElementById(canvasIdOrElement);
         this.role = role;
         this.reactivity = reactivity;
         this.variant = variant;

@@ -95,6 +95,18 @@ export default defineConfig({
         },
       },
     },
+    {
+      name: 'firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+      },
+    },
+    {
+      name: 'webkit',
+      use: {
+        ...devices['Desktop Safari'],
+      },
+    },
   ],
 
   /* Output folder for test artifacts */
