@@ -1,98 +1,121 @@
-# Repository manifest
+# Repository Manifest
 
-This document enumerates the repository’s directory structure and provides a high-level purpose for
+This document enumerates the repository's directory structure and provides a high-level purpose for
 each folder. Use it as a navigation guide when onboarding or auditing the codebase.
 
-## Top-level folders
-- `.git/` — Git metadata and internal state.
-- `DOCS/` — authored documentation (onboarding, setup, CI, lifecycle guides).
-- `cpp/` — native core (C++ sources, headers, bindings, and math).
-- `demo/` — demo assets and sandbox content.
-- `docs/` — documentation site sources and static docs assets.
-- `flutter/` — Flutter plugin and platform integration.
-- `integrated-demo/` — integrated demo workspace.
-- `js/` — JavaScript-based runtime modules (controls, audio, geometry, UI, interactions).
-- `src/` — primary engine source tree (core, renderers, math, tooling).
-- `styles/` — CSS and style assets.
-- `tests/` — unit/integration tests.
-- `tools/` — CLI/tooling scripts (telemetry, export, math utilities).
-- `types/` — shared TypeScript type declarations.
-- `wasm/` — WebAssembly artifacts and related assets.
+## Top-level Folders
 
-## Depth-2 directory manifest
-### `.git/`
-- `.git/branches/` — legacy branch metadata.
-- `.git/hooks/` — git hook templates.
-- `.git/info/` — local exclude and repo metadata.
-- `.git/logs/` — reflog history.
-- `.git/objects/` — object database.
-- `.git/refs/` — refs and tags.
+| Folder | Purpose |
+|--------|---------|
+| `.git/` | Git metadata and internal state |
+| `.github/` | GitHub Actions workflows and CI configuration |
+| `DOCS/` | Authored documentation (onboarding, setup, CI, lifecycle guides) |
+| `archive/` | Archived/legacy code (old implementations, TBD systems like Polychora) |
+| `cpp/` | Native C++ core (WASM sources, headers, bindings, math) |
+| `demo-assets/` | Demo assets and sandbox content |
+| `docs/` | Documentation site sources and static docs assets |
+| `examples/` | Example applications (flutter_demo, etc.) |
+| `flutter/` | Flutter plugin and platform integration |
+| `scripts/` | Build and utility scripts |
+| `src/` | Primary engine source tree (core, renderers, math, tooling) |
+| `styles/` | CSS and style assets |
+| `tests/` | Unit/integration tests (Playwright, Jest) |
+| `tools/` | CLI/tooling scripts (telemetry, export, math utilities) |
+| `types/` | Shared TypeScript type declarations |
+| `wasm/` | WebAssembly artifacts and related assets |
 
-### `DOCS/`
-- `DOCS/` — documentation set (onboarding, setup, CI, lifecycle, etc.).
+## Depth-2 Directory Manifest
 
 ### `cpp/`
-- `cpp/bindings/` — native bindings and interop layers.
-- `cpp/include/` — public C++ headers.
-- `cpp/math/` — math utilities for the native core.
-- `cpp/src/` — native engine sources.
+- `cpp/bindings/` — Native bindings and interop layers
+- `cpp/include/` — Public C++ headers (vib3_ffi.h)
+- `cpp/math/` — Math utilities for the native core
+- `cpp/src/` — Native engine sources (Rotor4D, Mat4x4, Vec4)
 
 ### `docs/`
-- `docs/src/` — documentation site sources.
-- `docs/wasm/` — WebAssembly-related docs assets.
+- `docs/src/` — Documentation site sources
+- `docs/wasm/` — WebAssembly-related docs assets
+
+### `examples/`
+- `examples/flutter_demo/` — Complete Flutter demo application
 
 ### `flutter/`
-- `flutter/android/` — Android plugin implementation and build files.
-- `flutter/ios/` — iOS plugin implementation and podspec.
-- `flutter/lib/` — Dart package sources.
-
-### `js/`
-- `js/audio/` — audio pipelines and reactivity modules.
-- `js/controls/` — UI controls for parameter tuning.
-- `js/core/` — core runtime utilities and managers.
-- `js/gallery/` — gallery/scene browsers.
-- `js/geometry/` — geometry definitions and helpers.
-- `js/interactions/` — user interaction handling.
-- `js/ui/` — UI components and layout.
+- `flutter/android/` — Android plugin implementation (Kotlin + OpenGL ES 3.0)
+- `flutter/ios/` — iOS plugin implementation and podspec
+- `flutter/lib/` — Dart package sources (vib3_engine.dart, widgets)
 
 ### `src/`
-- `src/agent/` — agentic tooling and MCP integration.
-- `src/cli/` — CLI entry points.
-- `src/config/` — configuration helpers.
-- `src/core/` — core engine orchestration.
-- `src/export/` — export pipeline.
-- `src/faceted/` — faceted renderer/system.
-- `src/features/` — feature flags and optional subsystems.
-- `src/gallery/` — gallery rendering and orchestration.
-- `src/geometry/` — geometry generation and definitions.
-- `src/holograms/` — holographic system.
-- `src/llm/` — LLM integrations.
-- `src/math/` — math primitives and projection utilities.
-- `src/physics/` — physics helpers.
-- `src/platforms/` — platform-specific targets (WASM, etc.).
-- `src/quantum/` — quantum visualization system.
-- `src/render/` — rendering backends and registries.
-- `src/schemas/` — JSON schemas for tooling/validation.
-- `src/scene/` — scene composition helpers.
-- `src/testing/` — testing utilities.
-- `src/ui/` — UI integration and components.
-- `src/variations/` — visual variations and presets.
-- `src/viewer/` — viewer-facing wrappers.
-- `src/wasm/` — WASM-specific entry points.
+- `src/agent/` — Agentic tooling and MCP integration
+  - `src/agent/cli/` — Agent CLI interface
+  - `src/agent/mcp/` — MCP server and tools (MCPServer.js, tools.js)
+  - `src/agent/telemetry/` — Telemetry services and exporters
+- `src/advanced/` — **NEW v2.0.0** Advanced features
+  - WebXRRenderer.js, WebGPUCompute.js, MIDIController.js, AIPresetGenerator.js, OffscreenWorker.js
+- `src/benchmarks/` — Performance benchmarks
+- `src/cli/` — CLI entry points
+- `src/config/` — Configuration helpers
+- `src/core/` — Core engine orchestration
+  - VIB3Engine.js (+ SpatialInputSystem integration), CanvasManager.js, ParameterMapper.js, Parameters.js
+- `src/creative/` — **NEW v2.0.0** Creative tooling
+  - ColorPresetsSystem.js, TransitionAnimator.js, PostProcessingPipeline.js, ParameterTimeline.js
+- `src/export/` — Export pipeline
+  - TradingCardGenerator, VIB3PackageExporter, SVGExporter, LottieExporter
+  - `src/export/systems/` — System-specific card generators
+- `src/faceted/` — Faceted visualization system (FacetedSystem.js — with audio + saturation v2.0.0)
+- `src/features/` — Feature flags and optional subsystems
+- `src/gallery/` — Gallery rendering and orchestration
+- `src/geometry/` — Geometry generation and definitions
+  - `src/geometry/buffers/` — Buffer builders
+  - `src/geometry/generators/` — Shape generators (Tesseract, Torus, etc.)
+  - `src/geometry/warp/` — Core warps (HypersphereCore, HypertetraCore)
+- `src/holograms/` — Holographic visualization system
+  - RealHolographicSystem.js, HolographicVisualizer.js
+- `src/integrations/` — **NEW v2.0.0** Platform integrations
+  - `src/integrations/frameworks/` — Vib3React.js, Vib3Vue.js, Vib3Svelte.js
+  - FigmaPlugin.js, ThreeJsPackage.js, TouchDesignerExport.js, OBSMode.js
+- `src/llm/` — LLM integrations (LLMParameterInterface, LLMParameterUI)
+- `src/math/` — Math primitives (Vec4, Mat4x4, Rotor4D, Projection)
+- `src/quantum/` — Quantum visualization system
+  - QuantumEngine.js, QuantumVisualizer.js
+- `src/reactivity/` — Reactivity configuration, management, and spatial input
+  - ReactivityConfig.js, ReactivityManager.js, SpatialInputSystem.js (**NEW v2.0.0**)
+- `src/render/` — Rendering backends and registries
+  - `src/render/backends/` — WebGL and WebGPU backends
+  - `src/render/commands/` — Render command buffer
+- `src/scene/` — Scene composition helpers (Scene4D, Node4D, ResourceManager)
+- `src/schemas/` — JSON schemas for tooling/validation
+- `src/testing/` — Testing utilities
+- `src/ui/` — UI integration and components
+- `src/variations/` — Visual variations and presets
+- `src/viewer/` — Viewer-facing wrappers (AudioReactivity, CardBending, GalleryUI)
+- `src/wasm/` — WASM-specific entry points (WasmLoader)
 
 ### `tests/`
-- `tests/agent/` — agent/tooling tests.
-- `tests/geometry/` — geometry unit tests.
-- `tests/math/` — math stability/unit tests.
-- `tests/render/` — rendering tests.
-- `tests/scene/` — scene tests.
+- `tests/agent/` — Agent/tooling tests
+- `tests/e2e/` — End-to-end browser tests
+- `tests/geometry/` — Geometry unit tests
+- `tests/math/` — Math stability/unit tests
+- `tests/render/` — Rendering tests
+- `tests/scene/` — Scene tests
 
 ### `tools/`
-- `tools/agentic/` — agentic helper scripts.
-- `tools/cli/` — CLI tooling scripts.
-- `tools/export/` — export pipeline tools.
-- `tools/math/` — math test baselines/utilities.
-- `tools/telemetry/` — telemetry tooling.
+- `tools/agentic/` — Agentic helper scripts
+- `tools/cli/` — CLI tooling scripts
+- `tools/export/` — Export pipeline tools
+- `tools/math/` — Math test baselines/utilities
+- `tools/telemetry/` — Telemetry tooling
 
 ### `types/`
-- `types/render/` — render-related type definitions.
+- `types/render/` — Render-related type definitions
+
+### `archive/` (Archived Code)
+- `archive/polychora/` — TBD Polychora system (not production ready)
+- `archive/duplicate-engines/` — Old engine implementations
+- `archive/duplicate-holographic/` — Old holographic system variants
+- `archive/legacy-docs/` — Historical documentation
+- `archive/sdk-old/` — Previous SDK implementation (superseded by src/)
+- `archive/platforms/` — Experimental platform targets
+
+---
+
+*Last updated: 2026-01-30 (v2.0.0)*

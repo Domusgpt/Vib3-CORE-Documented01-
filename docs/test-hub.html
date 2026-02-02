@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>VIB3+ Mobile Test Hub</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a12;
+            color: #e0e0e0;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+        h1 {
+            font-size: 18px;
+            color: #0ff;
+            text-align: center;
+            padding: 16px 0;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .status-bar {
+            background: rgba(0,255,0,0.1);
+            border: 1px solid rgba(0,255,0,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 11px;
+        }
+        .status-bar .label { color: #888; }
+        .status-bar .value { color: #0f0; font-weight: bold; }
+        .status-bar .fail { color: #f44; }
+        .status-bar .warn { color: #ff0; }
+        .section {
+            margin-bottom: 24px;
+        }
+        .section h2 {
+            font-size: 13px;
+            color: #0ff;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        .card {
+            display: block;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .card:active {
+            background: rgba(0,255,255,0.1);
+            border-color: #0ff;
+        }
+        .card .title {
+            font-size: 13px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .card .meta {
+            font-size: 10px;
+            color: #666;
+        }
+        .card .system {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-right: 6px;
+        }
+        .card .system.quantum { background: rgba(100,255,150,0.2); color: #64ff96; }
+        .card .system.faceted { background: rgba(0,255,255,0.2); color: #0ff; }
+        .card .system.holographic { background: rgba(255,0,255,0.2); color: #f0f; }
+        .card .system.gallery { background: rgba(255,255,0,0.2); color: #ff0; }
+        .fullwidth-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: rgba(0,255,255,0.15);
+            border: 1px solid #0ff;
+            border-radius: 8px;
+            color: #0ff;
+            font-size: 14px;
+            font-family: inherit;
+            text-align: center;
+            text-decoration: none;
+            margin-bottom: 8px;
+        }
+        .fullwidth-btn:active {
+            background: rgba(0,255,255,0.3);
+        }
+        #gpu-report {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            font-size: 10px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .pass { color: #0f0; }
+        .fail { color: #f44; }
+    </style>
+</head>
+<body>
+    <h1>VIB3+ Test Hub</h1>
+
+    <div class="status-bar" id="gpu-status">
+        <div><span class="label">WebGL: </span><span id="webgl-status" class="value">checking...</span></div>
+        <div><span class="label">WebGL2: </span><span id="webgl2-status" class="value">checking...</span></div>
+        <div><span class="label">WebGPU: </span><span id="webgpu-status" class="value">checking...</span></div>
+        <div><span class="label">GPU: </span><span id="gpu-name" class="value">detecting...</span></div>
+        <div><span class="label">Screen: </span><span id="screen-info" class="value">...</span></div>
+        <div><span class="label">DPR: </span><span id="dpr-info" class="value">...</span></div>
+    </div>
+
+    <div class="section">
+        <h2>LIVE ENGINE</h2>
+        <a class="card" href="webgpu-live.html" style="border-color: rgba(0,255,100,0.4);">
+            <div class="title"><span class="system" style="background:rgba(0,255,100,0.2);color:#0f6;">WebGPU</span> Live 4D Visualization Engine</div>
+            <div class="meta">Fullscreen interactive &bull; WebGPU preferred, WebGL fallback &bull; All 24 geometries &bull; 6D rotation</div>
+        </a>
+    </div>
+
+    <div class="section">
+        <h2>GALLERIES</h2>
+        <a class="card" href="index.html">
+            <div class="title"><span class="system gallery">GALLERY</span> Algorithmic Avant-Garde Collection</div>
+            <div class="meta">13 visualizations in iframe gallery layout</div>
+        </a>
+        <a class="card" href="vib3-exports/index.html">
+            <div class="title"><span class="system gallery">EXPORTS</span> Real Shader Exports</div>
+            <div class="meta">9 exported visualizations (3 quantum, 3 faceted, 3 holographic)</div>
+        </a>
+    </div>
+
+    <div class="section">
+        <h2>QUANTUM SYSTEM (3)</h2>
+        <a class="card" href="vib3-exports/01-quantum-quantum-tetrahedron-lattice.html">
+            <div class="title"><span class="system quantum">QUANTUM</span> Tetrahedron Lattice</div>
+            <div class="meta">Geometry 0 (Base) &bull; Grid 18 &bull; Morph 1.2 &bull; Hue 180</div>
+        </a>
+        <a class="card" href="vib3-exports/02-quantum-quantum-hypersphere-matrix.html">
+            <div class="title"><span class="system quantum">QUANTUM</span> Hypersphere Matrix</div>
+            <div class="meta">Geometry 8 (Hypersphere) &bull; 4D rotation active</div>
+        </a>
+        <a class="card" href="vib3-exports/03-quantum-quantum-hypertetra-fractal.html">
+            <div class="title"><span class="system quantum">QUANTUM</span> Hypertetra Fractal</div>
+            <div class="meta">Geometry 16 (Hypertetrahedron) &bull; Fractal patterns</div>
+        </a>
+    </div>
+
+    <div class="section">
+        <h2>FACETED SYSTEM (3)</h2>
+        <a class="card" href="vib3-exports/04-faceted-faceted-crystal-structure.html">
+            <div class="title"><span class="system faceted">FACETED</span> Crystal Structure</div>
+            <div class="meta">Clean 2D geometric patterns with 4D rotation</div>
+        </a>
+        <a class="card" href="vib3-exports/05-faceted-faceted-klein-bottle.html">
+            <div class="title"><span class="system faceted">FACETED</span> Klein Bottle</div>
+            <div class="meta">Non-orientable surface projection</div>
+        </a>
+        <a class="card" href="vib3-exports/06-faceted-faceted-hypertetra-torus.html">
+            <div class="title"><span class="system faceted">FACETED</span> Hypertetra Torus</div>
+            <div class="meta">Hypertetrahedron + toroidal geometry</div>
+        </a>
+    </div>
+
+    <div class="section">
+        <h2>HOLOGRAPHIC SYSTEM (3)</h2>
+        <a class="card" href="vib3-exports/07-holographic-holographic-wave-field.html">
+            <div class="title"><span class="system holographic">HOLO</span> Wave Field</div>
+            <div class="meta">5-layer glassmorphic wave patterns</div>
+        </a>
+        <a class="card" href="vib3-exports/08-holographic-holographic-hypersphere-sphere.html">
+            <div class="title"><span class="system holographic">HOLO</span> Hypersphere</div>
+            <div class="meta">Spherical holographic projection</div>
+        </a>
+        <a class="card" href="vib3-exports/09-holographic-holographic-hypertetra-crystal.html">
+            <div class="title"><span class="system holographic">HOLO</span> Hypertetra Crystal</div>
+            <div class="meta">Crystalline hypertetrahedron rendering</div>
+        </a>
+    </div>
+
+    <div class="section">
+        <h2>STANDALONE VISUALIZATIONS (13)</h2>
+        <a class="card" href="01-dissolution_of_euclidean_hegemony.html">
+            <div class="title">01 &mdash; Dissolution of Euclidean Hegemony</div>
+            <div class="meta">Recursive non-orientable manifold projections</div>
+        </a>
+        <a class="card" href="02-hyperspatial_ego_death.html">
+            <div class="title">02 &mdash; Hyperspatial Ego Death</div>
+            <div class="meta">Dimensional transcendence through tesseract unfolding</div>
+        </a>
+        <a class="card" href="03-post_cartesian_sublime.html">
+            <div class="title">03 &mdash; Post-Cartesian Sublime</div>
+            <div class="meta">Beyond coordinate geometry</div>
+        </a>
+        <a class="card" href="04-crystalline_void_meditation.html">
+            <div class="title">04 &mdash; Crystalline Void Meditation</div>
+            <div class="meta">Crystal structure in the void</div>
+        </a>
+        <a class="card" href="05-quantum_decoherence_ballet.html">
+            <div class="title">05 &mdash; Quantum Decoherence Ballet</div>
+            <div class="meta">Wavefunction collapse through stochastic geometry</div>
+        </a>
+        <a class="card" href="06-dissolution_of_euclidean_hegemony.html">
+            <div class="title">06 &mdash; Dissolution of Euclidean Hegemony (v2)</div>
+            <div class="meta">Extended variation</div>
+        </a>
+        <a class="card" href="07-hyperspatial_ego_death.html">
+            <div class="title">07 &mdash; Hyperspatial Ego Death (v2)</div>
+            <div class="meta">Extended variation</div>
+        </a>
+        <a class="card" href="08-post_cartesian_sublime.html">
+            <div class="title">08 &mdash; Post-Cartesian Sublime (v2)</div>
+            <div class="meta">Extended variation</div>
+        </a>
+        <a class="card" href="09-crystalline_void_meditation.html">
+            <div class="title">09 &mdash; Crystalline Void Meditation (v2)</div>
+            <div class="meta">Extended variation</div>
+        </a>
+        <a class="card" href="10-quantum_decoherence_ballet.html">
+            <div class="title">10 &mdash; Quantum Decoherence Ballet (v2)</div>
+            <div class="meta">Extended variation</div>
+        </a>
+        <a class="card" href="11-dissolution_of_euclidean_hegemony.html">
+            <div class="title">11 &mdash; Dissolution of Euclidean Hegemony (v3)</div>
+            <div class="meta">Extended variation</div>
+        </a>
+        <a class="card" href="12-hyperspatial_ego_death.html">
+            <div class="title">12 &mdash; Hyperspatial Ego Death (v3)</div>
+            <div class="meta">Extended variation</div>
+        </a>
+        <a class="card" href="13-post_cartesian_sublime.html">
+            <div class="title">13 &mdash; Post-Cartesian Sublime (v3)</div>
+            <div class="meta">Extended variation</div>
+        </a>
+    </div>
+
+    <div class="section">
+        <h2>GPU DIAGNOSTICS</h2>
+        <button class="fullwidth-btn" onclick="runGPUDiag()">Run Full GPU Diagnostic</button>
+        <div id="gpu-report"></div>
+    </div>
+
+    <script>
+    // GPU capability detection
+    (async function detect() {
+        const canvas = document.createElement('canvas');
+
+        // WebGL 1
+        const gl1 = canvas.getContext('webgl');
+        const el1 = document.getElementById('webgl-status');
+        if (gl1) {
+            const ext = gl1.getExtension('WEBGL_debug_renderer_info');
+            const renderer = ext ? gl1.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'yes';
+            el1.textContent = 'YES';
+            el1.className = 'value pass';
+            document.getElementById('gpu-name').textContent = renderer;
+        } else {
+            el1.textContent = 'NO';
+            el1.className = 'value fail';
+        }
+
+        // WebGL 2
+        const gl2 = document.createElement('canvas').getContext('webgl2');
+        const el2 = document.getElementById('webgl2-status');
+        el2.textContent = gl2 ? 'YES' : 'NO';
+        el2.className = gl2 ? 'value pass' : 'value fail';
+
+        // WebGPU
+        const elGPU = document.getElementById('webgpu-status');
+        if (navigator.gpu) {
+            try {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (adapter) {
+                    const info = adapter.info || {};
+                    elGPU.textContent = `YES (${info.vendor || ''} ${info.architecture || ''})`.trim();
+                    elGPU.className = 'value pass';
+                } else {
+                    elGPU.textContent = 'NO (no adapter)';
+                    elGPU.className = 'value fail';
+                }
+            } catch(e) {
+                elGPU.textContent = `NO (${e.message})`;
+                elGPU.className = 'value fail';
+            }
+        } else {
+            elGPU.textContent = 'NO (not available)';
+            elGPU.className = 'value warn';
+        }
+
+        // Screen info
+        document.getElementById('screen-info').textContent =
+            `${screen.width}x${screen.height} (viewport: ${window.innerWidth}x${window.innerHeight})`;
+        document.getElementById('dpr-info').textContent = window.devicePixelRatio;
+    })();
+
+    // Full GPU diagnostic
+    async function runGPUDiag() {
+        const out = document.getElementById('gpu-report');
+        const lines = [];
+        function log(s) { lines.push(s); out.textContent = lines.join('\n'); }
+
+        log('=== VIB3+ GPU Diagnostic ===');
+        log(`Date: ${new Date().toISOString()}`);
+        log(`UA: ${navigator.userAgent}`);
+        log(`Screen: ${screen.width}x${screen.height} @ ${window.devicePixelRatio}x`);
+        log(`Viewport: ${window.innerWidth}x${window.innerHeight}`);
+        log('');
+
+        // WebGL 1
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const gl = canvas.getContext('webgl');
+        if (gl) {
+            log('--- WebGL 1 ---');
+            const ext = gl.getExtension('WEBGL_debug_renderer_info');
+            log(`Vendor: ${ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR)}`);
+            log(`Renderer: ${ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)}`);
+            log(`Version: ${gl.getParameter(gl.VERSION)}`);
+            log(`GLSL: ${gl.getParameter(gl.SHADING_LANGUAGE_VERSION)}`);
+            log(`Max Tex Size: ${gl.getParameter(gl.MAX_TEXTURE_SIZE)}`);
+            log(`Max Viewp: ${gl.getParameter(gl.MAX_VIEWPORT_DIMS)}`);
+            log(`Extensions: ${gl.getSupportedExtensions().length}`);
+
+            // Quick shader compile test
+            log('');
+            log('--- Shader Compile Test ---');
+            const vs = gl.createShader(gl.VERTEX_SHADER);
+            gl.shaderSource(vs, 'attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}');
+            gl.compileShader(vs);
+            log(`Vertex: ${gl.getShaderParameter(vs, gl.COMPILE_STATUS) ? 'PASS' : 'FAIL'}`);
+
+            const fs = gl.createShader(gl.FRAGMENT_SHADER);
+            gl.shaderSource(fs, `
+                precision highp float;
+                uniform float u_time;
+                uniform vec2 u_resolution;
+                mat4 rotateXW(float a){float c=cos(a),s=sin(a);return mat4(c,0,0,-s,0,1,0,0,0,0,1,0,s,0,0,c);}
+                void main(){
+                    vec2 uv=(gl_FragCoord.xy-0.5*u_resolution)/min(u_resolution.x,u_resolution.y);
+                    vec4 p=vec4(uv,0,0);
+                    p=rotateXW(u_time*0.01)*p;
+                    float d=length(p.xyz/(2.5-p.w))-0.5;
+                    vec3 col=vec3(0.2,0.8,1.0)*smoothstep(0.02,0.0,abs(d));
+                    gl_FragColor=vec4(col,1);
+                }
+            `);
+            gl.compileShader(fs);
+            const fsOk = gl.getShaderParameter(fs, gl.COMPILE_STATUS);
+            log(`Fragment (4D rotation): ${fsOk ? 'PASS' : 'FAIL: ' + gl.getShaderInfoLog(fs)}`);
+
+            if (fsOk) {
+                const prog = gl.createProgram();
+                gl.attachShader(prog, vs);
+                gl.attachShader(prog, fs);
+                gl.linkProgram(prog);
+                const linked = gl.getProgramParameter(prog, gl.LINK_STATUS);
+                log(`Link: ${linked ? 'PASS' : 'FAIL'}`);
+
+                if (linked) {
+                    // Render a frame
+                    gl.useProgram(prog);
+                    const buf = gl.createBuffer();
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+                    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+                    const loc = gl.getAttribLocation(prog, 'p');
+                    gl.enableVertexAttribArray(loc);
+                    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+                    gl.uniform1f(gl.getUniformLocation(prog, 'u_time'), performance.now());
+                    gl.uniform2f(gl.getUniformLocation(prog, 'u_resolution'), 256, 256);
+                    gl.viewport(0, 0, 256, 256);
+                    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+                    // Read pixels
+                    const pixels = new Uint8Array(256 * 256 * 4);
+                    gl.readPixels(0, 0, 256, 256, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+                    let nonBlack = 0;
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        if (pixels[i] > 5 || pixels[i+1] > 5 || pixels[i+2] > 5) nonBlack++;
+                    }
+                    const total = 256 * 256;
+                    const pct = (nonBlack / total * 100).toFixed(1);
+                    log(`Render test: ${pct}% non-black pixels (${nonBlack}/${total})`);
+                    log(nonBlack > 100 ? '>>> GPU RENDERING WORKS <<<' : '>>> RENDERING FAILED (all black) <<<');
+                }
+            }
+        } else {
+            log('--- WebGL 1: NOT AVAILABLE ---');
+        }
+
+        // WebGL 2
+        log('');
+        const gl2 = document.createElement('canvas').getContext('webgl2');
+        log(`--- WebGL 2: ${gl2 ? 'AVAILABLE' : 'NOT AVAILABLE'} ---`);
+
+        // WebGPU
+        log('');
+        if (navigator.gpu) {
+            try {
+                const adapter = await navigator.gpu.requestAdapter();
+                if (adapter) {
+                    const info = adapter.info || {};
+                    log('--- WebGPU ---');
+                    log(`Vendor: ${info.vendor || 'unknown'}`);
+                    log(`Architecture: ${info.architecture || 'unknown'}`);
+                    log(`Description: ${info.description || 'unknown'}`);
+
+                    const device = await adapter.requestDevice();
+                    log(`Device: ${device ? 'created' : 'failed'}`);
+                    log(`Max Buffer: ${device.limits.maxBufferSize}`);
+                    log(`Max Tex 2D: ${device.limits.maxTextureDimension2D}`);
+                } else {
+                    log('--- WebGPU: no adapter ---');
+                }
+            } catch(e) {
+                log(`--- WebGPU error: ${e.message} ---`);
+            }
+        } else {
+            log('--- WebGPU: not available in this browser ---');
+        }
+
+        log('');
+        log('=== Diagnostic Complete ===');
+    }
+    </script>
+</body>
+</html>

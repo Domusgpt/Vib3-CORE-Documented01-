@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIB3+ Algorithmic Avant-Garde Collection</title>
+    <meta name="description" content="Machine-generated 4D visualization art created via VIB3+ MCP Protocol">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a0f;
+            --fg: #e0e0e0;
+            --accent: #00ffff;
+            --accent2: #ff00ff;
+            --green: #00ff00;
+            --yellow: #ffff00;
+            --dim: #666;
+            --card-bg: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.1);
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .hero {
+            padding: 80px 40px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(0,255,255,0.05) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero h1 {
+            font-size: clamp(24px, 5vw, 48px);
+            font-weight: 300;
+            letter-spacing: 8px;
+            color: var(--accent);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .hero .tagline {
+            font-size: 14px;
+            color: var(--dim);
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .hero .meta {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            font-size: 11px;
+        }
+
+        .hero .meta-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .hero .meta-value {
+            font-size: 24px;
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        .hero .meta-label {
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        section {
+            margin-bottom: 60px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: var(--accent);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h3 {
+            font-size: 14px;
+            color: var(--accent2);
+            margin: 20px 0 10px;
+        }
+
+        .doc-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .doc-section p {
+            color: var(--dim);
+            margin-bottom: 15px;
+        }
+
+        .doc-section code {
+            background: rgba(0,255,255,0.1);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        pre {
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.8;
+            margin: 15px 0;
+        }
+
+        pre .comment { color: #666; }
+        pre .keyword { color: var(--accent2); }
+        pre .string { color: var(--green); }
+        pre .number { color: var(--yellow); }
+        pre .function { color: var(--accent); }
+
+        .tool-flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .tool-step {
+            background: linear-gradient(135deg, rgba(0,255,255,0.1), rgba(255,0,255,0.1));
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 15px 20px;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .tool-step .step-num {
+            font-size: 10px;
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .tool-step .tool-name {
+            color: var(--accent);
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .tool-step .tool-desc {
+            font-size: 10px;
+            color: var(--dim);
+        }
+
+        .arrow {
+            color: var(--accent);
+            font-size: 24px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 40px rgba(0,255,255,0.1);
+        }
+
+        .card-preview {
+            height: 200px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-preview iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            pointer-events: none;
+        }
+
+        .card-preview .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.8) 100%);
+            display: flex;
+            align-items: flex-end;
+            padding: 15px;
+        }
+
+        .card-preview .pcs-badge {
+            background: var(--yellow);
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .card-desc {
+            font-size: 11px;
+            color: var(--dim);
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .card-params {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 10px;
+            margin-bottom: 15px;
+        }
+
+        .param {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 4px;
+        }
+
+        .param-name { color: var(--dim); }
+        .param-value { color: var(--green); font-family: monospace; }
+
+        .card-link {
+            display: block;
+            text-align: center;
+            padding: 12px;
+            background: var(--accent);
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .card-link:hover {
+            background: var(--accent2);
+        }
+
+        .constants-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .constants-table th,
+        .constants-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .constants-table th {
+            color: var(--accent);
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 10px;
+        }
+
+        .constants-table td:nth-child(2) {
+            font-family: monospace;
+            color: var(--green);
+        }
+
+        .constants-table td:nth-child(3) {
+            color: var(--dim);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid var(--border);
+            color: var(--dim);
+            font-size: 11px;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            .hero { padding: 40px 20px; }
+            .gallery { grid-template-columns: 1fr; }
+            .tool-flow { flex-direction: column; }
+            .arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+    <header class="hero">
+        <h1>Algorithmic Avant-Garde</h1>
+        <p class="tagline">
+            A collection of machine-generated 4D visualizations created through the VIB3+ MCP Protocol.
+            Each piece demonstrates the tedious precision that only an AI would bother to compute.
+        </p>
+        <div class="meta">
+            <div class="meta-item">
+                <span class="meta-value">13</span>
+                <span class="meta-label">Visualizations</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-value">1000</span>
+                <span class="meta-label">Lorenz Points</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-value">15</span>
+                <span class="meta-label">Decimal Places</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-value">6D</span>
+                <span class="meta-label">Rotation Space</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <section>
+            <h2>How This Was Made</h2>
+
+            <div class="doc-section">
+                <h3>The VIB3+ MCP Protocol</h3>
+                <p>
+                    VIB3+ exposes a <code>Model Context Protocol (MCP)</code> interface that allows AI agents to
+                    programmatically control 4D visualizations. Instead of a human manually adjusting sliders,
+                    an agent calls structured tool functions to create, configure, and export visualizations.
+                </p>
+
+                <div class="tool-flow">
+                    <div class="tool-step">
+                        <div class="step-num">Step 1</div>
+                        <div class="tool-name">list_behavior_presets</div>
+                        <div class="tool-desc">Discover available modes</div>
+                    </div>
+                    <span class="arrow">&#8594;</span>
+                    <div class="tool-step">
+                        <div class="step-num">Step 2</div>
+                        <div class="tool-name">create_4d_visualization</div>
+                        <div class="tool-desc">Initialize geometry</div>
+                    </div>
+                    <span class="arrow">&#8594;</span>
+                    <div class="tool-step">
+                        <div class="step-num">Step 3</div>
+                        <div class="tool-name">set_rotation</div>
+                        <div class="tool-desc">Apply 6D rotation</div>
+                    </div>
+                    <span class="arrow">&#8594;</span>
+                    <div class="tool-step">
+                        <div class="step-num">Step 4</div>
+                        <div class="tool-name">set_visual_parameters</div>
+                        <div class="tool-desc">Configure colors/dynamics</div>
+                    </div>
+                    <span class="arrow">&#8594;</span>
+                    <div class="tool-step">
+                        <div class="step-num">Step 5</div>
+                        <div class="tool-name">apply_behavior_preset</div>
+                        <div class="tool-desc">Set reactivity mode</div>
+                    </div>
+                    <span class="arrow">&#8594;</span>
+                    <div class="tool-step">
+                        <div class="step-num">Step 6</div>
+                        <div class="tool-name">export_package</div>
+                        <div class="tool-desc">Generate standalone HTML</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="doc-section">
+                <h3>Mathematical Foundations</h3>
+                <p>
+                    The generator uses multiple mathematical systems to create parameter distributions that
+                    no human would manually compute:
+                </p>
+
+                <table class="constants-table">
+                    <thead>
+                        <tr>
+                            <th>Constant</th>
+                            <th>Value (50 digits)</th>
+                            <th>Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>&#966; (Golden Ratio)</td>
+                            <td>1.6180339887498948482045868343656381177203...</td>
+                            <td>Parameter distribution via golden angle</td>
+                        </tr>
+                        <tr>
+                            <td>&#964; (Tau)</td>
+                            <td>6.2831853071795864769252867665590057683943...</td>
+                            <td>Rotation normalization</td>
+                        </tr>
+                        <tr>
+                            <td>e (Euler's)</td>
+                            <td>2.7182818284590452353602874713526624977572...</td>
+                            <td>Decay functions</td>
+                        </tr>
+                        <tr>
+                            <td>Lorenz &#963;, &#961;, &#946;</td>
+                            <td>10, 28, 8/3</td>
+                            <td>Chaotic attractor for parameter modulation</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="doc-section">
+                <h3>The Generation Algorithm</h3>
+                <pre><code><span class="comment">// Golden angle for optimal distribution across N variations</span>
+<span class="keyword">const</span> goldenAngle = TAU / (PHI * PHI); <span class="comment">// ~137.5 degrees</span>
+
+<span class="comment">// Each variation index produces unique 6D rotation</span>
+<span class="keyword">function</span> <span class="function">generateGoldenParameters</span>(index) {
+    <span class="keyword">const</span> theta = index * goldenAngle;
+
+    <span class="keyword">return</span> {
+        XY: (theta % TAU),
+        XZ: ((theta * PHI) % TAU),
+        YZ: ((theta * PHI * PHI) % TAU),
+        XW: ((theta / PHI) % TAU),
+        YW: ((theta / (PHI * PHI)) % TAU),
+        ZW: ((theta * SQRT5) % TAU),
+
+        <span class="comment">// Fibonacci-based hue selection</span>
+        hue: (<span class="function">fibonacci</span>(index % <span class="number">20</span>) * goldenAngle * <span class="number">180</span> / Math.PI) % <span class="number">360</span>,
+
+        <span class="comment">// Geometry from prime sieve sequence</span>
+        geometry: primes[index % primes.length] % <span class="number">24</span>
+    };
+}
+
+<span class="comment">// Lorenz attractor for subtle chaos injection</span>
+<span class="keyword">const</span> trajectory = <span class="function">generateLorenzTrajectory</span>(<span class="number">1000</span>);
+params.chaos = lorenzPoint.x * <span class="number">0.3</span> + params.chaos * <span class="number">0.7</span>;</code></pre>
+            </div>
+
+            <div class="doc-section">
+                <h3>The Shader Pipeline</h3>
+                <p>
+                    Each visualization contains a complete WebGL raymarching shader that renders 4D geometry
+                    in real-time. The 6D rotation is applied via matrix multiplication in the fragment shader:
+                </p>
+                <pre><code><span class="comment">// 6D rotation applied per-pixel</span>
+mat4 rot = <span class="function">rotateXY</span>(aXY) * <span class="function">rotateXZ</span>(aXZ) * <span class="function">rotateYZ</span>(aYZ) *
+           <span class="function">rotateXW</span>(aXW) * <span class="function">rotateYW</span>(aYW) * <span class="function">rotateZW</span>(aZW);
+
+<span class="comment">// Ray march through 4D space</span>
+<span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">64</span>; i++) {
+    vec4 p4 = rot * vec4(rayPos, sin(time) * MORPH);
+    <span class="keyword">float</span> d = <span class="function">sdf4D</span>(p4);  <span class="comment">// 4D signed distance field</span>
+    <span class="keyword">if</span> (d &lt; <span class="number">0.001</span>) <span class="keyword">break</span>;
+    rayPos += rayDir * d;
+}</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>The Collection</h2>
+
+            <div class="gallery">
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="01-dissolution_of_euclidean_hegemony.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.5584</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Dissolution of Euclidean Hegemony</h3>
+                        <p class="card-desc">Challenges the tyranny of orthogonal perception through recursive non-orientable manifold projections</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Klein + Hypertetra</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">280.00 deg</span></div>
+                        </div>
+                        <a href="01-dissolution_of_euclidean_hegemony.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="02-hyperspatial_ego_death.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.5511</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Hyperspatial Ego Death</h3>
+                        <p class="card-desc">Simulates the phenomenological experience of dimensional transcendence through tesseract unfolding</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Cube + Hypersphere</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">137.51 deg</span></div>
+                        </div>
+                        <a href="02-hyperspatial_ego_death.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="03-post_cartesian_sublime.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.3658</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Post-Cartesian Sublime</h3>
+                        <p class="card-desc">Deconstructs the coordinate system as a colonial imposition on pure geometric consciousness</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Fractal + Base</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">191.46 deg</span></div>
+                        </div>
+                        <a href="03-post_cartesian_sublime.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="04-crystalline_void_meditation.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.5124</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Crystalline Void Meditation</h3>
+                        <p class="card-desc">Explores the negative space between polytope vertices as a metaphor for existential absence</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Crystal + Hypersphere</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">215.28 deg</span></div>
+                        </div>
+                        <a href="04-crystalline_void_meditation.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="05-quantum_decoherence_ballet.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.5312</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Quantum Decoherence Ballet</h3>
+                        <p class="card-desc">Visualizes wavefunction collapse through stochastic geometry mutation</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Sphere + Hypertetra</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">77.51 deg</span></div>
+                        </div>
+                        <a href="05-quantum_decoherence_ballet.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="06-dissolution_of_euclidean_hegemony.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.4087</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Dissolution II</h3>
+                        <p class="card-desc">Second iteration - evolved through golden angle progression</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Klein + Hypertetra</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">334.59 deg</span></div>
+                        </div>
+                        <a href="06-dissolution_of_euclidean_hegemony.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="07-hyperspatial_ego_death.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.4393</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Ego Death II</h3>
+                        <p class="card-desc">Second iteration - prime harmonic temporal mode</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Cube + Hypersphere</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">20.06 deg</span></div>
+                        </div>
+                        <a href="07-hyperspatial_ego_death.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="08-post_cartesian_sublime.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.3902</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Post-Cartesian II</h3>
+                        <p class="card-desc">Second iteration - e-decay temporal evolution</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Fractal + Base</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">208.97 deg</span></div>
+                        </div>
+                        <a href="08-post_cartesian_sublime.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="09-crystalline_void_meditation.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.4446</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Crystalline Void II</h3>
+                        <p class="card-desc">Second iteration - breathing temporal mode</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Crystal + Hypersphere</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">200.43 deg</span></div>
+                        </div>
+                        <a href="09-crystalline_void_meditation.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="10-quantum_decoherence_ballet.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.4401</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Decoherence Ballet II</h3>
+                        <p class="card-desc">Second iteration - quantum random temporal mode</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Sphere + Hypertetra</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">178.42 deg</span></div>
+                        </div>
+                        <a href="10-quantum_decoherence_ballet.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="11-dissolution_of_euclidean_hegemony.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.4245</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Dissolution III</h3>
+                        <p class="card-desc">Third iteration - Lorenz chaos maximized</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Klein + Hypertetra</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">280.49 deg</span></div>
+                        </div>
+                        <a href="11-dissolution_of_euclidean_hegemony.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="12-hyperspatial_ego_death.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.3622</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Ego Death III</h3>
+                        <p class="card-desc">Third iteration - full trajectory integration</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Cube + Hypersphere</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">358.19 deg</span></div>
+                        </div>
+                        <a href="12-hyperspatial_ego_death.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-preview">
+                        <iframe src="13-post_cartesian_sublime.html" loading="lazy"></iframe>
+                        <div class="overlay"><span class="pcs-badge">PCS: 1.3545</span></div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Post-Cartesian III</h3>
+                        <p class="card-desc">Final iteration - convergence point</p>
+                        <div class="card-params">
+                            <div class="param"><span class="param-name">Geometry</span><span class="param-value">Fractal + Base</span></div>
+                            <div class="param"><span class="param-name">Hue</span><span class="param-value">180.09 deg</span></div>
+                        </div>
+                        <a href="13-post_cartesian_sublime.html" class="card-link">View Visualization</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Generation Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">1.5584</div>
+                    <div class="stat-label">Highest PCS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1.4448</div>
+                    <div class="stat-label">Mean PCS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">175 KB</div>
+                    <div class="stat-label">Total Size</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">30</div>
+                    <div class="stat-label">Fibonacci Terms</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">24</div>
+                    <div class="stat-label">Primes Used</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">&#8734;</div>
+                    <div class="stat-label">Pretentiousness</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>Generated by an AI using the <a href="https://github.com/Domusgpt/Vib3-CORE-Documented01-">VIB3+ MCP Protocol</a></p>
+        <p style="margin-top: 10px;">No human would ever specify rotation to 15 decimal places.</p>
+    </footer>
+</body>
+</html>

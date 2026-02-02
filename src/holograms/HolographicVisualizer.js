@@ -3,8 +3,10 @@
  * Extracted from working system, no debugging mess
  */
 export class HolographicVisualizer {
-    constructor(canvasId, role = 'content', reactivity = 1.0, variant = 0) {
-        this.canvas = document.getElementById(canvasId);
+    constructor(canvasIdOrElement, role = 'content', reactivity = 1.0, variant = 0) {
+        this.canvas = (canvasIdOrElement instanceof HTMLCanvasElement)
+            ? canvasIdOrElement
+            : document.getElementById(canvasIdOrElement);
         this.role = role;
         this.reactivity = reactivity;
         this.variant = variant;
@@ -78,6 +80,28 @@ export class HolographicVisualizer {
         this.audioColorShift = 0.0;
         
         this.startTime = Date.now();
+        this._contextLost = false;
+
+        // WebGL context loss/restore handlers
+        this._onContextLost = (e) => {
+            e.preventDefault();
+            this._contextLost = true;
+            console.warn(`WebGL context lost for ${canvasId}`);
+        };
+        this._onContextRestored = () => {
+            console.log(`WebGL context restored for ${canvasId}`);
+            this._contextLost = false;
+            try {
+                this.initShaders();
+                this.initBuffers();
+                this.resize();
+            } catch (err) {
+                console.error(`Failed to reinit after context restore for ${canvasId}:`, err);
+            }
+        };
+        this.canvas.addEventListener('webglcontextlost', this._onContextLost);
+        this.canvas.addEventListener('webglcontextrestored', this._onContextRestored);
+
         this.initShaders();
         this.initBuffers();
         this.resize();
@@ -809,8 +833,12 @@ export class HolographicVisualizer {
     }
     
     render() {
-        if (!this.program) return;
-        
+        if (!this.program || this._contextLost) return;
+        if (this.gl.isContextLost()) {
+            this._contextLost = true;
+            return;
+        }
+
         this.resize();
         this.gl.useProgram(this.program);
         
@@ -961,12 +989,15 @@ export class HolographicVisualizer {
      * This method was missing and causing parameter sliders to not work in holographic system
      */
     updateParameters(params) {
+        if (!params || typeof params !== 'object') return;
         // Update variant parameters with proper mapping and scaling
         if (this.variantParams) {
             Object.keys(params).forEach(param => {
                 const mappedParam = this.mapParameterName(param);
                 if (mappedParam !== null) {
                     let scaledValue = params[param];
+                    // Guard against NaN/Infinity reaching GPU uniforms
+                    if (typeof scaledValue !== 'number' || !Number.isFinite(scaledValue)) return;
                     
                     // FIX: Scale gridDensity to reasonable holographic density range (back to normal levels)
                     if (param === 'gridDensity') {
@@ -1008,5 +1039,35 @@ export class HolographicVisualizer {
             'geometry': 'geometryType'
         };
         return paramMap[globalParam] || globalParam;
+    }
+
+    /**
+     * Clean up all WebGL resources and event listeners
+     */
+    destroy() {
+        // Remove context loss listeners
+        if (this.canvas) {
+            if (this._onContextLost) {
+                this.canvas.removeEventListener('webglcontextlost', this._onContextLost);
+            }
+            if (this._onContextRestored) {
+                this.canvas.removeEventListener('webglcontextrestored', this._onContextRestored);
+            }
+        }
+
+        // Clean up WebGL resources (guard against lost context)
+        if (this.gl && !this.gl.isContextLost()) {
+            if (this.program) {
+                this.gl.deleteProgram(this.program);
+            }
+            if (this.buffer) {
+                this.gl.deleteBuffer(this.buffer);
+            }
+        }
+
+        this.program = null;
+        this.buffer = null;
+        this.gl = null;
+        this._contextLost = true;
     }
 }

@@ -179,7 +179,8 @@ function showHelp(isJson) {
             system: 'Switch visualization system',
             randomize: 'Randomize all parameters',
             reset: 'Reset to default parameters',
-            tools: 'List available MCP tools'
+            tools: 'List available MCP tools',
+            validate: 'Validate manifests, packs, and configs'
         },
         options: {
             '--json, -j': 'Output in JSON format (agent-friendly)',
@@ -194,7 +195,9 @@ function showHelp(isJson) {
             `${CLI_NAME} set visual --hue 200 --chaos 0.3`,
             `${CLI_NAME} geometry list --core-type hypersphere`,
             `${CLI_NAME} state --json`,
-            `${CLI_NAME} tools --json`
+            `${CLI_NAME} tools --json`,
+            `${CLI_NAME} validate pack scene.vib3 --json`,
+            `${CLI_NAME} validate manifest extension.json`
         ]
     };
 
@@ -362,6 +365,124 @@ async function handleTools(parsed, startTime) {
 }
 
 /**
+ * Handle 'validate' command - validates manifests, packs, and configs
+ */
+async function handleValidate(parsed, startTime) {
+    const subcommand = parsed.subcommand || 'pack';
+    const filePath = parsed.options.file || parsed.options.f || parsed.positional[0];
+
+    if (!filePath && subcommand !== 'schema') {
+        return wrapResponse('validate', {
+            error: {
+                type: 'ValidationError',
+                code: 'MISSING_FILE',
+                message: 'File path required for validation',
+                suggestion: 'Use --file <path> or provide file as positional argument'
+            }
+        }, false, performance.now() - startTime);
+    }
+
+    try {
+        switch (subcommand) {
+            case 'pack': {
+                // Validate a .vib3 scene pack file
+                const fs = await import('fs/promises');
+                const content = await fs.readFile(filePath, 'utf-8');
+                const pack = JSON.parse(content);
+
+                const validation = schemaRegistry.validate('parameters', pack.parameters || pack);
+                return wrapResponse('validate_pack', {
+                    file: filePath,
+                    valid: validation.valid,
+                    errors: validation.errors || [],
+                    schema: 'parameters'
+                }, validation.valid, performance.now() - startTime);
+            }
+
+            case 'manifest': {
+                // Validate extension/tool manifest
+                const fs = await import('fs/promises');
+                const content = await fs.readFile(filePath, 'utf-8');
+                const manifest = JSON.parse(content);
+
+                // Basic manifest structure validation
+                const required = ['name', 'version', 'type'];
+                const missing = required.filter(f => !manifest[f]);
+                const valid = missing.length === 0;
+
+                return wrapResponse('validate_manifest', {
+                    file: filePath,
+                    valid,
+                    errors: missing.length > 0 ? [{ message: `Missing required fields: ${missing.join(', ')}` }] : [],
+                    manifest_type: manifest.type || 'unknown',
+                    name: manifest.name,
+                    version: manifest.version
+                }, valid, performance.now() - startTime);
+            }
+
+            case 'response': {
+                // Validate a tool response envelope
+                const fs = await import('fs/promises');
+                const content = await fs.readFile(filePath, 'utf-8');
+                const response = JSON.parse(content);
+
+                const validation = schemaRegistry.validate('toolResponse', response);
+                return wrapResponse('validate_response', {
+                    file: filePath,
+                    valid: validation.valid,
+                    errors: validation.errors || [],
+                    schema: 'toolResponse'
+                }, validation.valid, performance.now() - startTime);
+            }
+
+            case 'schema': {
+                // List available schemas
+                const schemas = ['parameters', 'toolResponse', 'error'];
+                return wrapResponse('list_schemas', {
+                    schemas,
+                    count: schemas.length
+                }, true, performance.now() - startTime);
+            }
+
+            default:
+                return wrapResponse('validate', {
+                    error: {
+                        type: 'ValidationError',
+                        code: 'INVALID_SUBCOMMAND',
+                        message: `Unknown validate subcommand: ${subcommand}`,
+                        valid_options: ['pack', 'manifest', 'response', 'schema'],
+                        suggestion: 'Use "validate pack <file>", "validate manifest <file>", or "validate schema"'
+                    }
+                }, false, performance.now() - startTime);
+        }
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return wrapResponse('validate', {
+                error: {
+                    type: 'NotFoundError',
+                    code: 'FILE_NOT_FOUND',
+                    message: `File not found: ${filePath}`,
+                    suggestion: 'Check the file path and try again'
+                }
+            }, false, performance.now() - startTime);
+        }
+
+        if (error instanceof SyntaxError) {
+            return wrapResponse('validate', {
+                error: {
+                    type: 'ValidationError',
+                    code: 'INVALID_JSON',
+                    message: `Invalid JSON in file: ${error.message}`,
+                    suggestion: 'Ensure the file contains valid JSON'
+                }
+            }, false, performance.now() - startTime);
+        }
+
+        throw error;
+    }
+}
+
+/**
  * Main entry point
  */
 async function main() {
@@ -410,13 +531,19 @@ async function main() {
             case 'tools':
                 result = await handleTools(parsed, startTime);
                 break;
+            case 'validate':
+                result = await handleValidate(parsed, startTime);
+                break;
+            case 'init':
+                result = await handleInit(parsed, startTime);
+                break;
             default:
                 result = wrapResponse('get_state', {
                     error: {
                         type: 'NotFoundError',
                         code: 'UNKNOWN_COMMAND',
                         message: `Unknown command: ${parsed.command}`,
-                        valid_options: ['create', 'state', 'set', 'geometry', 'system', 'randomize', 'reset', 'tools'],
+                        valid_options: ['create', 'state', 'set', 'geometry', 'system', 'randomize', 'reset', 'tools', 'init'],
                         suggestion: 'Run "vib3 --help" for available commands'
                     }
                 }, false, performance.now() - startTime);
@@ -447,6 +574,101 @@ async function main() {
     }
 
     process.exit(ExitCode.SUCCESS);
+}
+
+/**
+ * Handle init command — scaffold a new VIB3+ project
+ */
+async function handleInit(parsed, startTime) {
+    const { writeFileSync, mkdirSync, existsSync } = await import('node:fs');
+    const { join } = await import('node:path');
+
+    const projectName = parsed.positional[0] || 'my-vib3-app';
+    const projectDir = join(process.cwd(), projectName);
+
+    if (existsSync(projectDir)) {
+        return wrapResponse('init', {
+            error: {
+                type: 'ValidationError',
+                code: 'DIR_EXISTS',
+                message: `Directory "${projectName}" already exists`,
+                suggestion: 'Choose a different name or delete the existing directory'
+            }
+        }, false, performance.now() - startTime);
+    }
+
+    mkdirSync(projectDir, { recursive: true });
+
+    // package.json
+    writeFileSync(join(projectDir, 'package.json'), JSON.stringify({
+        name: projectName,
+        version: '0.1.0',
+        type: 'module',
+        scripts: {
+            dev: 'npx vite --open',
+            build: 'npx vite build'
+        },
+        dependencies: {
+            '@vib3code/sdk': '^2.0.0'
+        },
+        devDependencies: {
+            vite: '^5.3.0'
+        }
+    }, null, 2) + '\n');
+
+    // index.html
+    writeFileSync(join(projectDir, 'index.html'), `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${projectName}</title>
+    <style>
+        body { margin: 0; background: #07070f; overflow: hidden; }
+        #controls { position: fixed; top: 12px; left: 12px; z-index: 10; font: 13px monospace; color: #0fc; }
+        select, input[type="range"] { margin-left: 6px; }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <label>System: <select id="sys"><option>quantum</option><option>faceted</option><option>holographic</option></select></label>
+        <label>Geometry: <input type="range" id="geo" min="0" max="23" value="0"></label>
+        <label>Hue: <input type="range" id="hue" min="0" max="360" value="200"></label>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
+`);
+
+    // main.js
+    writeFileSync(join(projectDir, 'main.js'), `import { VIB3Engine } from '@vib3code/sdk/core';
+
+const engine = new VIB3Engine();
+
+(async () => {
+  await engine.initialize();
+  await engine.switchSystem('quantum');
+})();
+
+document.getElementById('sys').addEventListener('change', (e) => engine.switchSystem(e.target.value));
+document.getElementById('geo').addEventListener('input', (e) => engine.setParameter('geometry', +e.target.value));
+document.getElementById('hue').addEventListener('input', (e) => engine.setParameter('hue', +e.target.value));
+`);
+
+    console.log(`\\n  Created ${projectName}/`);
+    console.log('  ├── package.json');
+    console.log('  ├── index.html');
+    console.log('  └── main.js');
+    console.log(`\\n  Next steps:`);
+    console.log(`    cd ${projectName}`);
+    console.log('    npm install');
+    console.log('    npm run dev\\n');
+
+    return wrapResponse('init', {
+        project: projectName,
+        files: ['package.json', 'index.html', 'main.js'],
+        next_steps: [`cd ${projectName}`, 'npm install', 'npm run dev']
+    }, true, performance.now() - startTime);
 }
 
 // Run CLI

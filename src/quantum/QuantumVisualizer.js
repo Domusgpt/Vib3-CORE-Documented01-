@@ -7,8 +7,10 @@
 import { GeometryLibrary } from '../geometry/GeometryLibrary.js';
 
 export class QuantumHolographicVisualizer {
-    constructor(canvasId, role, reactivity, variant) {
-        this.canvas = document.getElementById(canvasId);
+    constructor(canvasIdOrElement, role, reactivity, variant) {
+        this.canvas = (canvasIdOrElement instanceof HTMLCanvasElement)
+            ? canvasIdOrElement
+            : document.getElementById(canvasIdOrElement);
         this.role = role;
         this.reactivity = reactivity;
         this.variant = variant;
@@ -51,7 +53,26 @@ export class QuantumHolographicVisualizer {
         this.mouseIntensity = 0.0;
         this.clickIntensity = 0.0;
         this.startTime = Date.now();
-        
+        this._contextLost = false;
+
+        // WebGL context loss/restore handlers
+        this._onContextLost = (e) => {
+            e.preventDefault();
+            this._contextLost = true;
+            console.warn(`WebGL context lost for ${canvasId}`);
+        };
+        this._onContextRestored = () => {
+            console.log(`WebGL context restored for ${canvasId}`);
+            this._contextLost = false;
+            try {
+                this.init();
+            } catch (err) {
+                console.error(`Failed to reinit after context restore for ${canvasId}:`, err);
+            }
+        };
+        this.canvas.addEventListener('webglcontextlost', this._onContextLost);
+        this.canvas.addEventListener('webglcontextrestored', this._onContextRestored);
+
         // Default parameters
         this.params = {
             geometry: 0,
@@ -522,46 +543,63 @@ float geometryFunction(vec4 p) {
     }
 }
 
-// EXTREME LAYER-BY-LAYER COLOR SYSTEM
-// Each canvas layer gets completely different color behavior
+// HSL to RGB conversion for proper color control
+vec3 hsl2rgb(float h, float s, float l) {
+    float c = (1.0 - abs(2.0 * l - 1.0)) * s;
+    float hp = h * 6.0; // h is 0-1
+    float x = c * (1.0 - abs(mod(hp, 2.0) - 1.0));
+    float m = l - c * 0.5;
+    vec3 rgb;
+    if (hp < 1.0)      rgb = vec3(c, x, 0.0);
+    else if (hp < 2.0) rgb = vec3(x, c, 0.0);
+    else if (hp < 3.0) rgb = vec3(0.0, c, x);
+    else if (hp < 4.0) rgb = vec3(0.0, x, c);
+    else if (hp < 5.0) rgb = vec3(x, 0.0, c);
+    else               rgb = vec3(c, 0.0, x);
+    return rgb + m;
+}
 
-// Layer-specific color palettes with extreme juxtapositions
+// LAYER-BY-LAYER COLOR SYSTEM with user hue/saturation control
+// Each layer gets a hue offset from the user-controlled base hue
 vec3 getLayerColorPalette(int layerIndex, float t) {
+    float baseHue = u_hue; // 0-1 from JavaScript (user hue / 360)
+    float sat = u_saturation;
+
+    // Per-layer hue offsets for visual variety
+    float hueOffset = 0.0;
+    float lightness = 0.5;
+
     if (layerIndex == 0) {
-        // BACKGROUND LAYER: Deep space colors - purple/black/deep blue
-        vec3 color1 = vec3(0.05, 0.0, 0.2);   // Deep purple
-        vec3 color2 = vec3(0.0, 0.0, 0.1);    // Near black
-        vec3 color3 = vec3(0.0, 0.05, 0.3);   // Deep blue
-        return mix(mix(color1, color2, sin(t * 3.0) * 0.5 + 0.5), color3, cos(t * 2.0) * 0.5 + 0.5);
+        // BACKGROUND: Darkened, shifted hue
+        hueOffset = 0.0;
+        lightness = 0.15;
+        sat *= 0.7;
     }
     else if (layerIndex == 1) {
-        // SHADOW LAYER: Toxic greens and sickly yellows - high contrast
-        vec3 color1 = vec3(0.0, 1.0, 0.0);    // Pure toxic green
-        vec3 color2 = vec3(0.8, 1.0, 0.0);    // Sickly yellow-green
-        vec3 color3 = vec3(0.0, 0.8, 0.3);    // Forest green
-        return mix(mix(color1, color2, sin(t * 7.0) * 0.5 + 0.5), color3, cos(t * 5.0) * 0.5 + 0.5);
+        // SHADOW: Complementary offset, medium-dark
+        hueOffset = 0.33;
+        lightness = 0.3;
+        sat *= 0.9;
     }
     else if (layerIndex == 2) {
-        // CONTENT LAYER: Blazing hot colors - red/orange/white hot
-        vec3 color1 = vec3(1.0, 0.0, 0.0);    // Pure red
-        vec3 color2 = vec3(1.0, 0.5, 0.0);    // Blazing orange
-        vec3 color3 = vec3(1.0, 1.0, 1.0);    // White hot
-        return mix(mix(color1, color2, sin(t * 11.0) * 0.5 + 0.5), color3, cos(t * 8.0) * 0.5 + 0.5);
+        // CONTENT: Primary hue, bright
+        hueOffset = 0.0;
+        lightness = 0.55;
     }
     else if (layerIndex == 3) {
-        // HIGHLIGHT LAYER: Electric blues and cyans - crackling energy
-        vec3 color1 = vec3(0.0, 1.0, 1.0);    // Electric cyan
-        vec3 color2 = vec3(0.0, 0.5, 1.0);    // Electric blue
-        vec3 color3 = vec3(0.5, 1.0, 1.0);    // Bright cyan
-        return mix(mix(color1, color2, sin(t * 13.0) * 0.5 + 0.5), color3, cos(t * 9.0) * 0.5 + 0.5);
+        // HIGHLIGHT: Analogous offset, bright
+        hueOffset = 0.15;
+        lightness = 0.6;
     }
     else {
-        // ACCENT LAYER: Violent magentas and purples - chaotic
-        vec3 color1 = vec3(1.0, 0.0, 1.0);    // Pure magenta
-        vec3 color2 = vec3(0.8, 0.0, 1.0);    // Violet
-        vec3 color3 = vec3(1.0, 0.3, 1.0);    // Hot pink
-        return mix(mix(color1, color2, sin(t * 17.0) * 0.5 + 0.5), color3, cos(t * 12.0) * 0.5 + 0.5);
+        // ACCENT: Triadic offset, vivid
+        hueOffset = 0.67;
+        lightness = 0.5;
     }
+
+    // Animate hue gently over time and geometry value
+    float animatedHue = fract(baseHue + hueOffset + sin(t * 3.0) * 0.05);
+    return hsl2rgb(animatedHue, sat, lightness);
 }
 
 // Extreme RGB separation and distortion for each layer
@@ -645,9 +683,7 @@ void main() {
     // Apply user intensity control
     float finalIntensity = geometryIntensity * u_intensity;
     
-    // Old hemispheric color system completely removed - now using extreme layer-by-layer system
-    
-    // EXTREME LAYER-BY-LAYER COLOR SYSTEM
+    // LAYER-BY-LAYER COLOR SYSTEM with user hue/saturation/intensity controls
     // Determine canvas layer from role/variant (0=background, 1=shadow, 2=content, 3=highlight, 4=accent)
     int layerIndex = 0;
     if (u_roleIntensity == 0.7) layerIndex = 1;      // shadow layer
@@ -655,11 +691,9 @@ void main() {
     else if (u_roleIntensity == 0.85) layerIndex = 3; // highlight layer
     else if (u_roleIntensity == 0.6) layerIndex = 4;  // accent layer
     
-    // Get layer-specific base color with extreme dynamics
-    // Use u_hue as global intensity modifier (0-1) affecting all layers
-    float globalIntensity = u_hue; // Now 0-1 from JavaScript
-    float colorTime = timeSpeed * 2.0 + value * 3.0 + globalIntensity * 5.0;
-    vec3 layerColor = getLayerColorPalette(layerIndex, colorTime) * (0.5 + globalIntensity * 1.5);
+    // Get layer-specific base color using user hue/saturation controls
+    float colorTime = timeSpeed * 2.0 + value * 3.0;
+    vec3 layerColor = getLayerColorPalette(layerIndex, colorTime);
     
     // Apply geometry-based intensity modulation per layer
     vec3 extremeBaseColor;
@@ -705,26 +739,23 @@ void main() {
         extremeParticles = (1.0 - smoothstep(0.05, particleSize, particleDist)) * particleAlpha * 0.4;
     }
     
-    // Combine extreme color with particles based on layer
+    // Combine color with particles based on layer
+    // Particle color derives from user hue for consistency
+    vec3 particleColor = hsl2rgb(fract(u_hue + 0.15), u_saturation * 0.5, 0.85);
     vec3 finalColor;
     if (layerIndex == 0) {
-        // Background: Pure extreme color
         finalColor = extremeColor;
     }
     else if (layerIndex == 1) {
-        // Shadow: Dark with toxic highlights
         finalColor = extremeColor * 0.8;
     }
     else if (layerIndex == 2) {
-        // Content: Blazing with white-hot particles
-        finalColor = extremeColor + extremeParticles * vec3(1.0, 1.0, 1.0);
+        finalColor = extremeColor + extremeParticles * particleColor;
     }
     else if (layerIndex == 3) {
-        // Highlight: Electric with cyan particles
-        finalColor = extremeColor + extremeParticles * vec3(0.0, 1.0, 1.0);
+        finalColor = extremeColor + extremeParticles * particleColor;
     }
     else {
-        // Accent: Chaotic magenta madness
         finalColor = extremeColor * (1.0 + sin(timeSpeed * 20.0) * 0.3);
     }
     
@@ -760,7 +791,7 @@ void main() {
             rot4dYW: this.gl.getUniformLocation(this.program, 'u_rot4dYW'),
             rot4dZW: this.gl.getUniformLocation(this.program, 'u_rot4dZW'),
             mouseIntensity: this.gl.getUniformLocation(this.program, 'u_mouseIntensity'),
-            clickIntensity: this.gl.getUniformLocation(this.program, 'u_mouseIntensity'),
+            clickIntensity: this.gl.getUniformLocation(this.program, 'u_clickIntensity'),
             roleIntensity: this.gl.getUniformLocation(this.program, 'u_roleIntensity')
         };
     }
@@ -939,8 +970,13 @@ void main() {
      * Update visualization parameters with immediate GPU sync
      */
     updateParameters(params) {
-        this.params = { ...this.params, ...params };
-        
+        if (!params || typeof params !== 'object') return;
+        // Filter to only finite numbers to prevent NaN/Infinity reaching GPU uniforms
+        for (const [key, value] of Object.entries(params)) {
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                this.params[key] = value;
+            }
+        }
         // Don't call render() here - engine will call it to prevent infinite loop
     }
     
@@ -957,14 +993,12 @@ void main() {
      * Render frame
      */
     render() {
-        if (!this.program) {
-            if (window.mobileDebug && !this._noProgramWarned) {
-                window.mobileDebug.log(`❌ ${this.canvas?.id}: No WebGL program for render`);
-                this._noProgramWarned = true;
-            }
+        if (!this.program || this._contextLost) return;
+        if (!this.gl || this.gl.isContextLost()) {
+            this._contextLost = true;
             return;
         }
-        
+
         this.resize();
         this.gl.useProgram(this.program);
         
@@ -1017,8 +1051,8 @@ void main() {
         this.gl.uniform1f(this.uniforms.morphFactor, Math.min(2, morphFactor));
         this.gl.uniform1f(this.uniforms.chaos, Math.min(1, chaos));
         this.gl.uniform1f(this.uniforms.speed, this.params.speed);
-        // Hue now used as global intensity modifier for extreme layer system
-        this.gl.uniform1f(this.uniforms.hue, (hue % 360) / 360.0); // Normalize to 0-1
+        // Hue passed as normalized 0-1 for HSL color control
+        this.gl.uniform1f(this.uniforms.hue, (hue % 360) / 360.0);
         this.gl.uniform1f(this.uniforms.intensity, this.params.intensity);
         this.gl.uniform1f(this.uniforms.saturation, this.params.saturation);
         this.gl.uniform1f(this.uniforms.dimension, this.params.dimension);
@@ -1041,11 +1075,29 @@ void main() {
      * Clean up WebGL resources
      */
     destroy() {
-        if (this.gl && this.program) {
-            this.gl.deleteProgram(this.program);
+        // Remove context loss listeners
+        if (this.canvas) {
+            if (this._onContextLost) {
+                this.canvas.removeEventListener('webglcontextlost', this._onContextLost);
+            }
+            if (this._onContextRestored) {
+                this.canvas.removeEventListener('webglcontextrestored', this._onContextRestored);
+            }
         }
-        if (this.gl && this.buffer) {
-            this.gl.deleteBuffer(this.buffer);
+
+        // Clean up WebGL resources (guard against lost context)
+        if (this.gl && !this.gl.isContextLost()) {
+            if (this.program) {
+                this.gl.deleteProgram(this.program);
+            }
+            if (this.buffer) {
+                this.gl.deleteBuffer(this.buffer);
+            }
         }
+
+        this.program = null;
+        this.buffer = null;
+        this.gl = null;
+        this._contextLost = true;
     }
 }

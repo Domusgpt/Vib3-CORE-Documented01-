@@ -1,742 +1,1613 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIB3+ Engine - 24 Geometries • 6D Rotation</title>
-    
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" onerror="console.warn('Google Fonts failed to load - using fallback')">
-    
-    <!-- Organized CSS Architecture -->
-    <link rel="stylesheet" href="styles/base.css">
-    <link rel="stylesheet" href="styles/header-enhanced.css">
-    <link rel="stylesheet" href="styles/controls.css">
-    <link rel="stylesheet" href="styles/reactivity.css">
-    <link rel="stylesheet" href="styles/gallery-modal.css">
-    <link rel="stylesheet" href="styles/bottom-bezel.css">
-    <link rel="stylesheet" href="styles/geometry-tabs.css">
-    <link rel="stylesheet" href="styles/mobile.css">
-    <link rel="stylesheet" href="styles/animations.css">
-    <link rel="stylesheet" href="styles/z-index-fix.css">
-    <link rel="stylesheet" href="styles/glitch-icons.css">
-</head>
-<body class="loading">
-    <!-- Enhanced Top Navigation Bar -->
-    <div class="top-bar">
-        <!-- Logo Section -->
-        <div class="logo-section">
-            <div class="logo">VIB3+ ENGINE</div>
-            <div class="engine-status">24 GEOMETRIES • 6D</div>
-        </div>
-
-        <!-- System Selector -->
-        <div class="system-selector">
-            <button class="system-btn active" data-system="faceted" onclick="switchSystem('faceted')">
-                <span class="system-icon">🔷</span>
-                <span>FACETED</span>
-            </button>
-            <button class="system-btn" data-system="quantum" onclick="switchSystem('quantum')">
-                <span class="system-icon">🌌</span>
-                <span>QUANTUM</span>
-            </button>
-            <button class="system-btn" data-system="holographic" onclick="switchSystem('holographic')">
-                <span class="system-icon">✨</span>
-                <span>HOLOGRAPHIC</span>
-            </button>
-            <button class="system-btn" data-system="polychora" onclick="switchSystem('polychora')">
-                <span class="system-icon">🔮</span>
-                <span>POLYCHORA</span>
-            </button>
-        </div>
-
-        <!-- Action Section -->
-        <div class="action-section">
-            <!-- Save Button (prominent) -->
-            <button class="save-btn" onclick="saveToGallery()" title="Save Current State">
-                💾 <span>SAVE</span>
-            </button>
-
-            <!-- Other Action Buttons -->
-            <div class="action-buttons">
-                <button class="action-btn" onclick="openGallery()" title="Gallery">🖼️</button>
-                <button class="action-btn" onclick="toggleAudio()" title="Audio">🎵</button>
-                <button class="action-btn" onclick="toggleDeviceTilt()" title="Device Tilt (4D Rotation)" id="tiltBtn">📱</button>
-                <button class="action-btn" onclick="showLLMInterface()" title="AI Parameters">🤖</button>
-                <button class="action-btn" onclick="toggleInteractivity()" title="Interactivity Menu (Press I)">I</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Canvas Container -->
-    <div class="canvas-container" id="canvasContainer">
-        <!-- Dynamic Canvas Containers - Canvases created/destroyed per system -->
-        <div class="holographic-layers" id="vib34dLayers" style="display: block;"></div>
-        <div class="holographic-layers" id="quantumLayers" style="display: none;"></div>
-        <div class="holographic-layers" id="holographicLayers" style="display: none;"></div>
-        <div class="holographic-layers" id="polychoraLayers" style="display: none;"></div>
-    </div>
-
-    <!-- Bottom Bezel Control Panel (Tab-Based) -->
-    <div class="control-panel" id="controlPanel">
-        <!-- Bezel Header with Tabs -->
-        <div class="bezel-header">
-            <div class="bezel-tabs">
-                <button class="bezel-tab active" data-tab="controls" onclick="switchBezelTab('controls')">
-                    <span class="tab-icon">⚙️</span>
-                    <span>Controls</span>
-                </button>
-                <button class="bezel-tab" data-tab="color" onclick="switchBezelTab('color')">
-                    <span class="tab-icon">🎨</span>
-                    <span>Color</span>
-                </button>
-                <button class="bezel-tab" data-tab="geometry" onclick="switchBezelTab('geometry')">
-                    <span class="tab-icon">🧬</span>
-                    <span>Geometry</span>
-                </button>
-                <button class="bezel-tab" data-tab="reactivity" onclick="switchBezelTab('reactivity')">
-                    <span class="tab-icon">🎛️</span>
-                    <span>Reactivity</span>
-                </button>
-                <button class="bezel-tab" data-tab="export" onclick="switchBezelTab('export')">
-                    <span class="tab-icon">💾</span>
-                    <span>Export</span>
-                </button>
-            </div>
-
-            <!-- Quick Actions (shown when collapsed) -->
-            <div class="quick-access">
-                <button class="quick-action-btn" onclick="quickRandomize()" title="Quick Randomize">🎲</button>
-                <button class="quick-action-btn" onclick="quickSave()" title="Quick Save">💾</button>
-                <button class="quick-action-btn" onclick="quickGallery()" title="Open Gallery">🖼️</button>
-            </div>
-
-            <!-- Collapse Toggle -->
-            <button class="bezel-collapse-btn" onclick="toggleBezelCollapse()" title="Toggle Controls (Ctrl+B / Space)">▼</button>
-        </div>
-
-        <!-- Tab 1: Controls Content (6D Rotations + Visual Parameters) -->
-        <div class="bezel-content active" id="controls-content">
-            <div class="tab-content-grid">
-                <!-- 3D Space Rotations -->
-                <div class="control-section">
-                    <div class="section-title">3D Space Rotations</div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>X-Y Plane</span>
-                            <span class="control-value" id="rot4dXY-display">0.00</span>
-                        </div>
-                        <input type="range" id="rot4dXY" class="control-slider" min="-6.28" max="6.28" step="0.01" value="0"
-                               oninput="updateParameter('rot4dXY', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>X-Z Plane</span>
-                            <span class="control-value" id="rot4dXZ-display">0.00</span>
-                        </div>
-                        <input type="range" id="rot4dXZ" class="control-slider" min="-6.28" max="6.28" step="0.01" value="0"
-                               oninput="updateParameter('rot4dXZ', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Y-Z Plane</span>
-                            <span class="control-value" id="rot4dYZ-display">0.00</span>
-                        </div>
-                        <input type="range" id="rot4dYZ" class="control-slider" min="-6.28" max="6.28" step="0.01" value="0"
-                               oninput="updateParameter('rot4dYZ', this.value)">
-                    </div>
-                </div>
-
-                <!-- 4D Hyperspace Rotations -->
-                <div class="control-section">
-                    <div class="section-title">4D Hyperspace Rotations</div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>X-W Plane</span>
-                            <span class="control-value" id="rot4dXW-display">0.00</span>
-                        </div>
-                        <input type="range" id="rot4dXW" class="control-slider" min="-6.28" max="6.28" step="0.01" value="0"
-                               oninput="updateParameter('rot4dXW', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Y-W Plane</span>
-                            <span class="control-value" id="rot4dYW-display">0.00</span>
-                        </div>
-                        <input type="range" id="rot4dYW" class="control-slider" min="-6.28" max="6.28" step="0.01" value="0"
-                               oninput="updateParameter('rot4dYW', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Z-W Plane</span>
-                            <span class="control-value" id="rot4dZW-display">0.00</span>
-                        </div>
-                        <input type="range" id="rot4dZW" class="control-slider" min="-6.28" max="6.28" step="0.01" value="0"
-                               oninput="updateParameter('rot4dZW', this.value)">
-                    </div>
-                </div>
-
-                <!-- Visual Parameters -->
-                <div class="control-section">
-                    <div class="section-title">Visual Parameters</div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Grid Density</span>
-                            <span class="control-value" id="gridDensity-display">15</span>
-                        </div>
-                        <input type="range" id="gridDensity" class="control-slider" min="5" max="100" step="1" value="15"
-                               oninput="updateParameter('gridDensity', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Morph Factor</span>
-                            <span class="control-value" id="morphFactor-display">1.00</span>
-                        </div>
-                        <input type="range" id="morphFactor" class="control-slider" min="0" max="2" step="0.01" value="1"
-                               oninput="updateParameter('morphFactor', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Chaos</span>
-                            <span class="control-value" id="chaos-display">0.20</span>
-                        </div>
-                        <input type="range" id="chaos" class="control-slider" min="0" max="1" step="0.01" value="0.2"
-                               oninput="updateParameter('chaos', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Speed</span>
-                            <span class="control-value" id="speed-display">1.00</span>
-                        </div>
-                        <input type="range" id="speed" class="control-slider" min="0.1" max="3" step="0.01" value="1"
-                               oninput="updateParameter('speed', this.value)">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 2: Color Content -->
-        <div class="bezel-content" id="color-content">
-            <div class="tab-content-grid">
-                <div class="control-section">
-                    <div class="section-title">Color Parameters</div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Hue</span>
-                            <span class="control-value" id="hue-display">200°</span>
-                        </div>
-                        <input type="range" id="hue" class="control-slider" min="0" max="360" step="1" value="200"
-                               oninput="updateParameter('hue', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Saturation</span>
-                            <span class="control-value" id="saturation-display">0.80</span>
-                        </div>
-                        <input type="range" id="saturation" class="control-slider" min="0" max="1" step="0.01" value="0.8"
-                               oninput="updateParameter('saturation', this.value)">
-                    </div>
-                    <div class="control-group">
-                        <div class="control-label">
-                            <span>Intensity</span>
-                            <span class="control-value" id="intensity-display">0.50</span>
-                        </div>
-                        <input type="range" id="intensity" class="control-slider" min="0" max="1" step="0.01" value="0.5"
-                               oninput="updateParameter('intensity', this.value)">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 3: Geometry Content (8 Base + 3 Core Tabs = 24 Geometries) -->
-        <div class="bezel-content" id="geometry-content">
-            <div class="tab-content-grid">
-                <div class="control-section">
-                    <div class="section-title">📐 24 Geometry System</div>
-                    <div class="geometry-container" data-active-core="base">
-                        <!-- Core Type Tabs (3 tabs) -->
-                        <div id="coreTabsContainer">
-                            <!-- Populated by geometry-tabs.js -->
-                        </div>
-
-                        <!-- Base Geometry Buttons (8 buttons) -->
-                        <div class="geometry-grid" id="geometryGrid">
-                            <!-- Populated by geometry-tabs.js -->
-                        </div>
-                    </div>
-
-                    <!-- Geometry Info Display -->
-                    <div style="margin-top: 15px; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 255, 255, 0.15); border-radius: 8px;">
-                        <div style="font-family: 'Orbitron', monospace; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7); text-align: center;">
-                            <strong style="color: #00ffff;">Active Geometry:</strong>
-                            <span data-geometry-display style="color: #ffffff;">Tetrahedron</span>
-                            <span style="opacity: 0.6; margin-left: 10px;">(#<span data-geometry-display data-geometry-index="0">0</span>)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 4: Reactivity Content -->
-        <div class="bezel-content" id="reactivity-content">
-            <div class="tab-content-grid">
-                <!-- Interactivity Matrix -->
-                <div class="control-section">
-                    <div class="section-title">🎛️ Interactivity Matrix</div>
-                    <div class="reactivity-grid">
-                        <div class="reactivity-header"></div>
-                        <div class="reactivity-header">🔷 FACET</div>
-                        <div class="reactivity-header">🌌 QUANTUM</div>
-                        <div class="reactivity-header">✨ HOLO</div>
-
-                        <div class="reactivity-label">🖱️ Mouse</div>
-                        <div class="reactivity-cell" onclick="document.getElementById('facetedMouse').click()">
-                            <input type="checkbox" id="facetedMouse" onchange="toggleSystemReactivity('faceted', 'mouse', this.checked)">
-                            <span class="cell-text">ROT</span>
-                        </div>
-                        <div class="reactivity-cell" onclick="document.getElementById('quantumMouse').click()">
-                            <input type="checkbox" id="quantumMouse" onchange="toggleSystemReactivity('quantum', 'mouse', this.checked)">
-                            <span class="cell-text">VEL</span>
-                        </div>
-                        <div class="reactivity-cell" onclick="document.getElementById('holographicMouse').click()">
-                            <input type="checkbox" id="holographicMouse" onchange="toggleSystemReactivity('holographic', 'mouse', this.checked)">
-                            <span class="cell-text">SHIMMER</span>
-                        </div>
-
-                        <div class="reactivity-label">👆 Click</div>
-                        <div class="reactivity-cell" onclick="document.getElementById('facetedClick').click()">
-                            <input type="checkbox" id="facetedClick" onchange="toggleSystemReactivity('faceted', 'click', this.checked)">
-                            <span class="cell-text">BURST</span>
-                        </div>
-                        <div class="reactivity-cell" onclick="document.getElementById('quantumClick').click()">
-                            <input type="checkbox" id="quantumClick" onchange="toggleSystemReactivity('quantum', 'click', this.checked)">
-                            <span class="cell-text">BLAST</span>
-                        </div>
-                        <div class="reactivity-cell" onclick="document.getElementById('holographicClick').click()">
-                            <input type="checkbox" id="holographicClick" onchange="toggleSystemReactivity('holographic', 'click', this.checked)">
-                            <span class="cell-text">RIPPLE</span>
-                        </div>
-
-                        <div class="reactivity-label">🌀 Scroll</div>
-                        <div class="reactivity-cell" onclick="document.getElementById('facetedScroll').click()">
-                            <input type="checkbox" id="facetedScroll" onchange="toggleSystemReactivity('faceted', 'scroll', this.checked)">
-                            <span class="cell-text">CYCLE</span>
-                        </div>
-                        <div class="reactivity-cell" onclick="document.getElementById('quantumScroll').click()">
-                            <input type="checkbox" id="quantumScroll" onchange="toggleSystemReactivity('quantum', 'scroll', this.checked)">
-                            <span class="cell-text">WAVE</span>
-                        </div>
-                        <div class="reactivity-cell" onclick="document.getElementById('holographicScroll').click()">
-                            <input type="checkbox" id="holographicScroll" onchange="toggleSystemReactivity('holographic', 'scroll', this.checked)">
-                            <span class="cell-text">SWEEP</span>
-                        </div>
-                    </div>
-                    <div class="reactivity-note">Toggle mouse, click, and scroll interactions per system</div>
-                </div>
-
-                <!-- Audio Reactivity Matrix -->
-                <div class="control-section">
-                    <div class="section-title">🎵 Audio Reactivity Matrix</div>
-                    <div class="audio-grid">
-                        <div class="audio-header"></div>
-                        <div class="audio-header">🎨 COLOR</div>
-                        <div class="audio-header">🧬 GEO</div>
-                        <div class="audio-header">🌀 MOVE</div>
-
-                        <div class="audio-label">LOW</div>
-                        <div class="audio-cell" onclick="document.getElementById('lowColor').click()">
-                            <input type="checkbox" id="lowColor" onchange="toggleAudioReactivity('low', 'color', this.checked)">
-                            <span class="cell-text">30%</span>
-                        </div>
-                        <div class="audio-cell" onclick="document.getElementById('lowGeometry').click()">
-                            <input type="checkbox" id="lowGeometry" onchange="toggleAudioReactivity('low', 'geometry', this.checked)">
-                            <span class="cell-text">30%</span>
-                        </div>
-                        <div class="audio-cell" onclick="document.getElementById('lowMovement').click()">
-                            <input type="checkbox" id="lowMovement" onchange="toggleAudioReactivity('low', 'movement', this.checked)">
-                            <span class="cell-text">30%</span>
-                        </div>
-
-                        <div class="audio-label">MED</div>
-                        <div class="audio-cell" onclick="document.getElementById('mediumColor').click()">
-                            <input type="checkbox" id="mediumColor" checked onchange="toggleAudioReactivity('medium', 'color', this.checked)">
-                            <span class="cell-text">100%</span>
-                        </div>
-                        <div class="audio-cell" onclick="document.getElementById('mediumGeometry').click()">
-                            <input type="checkbox" id="mediumGeometry" onchange="toggleAudioReactivity('medium', 'geometry', this.checked)">
-                            <span class="cell-text">100%</span>
-                        </div>
-                        <div class="audio-cell" onclick="document.getElementById('mediumMovement').click()">
-                            <input type="checkbox" id="mediumMovement" onchange="toggleAudioReactivity('medium', 'movement', this.checked)">
-                            <span class="cell-text">100%</span>
-                        </div>
-
-                        <div class="audio-label">HIGH</div>
-                        <div class="audio-cell" onclick="document.getElementById('highColor').click()">
-                            <input type="checkbox" id="highColor" onchange="toggleAudioReactivity('high', 'color', this.checked)">
-                            <span class="cell-text">200%</span>
-                        </div>
-                        <div class="audio-cell" onclick="document.getElementById('highGeometry').click()">
-                            <input type="checkbox" id="highGeometry" onchange="toggleAudioReactivity('high', 'geometry', this.checked)">
-                            <span class="cell-text">200%</span>
-                        </div>
-                        <div class="audio-cell" onclick="document.getElementById('highMovement').click()">
-                            <input type="checkbox" id="highMovement" onchange="toggleAudioReactivity('high', 'movement', this.checked)">
-                            <span class="cell-text">200%</span>
-                        </div>
-                    </div>
-                    <div class="audio-note">Control audio sensitivity and which parameters react</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 5: Export Content -->
-        <div class="bezel-content" id="export-content">
-            <div class="tab-content-grid">
-                <div class="control-section">
-                    <div class="section-title">📤 Export & Actions</div>
-                    <div class="action-button-row">
-                        <button class="panel-btn" onclick="createTradingCard()">🎴 Trading Card</button>
-                        <button class="panel-btn" onclick="openGallery()">🖼️ Open Gallery</button>
-                        <button class="panel-btn" onclick="resetAll()">🔄 Reset All</button>
-                    </div>
-                    <div style="margin-top: 15px; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 255, 255, 0.15); border-radius: 8px; text-align: center;">
-                        <div style="font-family: 'Orbitron', monospace; font-size: 0.75rem; color: rgba(255, 255, 255, 0.7);">
-                            💡 <strong style="color: #00ffff;">TIP:</strong> Use <strong>🎲 Randomize All</strong> and <strong>🎯 Random Tab</strong> buttons at the top of each tab to randomize parameters!
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- URL Parameter Handler (runs first) -->
-    <script type="module" src="js/core/url-params.js"></script>
-
-    <!-- Gallery Preview Fix (runs early for gallery previews) -->
-    <script type="module" src="js/core/gallery-preview-fix.js"></script>
-
-    <!-- Core JavaScript Modules (NEW CLEAN ARCHITECTURE) - Order matters for globals -->
-    <script type="module" src="js/audio/audio-engine.js"></script>
-    <script type="module" src="js/controls/ui-handlers.js"></script>
-    <script type="module" src="js/gallery/gallery-manager.js"></script>
-    <script type="module" src="js/gallery/gallery-modal.js"></script>
-    <script type="module" src="js/ui/bezel-tabs.js"></script>
-    <script type="module" src="js/geometry/geometry-tabs.js"></script>
-    <script type="module" src="js/interactions/device-tilt.js"></script>
-    <script type="module" src="js/core/ui-fixes.js"></script>
-
-    <!-- Enhanced UI Modules -->
-    <script type="module" src="js/ui/geometric-icons.js"></script>
-    <script type="module" src="js/core/comprehensive-fixes.js"></script>
-    <script type="module" src="js/core/global-shortcuts.js"></script>
-    <script type="module" src="js/core/performance-optimizer.js"></script>
-    <script type="module" src="js/core/state-manager.js"></script>
-    <script type="module" src="js/core/layout-polish.js"></script>
-    <script type="module" src="js/core/system-diagnostics.js"></script>
-    <script type="module" src="js/core/loading-states.js"></script>
-    <script type="module" src="js/core/visual-test-suite.js"></script>
-
-    <!-- Initialize globals and user parameter state BEFORE main app -->
-    <script>
-        // Initialize global state that modules need
-        window.userParameterState = {};
-        // CRITICAL FIX: Don't overwrite currentSystem if URL parameters already set it
-        if (!window.currentSystem) {
-            window.currentSystem = 'faceted';
-            console.log('🔧 Global: Set currentSystem to default faceted');
-        } else {
-            console.log(`🔧 Global: Preserving existing currentSystem = '${window.currentSystem}'`);
+    <title>VIB3+ CORE — 4D Visualization Engine</title>
+    <meta name="description" content="VIB3+ is a 4D visualization SDK with 24 geometry variants, 6D rotation, and three rendering systems. WebGL + WebGPU.">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <style>
+        /* ─── Reset & Base ─── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: auto; }
+        body {
+            background: #050508;
+            color: #c8c8d4;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            overflow-x: hidden;
         }
-        window.moduleReady = false;
-        
-        // Initialize geometries data - 24 GEOMETRIES PER SYSTEM
-        window.geometries = {
-            faceted: [
-                // Base geometries (0-7)
-                'Tetrahedron', 'Hypercube', 'Sphere', 'Torus', 'Klein Bottle', 'Fractal', 'Wave', 'Crystal',
-                // Hypersphere Core (8-15)
-                '🌀 Tetrahedron Core', '🌀 Hypercube Core', '🌀 Sphere Core', '🌀 Torus Core',
-                '🌀 Klein Core', '🌀 Fractal Core', '🌀 Wave Core', '🌀 Crystal Core',
-                // Hypertetrahedron Core (16-23)
-                '🔺 Tetrahedron Core', '🔺 Hypercube Core', '🔺 Sphere Core', '🔺 Torus Core',
-                '🔺 Klein Core', '🔺 Fractal Core', '🔺 Wave Core', '🔺 Crystal Core'
-            ],
-            quantum: [
-                // Base geometries (0-7)
-                'Tetrahedron', 'Hypercube', 'Sphere', 'Torus', 'Klein Bottle', 'Fractal', 'Wave', 'Crystal',
-                // Hypersphere Core (8-15)
-                '🌀 Tetrahedron Core', '🌀 Hypercube Core', '🌀 Sphere Core', '🌀 Torus Core',
-                '🌀 Klein Core', '🌀 Fractal Core', '🌀 Wave Core', '🌀 Crystal Core',
-                // Hypertetrahedron Core (16-23)
-                '🔺 Tetrahedron Core', '🔺 Hypercube Core', '🔺 Sphere Core', '🔺 Torus Core',
-                '🔺 Klein Core', '🔺 Fractal Core', '🔺 Wave Core', '🔺 Crystal Core'
-            ],
-            holographic: ['HOLOGRAPHIC'], // Single holographic mode
-            polychora: ['5-CELL', 'TESSERACT', '16-CELL', '24-CELL', '600-CELL', '120-CELL']
-        };
-        
-        console.log('🔧 Global state initialized for clean architecture');
-    </script>
+        .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
 
-    <!-- Main Application Module -->
-    <script type="module">
-        (async function() {
-            try {
-                console.log('📦 Starting system imports...');
-                
-                // Import the main app first
-                const VIB34DApp = (await import('./js/core/app.js')).default;
-                console.log('✅ VIB34DApp imported');
-                
-                // Try to import system engines - make them optional for clean architecture demo
-                let VIB34DIntegratedEngine, QuantumEngine, RealHolographicSystem, PolychoraSystem;
-                let CollectionManager, UnifiedSaveManager, ParameterMapper, CanvasManager, TradingCardGenerator, ReactivityManager;
-                
-                try {
-                    const coreEngine = await import('./src/core/Engine.js');
-                    VIB34DIntegratedEngine = coreEngine.VIB34DIntegratedEngine;
-                    console.log('✅ VIB34DIntegratedEngine imported');
-                } catch (e) {
-                    console.warn('⚠️ VIB34DIntegratedEngine not available:', e.message);
-                }
-                
-                try {
-                    const quantumEngine = await import('./src/quantum/QuantumEngine.js');
-                    QuantumEngine = quantumEngine.QuantumEngine;
-                    console.log('✅ QuantumEngine imported');
-                } catch (e) {
-                    console.warn('⚠️ QuantumEngine not available:', e.message);
-                }
-                
-                try {
-                    const holoSystem = await import('./src/holograms/RealHolographicSystem.js');
-                    RealHolographicSystem = holoSystem.RealHolographicSystem;
-                    console.log('✅ RealHolographicSystem imported');
-                } catch (e) {
-                    console.warn('⚠️ RealHolographicSystem not available:', e.message);
-                }
-                
-                try {
-                    const newPolySystem = await import('./src/core/PolychoraSystemNew.js');
-                    NewPolychoraEngine = newPolySystem.NewPolychoraEngine;
-                    console.log('✅ NEW 4D Polychora Engine imported with VIB34D DNA');
-                } catch (e) {
-                    console.warn('⚠️ New Polychora Engine not available:', e.message);
-                    // Fallback to old system if new one fails
-                    try {
-                        const polySystem = await import('./src/core/PolychoraSystem.js');
-                        NewPolychoraEngine = polySystem.PolychoraSystem;
-                        console.log('✅ Fallback to old PolychoraSystem');
-                    } catch (e2) {
-                        console.warn('⚠️ No Polychora system available:', e2.message);
-                    }
-                }
-                
-                // Import other components with fallbacks
-                try {
-                    const canvasManager = await import('./src/core/CanvasManager.js');
-                    CanvasManager = canvasManager.CanvasManager;
-                } catch (e) {
-                    console.warn('⚠️ CanvasManager not available - using stub');
-                }
-                
-                try {
-                    const unifiedReactivityManager = await import('./src/core/UnifiedReactivityManager.js');
-                    UnifiedReactivityManager = unifiedReactivityManager.UnifiedReactivityManager;
-                    console.log('✅ UnifiedReactivityManager imported');
-                } catch (e) {
-                    console.warn('⚠️ UnifiedReactivityManager not available');
-                }
-                
-                try {
-                    const reactivityManager = await import('./src/core/ReactivityManager.js');
-                    ReactivityManager = reactivityManager.ReactivityManager;
-                } catch (e) {
-                    console.warn('⚠️ ReactivityManager not available - using stub');
-                }
+        /* ─── Scroll Progress ─── */
+        .scroll-progress {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px; z-index: 9999;
+            background: linear-gradient(90deg, #0ff, #7b3ff2, #ff006e, #0ff);
+            background-size: 300% 100%;
+            transform-origin: left; transform: scaleX(0);
+            will-change: transform;
+            animation: progressHue 6s linear infinite;
+        }
+        @keyframes progressHue {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
 
-                // Store engine classes globally for system switching
-                window.engineClasses = {
-                    VIB34DIntegratedEngine,
-                    QuantumEngine,
-                    RealHolographicSystem,
-                    NewPolychoraEngine
-                };
-                
-                console.log('📦 Engine classes stored:', Object.keys(window.engineClasses).filter(k => window.engineClasses[k]));
+        /* ─── Canvas ─── */
+        .vib3-canvas {
+            display: block; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0;
+        }
+        .canvas-wrap {
+            position: relative; overflow: hidden;
+            background: #0a0a10;
+        }
 
-                // Initialize Unified Reactivity Manager FIRST
-                if (UnifiedReactivityManager) {
-                    const reactivityManager = new UnifiedReactivityManager();
-                    console.log('✅ UnifiedReactivityManager initialized');
-                } else {
-                    // Fallback getCurrentReactivityState function
-                    window.getCurrentReactivityState = function() {
-                        return {
-                            system: window.currentSystem || 'faceted',
-                            mouse: { faceted: true, quantum: false, holographic: false, polychora: false, mixed: false },
-                            click: { faceted: true, quantum: false, holographic: false, polychora: false, mixed: false },
-                            scroll: { faceted: true, quantum: false, holographic: false, polychora: false, mixed: false },
-                            audio: window.audioEnabled || false,
-                            interactivity: window.interactivityEnabled !== false,
-                            deviceTilt: window.deviceTiltHandler?.isEnabled || false
-                        };
-                    };
-                    console.log('⚠️ Using fallback getCurrentReactivityState');
-                }
+        /* ═══════════════════════════════════════════
+           SECTION 1: HERO — Quantum Emergence
+           ═══════════════════════════════════════════ */
+        .hero {
+            position: relative; height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .hero-bg { position: absolute; inset: 0; z-index: 0; }
+        .hero-content {
+            position: relative; z-index: 2; text-align: center;
+            padding: 0 24px;
+        }
+        .hero-badge {
+            display: inline-block; padding: 5px 16px;
+            border: 1px solid rgba(0,255,200,0.35); border-radius: 100px;
+            font-size: 11px; color: #0fc; letter-spacing: 2px;
+            text-transform: uppercase; margin-bottom: 24px;
+            backdrop-filter: blur(8px); background: rgba(0,255,200,0.04);
+            opacity: 0; transform: translateY(-20px);
+        }
+        h1.hero-title {
+            font-size: clamp(48px, 10vw, 120px); font-weight: 900;
+            letter-spacing: 8px; line-height: 1;
+            color: #fff; overflow: hidden;
+        }
+        .hero-title .char {
+            display: inline-block;
+            opacity: 0; transform: translateY(100%);
+        }
+        .hero-sub {
+            font-size: clamp(14px, 2vw, 20px); color: rgba(200,200,212,0.5);
+            max-width: 600px; margin: 24px auto 0; line-height: 1.7;
+            opacity: 0; transform: translateY(20px);
+        }
+        .hero-system-label {
+            margin-top: 16px; font-size: 11px; letter-spacing: 4px;
+            text-transform: uppercase; color: rgba(0,255,200,0.4);
+            opacity: 0;
+        }
+        .hero-scroll {
+            position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+            z-index: 2; display: flex; flex-direction: column; align-items: center;
+            gap: 8px; opacity: 0;
+        }
+        .hero-scroll span {
+            font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+            color: rgba(255,255,255,0.2);
+        }
+        .scroll-line {
+            width: 1px; height: 40px;
+            background: linear-gradient(180deg, rgba(0,255,200,0.4), transparent);
+            animation: scrollPulse 2s ease-in-out infinite;
+        }
+        @keyframes scrollPulse {
+            0%, 100% { opacity: 0.3; transform: scaleY(1); }
+            50% { opacity: 0.7; transform: scaleY(1.3); }
+        }
 
-                // Initialize VIB34D Application
-                const app = new VIB34DApp();
-                window.vib34dApp = app;
-                
-                // CRITICAL FIX: Ensure global functions are available IMMEDIATELY for gallery previews
-                await app.initialize();
-                
-                // Force check that essential functions are global
-                if (!window.syncVisualizerToUI) {
-                    console.error('🚨 CRITICAL: syncVisualizerToUI not available globally after app init');
-                } else {
-                    console.log('✅ Essential functions available globally');
-                }
+        /* ═══════════════════════════════════════════
+           SECTION 2: SYSTEM TRINITY — Three Voices
+           Single canvas, system swaps on scroll
+           ═══════════════════════════════════════════ */
+        .trinity {
+            position: relative; min-height: 500vh;
+        }
+        .trinity-pinned {
+            height: 100vh; width: 100%; position: relative;
+            overflow: hidden; background: #050508;
+        }
+        .trinity-flash {
+            position: absolute; inset: 0; z-index: 5;
+            background: #050508; opacity: 0; pointer-events: none;
+        }
+        .trinity-label {
+            position: absolute; z-index: 10;
+            bottom: 15%; left: 50%; transform: translateX(-50%);
+            text-align: center; pointer-events: none;
+        }
+        .trinity-label h2 {
+            font-size: clamp(32px, 6vw, 72px); font-weight: 900;
+            letter-spacing: 6px; text-transform: uppercase;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+            opacity: 0; transform: translateY(40px);
+        }
+        .trinity-label p {
+            font-size: 13px; color: rgba(200,200,212,0.4);
+            letter-spacing: 2px; margin-top: 8px;
+            opacity: 0; transform: translateY(20px);
+        }
+        .trinity-counter {
+            position: absolute; top: 40px; right: 40px; z-index: 20;
+            font-size: 13px; letter-spacing: 3px; color: rgba(255,255,255,0.15);
+            font-weight: 600;
+        }
+        .trinity-counter .active { color: #0fc; }
+        .trinity-progress-ring {
+            position: absolute; top: 50%; left: 40px; transform: translateY(-50%);
+            z-index: 20; display: flex; flex-direction: column; gap: 12px;
+        }
+        .ring-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .ring-dot.active {
+            background: #0fc; border-color: #0fc;
+            box-shadow: 0 0 12px rgba(0,255,200,0.4);
+        }
 
-                // Initialize default system
-                const initialSystem = window.currentSystem || 'faceted';
-                if (window.switchSystem) {
-                    await window.switchSystem(initialSystem);
-                }
-                
-                if (window.setupGeometry) {
-                    window.setupGeometry(initialSystem);
-                }
+        /* ═══════════════════════════════════════════
+           SECTION 3: CONVERGENCE — Coordinated Triptych
+           ═══════════════════════════════════════════ */
+        .convergence {
+            position: relative; min-height: 400vh;
+        }
+        .convergence-pinned {
+            height: 100vh; width: 100%; position: relative;
+            display: flex; overflow: hidden;
+        }
+        .conv-panel {
+            flex: 1; position: relative; overflow: hidden;
+            border-right: 1px solid rgba(255,255,255,0.03);
+        }
+        .conv-panel:last-child { border-right: none; }
+        .conv-panel .canvas-wrap { width: 100%; height: 100%; }
+        .conv-tag {
+            position: absolute; bottom: 24px; left: 50%;
+            transform: translateX(-50%); z-index: 5;
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            padding: 6px 16px; border-radius: 100px;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.06);
+            white-space: nowrap;
+        }
+        .conv-overlay {
+            position: absolute; inset: 0; z-index: 10;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; pointer-events: none;
+        }
+        .conv-overlay h2 {
+            font-size: clamp(24px, 4vw, 48px); font-weight: 800;
+            color: #fff; letter-spacing: 3px;
+            text-shadow: 0 0 60px rgba(0,255,200,0.2);
+            opacity: 0;
+        }
+        .conv-overlay p {
+            color: rgba(200,200,212,0.4); font-size: 14px;
+            margin-top: 8px; max-width: 500px;
+            opacity: 0;
+        }
 
-                window.moduleReady = true;
-                document.body.classList.remove('loading');
+        /* ═══════════════════════════════════════════
+           SECTION 4: ENERGY TRANSFER — Interactive
+           ═══════════════════════════════════════════ */
+        .energy {
+            position: relative; min-height: 250vh;
+        }
+        .energy-pinned {
+            height: 100vh; position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .energy-bg { position: absolute; inset: 0; z-index: 0; }
+        .energy-card {
+            position: relative; z-index: 5;
+            width: min(480px, 90vw); padding: 48px;
+            background: rgba(8,8,16,0.6); backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 24px; text-align: center;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+            transform: translateY(60px); opacity: 0;
+        }
+        .energy-card-canvas {
+            position: absolute; inset: 0; border-radius: 24px; overflow: hidden;
+            z-index: -1; opacity: 0.4;
+        }
+        .energy-card h3 {
+            font-size: 22px; font-weight: 700; color: #e8e8f0;
+            margin-bottom: 8px;
+        }
+        .energy-card p {
+            font-size: 13px; color: rgba(200,200,212,0.45); line-height: 1.7;
+            margin-bottom: 28px;
+        }
+        .energy-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 16px 36px; border: none; border-radius: 14px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+            background: linear-gradient(135deg, rgba(123,63,242,0.25), rgba(0,255,200,0.15));
+            color: #0fc; border: 1px solid rgba(0,255,200,0.25);
+            transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+            letter-spacing: 1px;
+        }
+        .energy-btn:hover {
+            background: linear-gradient(135deg, rgba(123,63,242,0.35), rgba(0,255,200,0.25));
+            border-color: rgba(0,255,200,0.5);
+            transform: scale(1.03);
+            box-shadow: 0 0 30px rgba(0,255,200,0.15);
+        }
+        .energy-btn:active { transform: scale(0.97); }
+        .energy-btn svg { flex-shrink: 0; }
+        .energy-meter {
+            margin-top: 24px; height: 3px; border-radius: 2px;
+            background: rgba(255,255,255,0.04); overflow: hidden;
+        }
+        .energy-meter-fill {
+            height: 100%; width: 50%; border-radius: 2px;
+            background: linear-gradient(90deg, #7b3ff2, #0fc);
+            transition: width 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+        }
 
-                console.log('🚀 VIB34D Clean Architecture System Loaded');
-                
-                // TESTING MODE: Run architecture tests if requested
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('testing-mode')) {
-                    console.log('🧪 TESTING MODE: Running architecture validation...');
-                    
-                    // Add test results overlay
-                    const testOverlay = document.createElement('div');
-                    testOverlay.id = 'test-overlay';
-                    testOverlay.style.cssText = `
-                        position: fixed;
-                        top: 60px;
-                        left: 20px;
-                        width: 400px;
-                        max-height: 80vh;
-                        overflow-y: auto;
-                        background: rgba(0, 0, 0, 0.95);
-                        border: 2px solid #00ffff;
-                        border-radius: 10px;
-                        padding: 15px;
-                        font-family: 'Orbitron', monospace;
-                        font-size: 0.8rem;
-                        color: #fff;
-                        z-index: 9999;
-                    `;
-                    testOverlay.innerHTML = `
-                        <h3 style="color: #00ffff; margin-bottom: 10px;">🧪 ARCHITECTURE TEST</h3>
-                        <div id="test-results"></div>
-                    `;
-                    document.body.appendChild(testOverlay);
-                    
-                    // Run tests  
-                    setTimeout(runArchitectureTests, 1000);
-                    
-                    function runArchitectureTests() {
-                    const results = document.getElementById('test-results');
-                    let passedTests = 0;
-                    let totalTests = 0;
-                    
-                    function logTest(message, passed) {
-                        totalTests++;
-                        if (passed) passedTests++;
-                        
-                        const div = document.createElement('div');
-                        div.style.cssText = `color: ${passed ? '#00ff00' : '#ff4444'}; margin: 2px 0;`;
-                        div.innerHTML = `${passed ? '✅' : '❌'} ${message}`;
-                        results.appendChild(div);
-                    }
-                    
-                    // Test essential functions
-                    logTest('window.switchSystem available', typeof window.switchSystem === 'function');
-                    logTest('window.selectGeometry available', typeof window.selectGeometry === 'function');
-                    logTest('window.updateParameter available', typeof window.updateParameter === 'function');
-                    logTest('window.randomizeAll available', typeof window.randomizeAll === 'function');
-                    logTest('window.resetAll available', typeof window.resetAll === 'function');
-                    
-                    // Test DOM elements
-                    logTest('Canvas Container exists', !!document.getElementById('canvasContainer'));
-                    logTest('Control Panel exists', !!document.getElementById('controlPanel'));
-                    logTest('Panel Header exists', !!document.getElementById('panelHeader'));
-                    logTest('Faceted Layers exist', !!document.getElementById('vib34dLayers'));
-                    
-                    // Test parameter controls
-                    const params = ['rot4dXW', 'rot4dYW', 'rot4dZW', 'gridDensity', 'morphFactor', 'chaos', 'speed', 'hue', 'intensity', 'saturation'];
-                    params.forEach(param => {
-                        const slider = document.getElementById(param);
-                        logTest(`${param} slider exists`, !!slider);
-                    });
-                    
-                    // Test system buttons
-                    const systems = ['faceted', 'quantum', 'holographic', 'polychora'];
-                    systems.forEach(system => {
-                        const btn = document.querySelector(`[data-system="${system}"]`);
-                        logTest(`${system} button exists`, !!btn);
-                    });
-                    
-                    // Final results
-                    const passRate = ((passedTests / totalTests) * 100).toFixed(1);
-                    const finalDiv = document.createElement('div');
-                    finalDiv.style.cssText = `
-                        color: ${passRate >= 90 ? '#00ff00' : passRate >= 70 ? '#ffff00' : '#ff4444'};
-                        font-weight: bold;
-                        margin-top: 10px;
-                        padding: 10px;
-                        border-top: 1px solid #333;
-                    `;
-                    finalDiv.innerHTML = `
-                        <div>📊 RESULT: ${passedTests}/${totalTests} (${passRate}%)</div>
-                        <div>${passRate >= 90 ? '✅ ARCHITECTURE READY' : passRate >= 70 ? '⚠️ NEEDS FIXES' : '❌ CRITICAL ISSUES'}</div>
-                    `;
-                    results.appendChild(finalDiv);
-                    
-                    console.log(`🧪 Architecture test complete: ${passedTests}/${totalTests} passed (${passRate}%)`);
-                    }
-                }
-                
-            } catch (error) {
-                console.error('❌ Failed to initialize VIB34D system:', error);
-                document.body.classList.remove('loading');
-                
-                // Show error overlay
-                const errorDiv = document.createElement('div');
-                errorDiv.style.cssText = `
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(255, 0, 0, 0.9);
-                    color: white;
-                    padding: 20px;
-                    border-radius: 10px;
-                    font-family: 'Orbitron', monospace;
-                    z-index: 10000;
-                    max-width: 80vw;
-                `;
-                errorDiv.innerHTML = `
-                    <h3>❌ VIB34D Initialization Failed</h3>
-                    <p>${error.message}</p>
-                    <small>Check console for details</small>
-                `;
-                document.body.appendChild(errorDiv);
+        /* ═══════════════════════════════════════════
+           SECTION 5: GEOMETRY CASCADE — Card Scroll
+           ═══════════════════════════════════════════ */
+        .cascade {
+            position: relative; min-height: 400vh;
+        }
+        .cascade-pinned {
+            height: 100vh; display: flex; align-items: center;
+            justify-content: center; position: relative; overflow: hidden;
+        }
+        .cascade-track {
+            display: flex; gap: 28px; will-change: transform;
+            padding: 0 calc(50vw - 180px);
+        }
+        .cascade-card {
+            flex-shrink: 0; width: min(340px, 75vw); height: 460px;
+            border-radius: 24px; overflow: hidden; position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+            opacity: 0; transform: translateY(40px) scale(0.95);
+            will-change: transform, opacity;
+        }
+        .cascade-card .canvas-wrap { width: 100%; height: 100%; }
+        .cascade-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 5;
+            padding: 28px; background: linear-gradient(transparent, rgba(5,5,8,0.92));
+        }
+        .cascade-overlay h4 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .cascade-overlay .cascade-sys {
+            font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+            padding: 3px 10px; border-radius: 100px; display: inline-block;
+        }
+        .sys-quantum { color: #0ff; border: 1px solid rgba(0,255,255,0.25); background: rgba(0,255,255,0.06); }
+        .sys-holographic { color: #ff006e; border: 1px solid rgba(255,0,110,0.25); background: rgba(255,0,110,0.06); }
+        .sys-faceted { color: #0fc; border: 1px solid rgba(0,255,200,0.25); background: rgba(0,255,200,0.06); }
+
+        /* ═══════════════════════════════════════════
+           SECTION 6: CTA
+           ═══════════════════════════════════════════ */
+        .cta-section {
+            position: relative; min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 80px 24px;
+        }
+        .cta-bg { position: absolute; inset: 0; z-index: 0; opacity: 0.25; }
+        .cta-content { position: relative; z-index: 5; text-align: center; }
+        .cta-content h2 {
+            font-size: clamp(28px, 5vw, 56px); font-weight: 900; color: #fff;
+            letter-spacing: 4px; margin-bottom: 16px;
+        }
+        .cta-content p {
+            color: rgba(200,200,212,0.45); font-size: 16px; max-width: 500px;
+            margin: 0 auto 40px; line-height: 1.7;
+        }
+        .cta-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 48px; }
+        .cta {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 32px; border-radius: 10px; text-decoration: none;
+            font-size: 14px; font-weight: 600; transition: all 0.2s;
+        }
+        .cta-primary {
+            background: linear-gradient(135deg, rgba(0,255,200,0.18), rgba(123,63,242,0.18));
+            border: 1px solid rgba(0,255,200,0.4); color: #0fc;
+        }
+        .cta-primary:hover { background: rgba(0,255,200,0.25); border-color: rgba(0,255,200,0.6); }
+        .cta-ghost {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #888;
+        }
+        .cta-ghost:hover { background: rgba(255,255,255,0.07); color: #ccc; }
+
+        .code-block {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px; padding: 28px 32px;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 13px; color: #b8b8c8; text-align: left;
+            max-width: 520px; width: 100%; line-height: 1.9;
+        }
+        .code-block .kw { color: #c792ea; }
+        .code-block .fn { color: #82aaff; }
+        .code-block .str { color: #c3e88d; }
+        .code-block .cmt { color: #546e7a; }
+        .code-block .num { color: #f78c6c; }
+
+        .link-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 12px; max-width: 680px; width: 100%; margin-top: 40px;
+        }
+        .link-grid a {
+            display: flex; align-items: center; gap: 10px;
+            padding: 14px 18px; border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 10px; text-decoration: none; color: #777; font-size: 13px;
+            transition: all 0.2s; background: rgba(255,255,255,0.015);
+        }
+        .link-grid a:hover { background: rgba(255,255,255,0.04); color: #bbb; border-color: rgba(255,255,255,0.1); }
+        .link-badge {
+            padding: 3px 8px; border-radius: 4px; font-size: 9px; letter-spacing: 1px;
+            text-transform: uppercase; font-weight: 700;
+        }
+        .badge-gpu { background: rgba(0,255,100,0.1); color: #0f6; }
+        .badge-gl { background: rgba(255,200,0,0.1); color: #fc0; }
+
+        footer {
+            text-align: center; padding: 40px 24px;
+            border-top: 1px solid rgba(255,255,255,0.03);
+            font-size: 12px; color: #2a2a2a;
+        }
+        footer a { color: #444; text-decoration: none; }
+        footer a:hover { color: #888; }
+
+        /* ─── Reduced Motion ─── */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
             }
-        })();
+        }
+
+        /* ─── Mobile ─── */
+        @media (max-width: 768px) {
+            .convergence-pinned { flex-direction: column; }
+            .conv-panel { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.03); }
+            .trinity-progress-ring { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main" class="sr-only">Skip to content</a>
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 1: HERO — Quantum Emergence
+         Full-screen Quantum system shader (1 GPU context)
+         ═══════════════════════════════════════════════════ -->
+    <section class="hero" id="main">
+        <div class="hero-bg">
+            <div class="canvas-wrap" style="width:100%;height:100%;">
+                <canvas class="vib3-canvas" id="hero-canvas"></canvas>
+            </div>
+        </div>
+        <div class="hero-content" id="heroContent">
+            <span class="hero-badge" id="heroBadge">v2.0.0 &mdash; Three Systems &middot; 24 Geometries &middot; 6D Rotation</span>
+            <h1 class="hero-title" id="heroTitle">VIB3+</h1>
+            <p class="hero-sub" id="heroSub">
+                The fourth dimension, rendered. Three rendering systems.
+                24 geometry variants. Six degrees of rotation freedom.
+            </p>
+            <div class="hero-system-label" id="heroSystemLabel">Quantum Lattice Engine</div>
+        </div>
+        <div class="hero-scroll" id="heroScroll">
+            <span>explore</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 2: SYSTEM TRINITY — Three Voices
+         SINGLE canvas — systems swap on scroll (1 GPU context)
+         ═══════════════════════════════════════════════════ -->
+    <section class="trinity" id="trinitySection">
+        <div class="trinity-pinned" id="trinityPinned">
+            <div class="canvas-wrap" style="width:100%;height:100%;">
+                <canvas class="vib3-canvas" id="trinity-canvas"></canvas>
+            </div>
+            <div class="trinity-flash" id="trinityFlash"></div>
+            <div class="trinity-label" id="triQLbl">
+                <h2>Quantum</h2>
+                <p>Complex lattice interference &middot; Volumetric shimmer &middot; 24 geometries</p>
+            </div>
+            <div class="trinity-label" id="triHLbl">
+                <h2>Holographic</h2>
+                <p>Five-layer glassmorphism &middot; Role-based rendering &middot; Moir&eacute; interference</p>
+            </div>
+            <div class="trinity-label" id="triFLbl">
+                <h2>Faceted</h2>
+                <p>Precise lattice geometry &middot; Clean projection &middot; HSL saturation control</p>
+            </div>
+            <div class="trinity-counter" id="triCounter">
+                <span class="active">01</span> / 03
+            </div>
+            <div class="trinity-progress-ring" id="triRing">
+                <div class="ring-dot active" data-idx="0"></div>
+                <div class="ring-dot" data-idx="1"></div>
+                <div class="ring-dot" data-idx="2"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 3: CONVERGENCE — Coordinated Triptych
+         Three panels side-by-side (Canvas2D — 0 GPU contexts)
+         ═══════════════════════════════════════════════════ -->
+    <section class="convergence" id="convSection">
+        <div class="convergence-pinned" id="convPinned">
+            <div class="conv-panel" id="convLeft">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="conv-canvas-q"></canvas></div>
+                <div class="conv-tag">Quantum</div>
+            </div>
+            <div class="conv-panel" id="convCenter">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="conv-canvas-h"></canvas></div>
+                <div class="conv-tag">Holographic</div>
+            </div>
+            <div class="conv-panel" id="convRight">
+                <div class="canvas-wrap"><canvas class="vib3-canvas" id="conv-canvas-f"></canvas></div>
+                <div class="conv-tag">Faceted</div>
+            </div>
+            <div class="conv-overlay" id="convOverlay">
+                <div>
+                    <h2 id="convTitle">Convergence</h2>
+                    <p id="convSub">Three systems. One unified motion. Scroll to synchronize.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 4: ENERGY TRANSFER — Interactive Demo
+         Canvas2D bg + Faceted GPU card (1 GPU context, lazy)
+         ═══════════════════════════════════════════════════ -->
+    <section class="energy" id="energySection">
+        <div class="energy-pinned" id="energyPinned">
+            <div class="energy-bg">
+                <div class="canvas-wrap" style="width:100%;height:100%;">
+                    <canvas class="vib3-canvas" id="energy-bg-canvas"></canvas>
+                </div>
+            </div>
+            <div class="energy-card" id="energyCard">
+                <div class="energy-card-canvas">
+                    <canvas class="vib3-canvas" id="energy-card-canvas"></canvas>
+                </div>
+                <h3>Energy Transfer</h3>
+                <p>Click to drain the card shader into the background.
+                   Watch color, density, and geometry morph between elements.</p>
+                <button class="energy-btn" id="energyBtn">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="9" r="3" fill="currentColor"/></svg>
+                    Trigger Sweep
+                </button>
+                <div class="energy-meter">
+                    <div class="energy-meter-fill" id="energyFill"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 5: GEOMETRY CASCADE — Horizontal Card Scroll
+         Canvas2D cards (0 GPU contexts)
+         ═══════════════════════════════════════════════════ -->
+    <section class="cascade" id="cascadeSection">
+        <div class="cascade-pinned" id="cascadePinned">
+            <div class="cascade-track" id="cascadeTrack">
+                <div class="cascade-card" data-geo="0" data-hue="190" data-sys="quantum">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-0"></canvas></div>
+                    <div class="cascade-overlay"><h4>Tetrahedron</h4><span class="cascade-sys sys-quantum">Quantum &middot; Base</span></div>
+                </div>
+                <div class="cascade-card" data-geo="9" data-hue="300" data-sys="holographic">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-1"></canvas></div>
+                    <div class="cascade-overlay"><h4>Hypersphere Torus</h4><span class="cascade-sys sys-holographic">Holographic &middot; Hypersphere</span></div>
+                </div>
+                <div class="cascade-card" data-geo="16" data-hue="35" data-sys="faceted">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-2"></canvas></div>
+                    <div class="cascade-overlay"><h4>Hypertetra Tetra</h4><span class="cascade-sys sys-faceted">Faceted &middot; Hypertetra</span></div>
+                </div>
+                <div class="cascade-card" data-geo="5" data-hue="130" data-sys="quantum">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-3"></canvas></div>
+                    <div class="cascade-overlay"><h4>Fractal</h4><span class="cascade-sys sys-quantum">Quantum &middot; Base</span></div>
+                </div>
+                <div class="cascade-card" data-geo="11" data-hue="260" data-sys="holographic">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-4"></canvas></div>
+                    <div class="cascade-overlay"><h4>Hypersphere Klein</h4><span class="cascade-sys sys-holographic">Holographic &middot; Hypersphere</span></div>
+                </div>
+                <div class="cascade-card" data-geo="7" data-hue="60" data-sys="faceted">
+                    <div class="canvas-wrap"><canvas class="vib3-canvas" id="cas-5"></canvas></div>
+                    <div class="cascade-overlay"><h4>Crystal</h4><span class="cascade-sys sys-faceted">Faceted &middot; Base</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════
+         SECTION 6: CTA
+         Canvas2D bg (0 GPU contexts)
+         ═══════════════════════════════════════════════════ -->
+    <section class="cta-section" id="ctaSection">
+        <div class="cta-bg">
+            <div class="canvas-wrap" style="width:100%;height:100%;">
+                <canvas class="vib3-canvas" id="cta-canvas"></canvas>
+            </div>
+        </div>
+        <div class="cta-content">
+            <h2>Start Building</h2>
+            <p>Three lines to a 4D visualizer. WebGPU primary, WebGL fallback, C++ WASM math core.</p>
+            <div class="cta-row">
+                <a class="cta cta-primary" href="docs/webgpu-live.html">Launch Live Demo</a>
+                <a class="cta cta-ghost" href="https://github.com/Domusgpt/Vib3-CORE-Documented01-">GitHub</a>
+            </div>
+            <div class="code-block">
+                <span class="cmt">// npm install @vib3code/sdk</span><br>
+                <span class="kw">import</span> { VIB3Engine } <span class="kw">from</span> <span class="str">'@vib3code/sdk/core'</span>;<br><br>
+                <span class="kw">const</span> engine = <span class="kw">new</span> <span class="fn">VIB3Engine</span>();<br>
+                <span class="kw">await</span> engine.<span class="fn">initialize</span>();<br>
+                <span class="kw">await</span> engine.<span class="fn">switchSystem</span>(<span class="str">'quantum'</span>);<br>
+                engine.<span class="fn">setParameter</span>(<span class="str">'geometry'</span>, <span class="num">16</span>);<br>
+                engine.<span class="fn">setParameter</span>(<span class="str">'rot4dXW'</span>, <span class="num">1.57</span>);
+            </div>
+            <div class="link-grid">
+                <a href="docs/webgpu-live.html"><span class="link-badge badge-gpu">WebGPU</span> Live 4D Engine</a>
+                <a href="docs/index.html">Gallery &mdash; Algorithmic Art</a>
+                <a href="docs/test-hub.html">Test Hub &mdash; GPU Diagnostics</a>
+                <a href="docs/vib3-exports/index.html"><span class="link-badge badge-gl">WebGL</span> Shader Exports</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025-2026 <a href="https://parserator.com">Clear Seas Solutions LLC</a> / Paul Phillips &middot; MIT License</p>
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         ENGINE BOOT + GPU CONTEXT POOL + GSAP CHOREOGRAPHY
+
+         GPU CONTEXT BUDGET:
+           Hero ............ 1 (Quantum)
+           Trinity ......... 1 (swaps Q → H → F on scroll)
+           Convergence ..... 0 (Canvas2D)
+           Energy card ..... 1 (Faceted, lazy)
+           Cascade ......... 0 (Canvas2D)
+           CTA ............. 0 (Canvas2D)
+           MAX CONCURRENT .. 1-2 (safe for mobile)
+         ═══════════════════════════════════════════════════════════ -->
+    <script type="module">
+        import { QuantumEngine } from './src/quantum/QuantumEngine.js';
+        import { RealHolographicSystem } from './src/holograms/RealHolographicSystem.js';
+        import { FacetedSystem } from './src/faceted/FacetedSystem.js';
+
+        gsap.registerPlugin(ScrollTrigger);
+
+        /* ═══════════════════════════════════════════
+           GPU CONTEXT POOL
+           Max 2 simultaneous WebGL contexts.
+           Handles dispose + loseContext + canvas reset.
+           ═══════════════════════════════════════════ */
+        class ContextPool {
+            constructor(max = 2) {
+                this.max = max;
+                this.slots = new Map();
+            }
+
+            has(key) { return this.slots.has(key); }
+            get(key) { return this.slots.get(key)?.adapter || null; }
+
+            acquire(key, canvasId, Factory, opts) {
+                if (this.slots.has(key)) return this.slots.get(key).adapter;
+
+                // Evict oldest if at capacity
+                while (this.slots.size >= this.max) {
+                    const oldest = this.slots.keys().next().value;
+                    this.release(oldest);
+                }
+
+                // Replace canvas element for a clean WebGL state
+                this._resetCanvas(canvasId);
+
+                // Create adapter
+                try {
+                    const adapter = new Factory(canvasId, opts);
+                    if (!adapter.active) {
+                        console.warn(`[ContextPool] ${key} init failed on #${canvasId}`);
+                        return null;
+                    }
+                    this.slots.set(key, { adapter, canvasId });
+                    console.log(`[ContextPool] acquired "${key}" on #${canvasId} (${this.slots.size}/${this.max})`);
+                    return adapter;
+                } catch (e) {
+                    console.warn(`[ContextPool] ${key} threw:`, e);
+                    return null;
+                }
+            }
+
+            release(key) {
+                const entry = this.slots.get(key);
+                if (!entry) return;
+                try { entry.adapter.dispose(); } catch (e) {}
+                this._loseContext(entry.canvasId);
+                this.slots.delete(key);
+                console.log(`[ContextPool] released "${key}" (${this.slots.size}/${this.max})`);
+            }
+
+            releaseAll() {
+                for (const key of [...this.slots.keys()]) this.release(key);
+            }
+
+            _loseContext(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+                try {
+                    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+                    if (gl && !gl.isContextLost()) {
+                        const ext = gl.getExtension('WEBGL_lose_context');
+                        if (ext) ext.loseContext();
+                    }
+                } catch (e) {}
+            }
+
+            _resetCanvas(canvasId) {
+                const old = document.getElementById(canvasId);
+                if (!old) return;
+                this._loseContext(canvasId);
+                const fresh = document.createElement('canvas');
+                fresh.id = canvasId;
+                fresh.className = old.className;
+                if (old.style.cssText) fresh.style.cssText = old.style.cssText;
+                // Copy dimensions so the new system starts at proper size
+                const parent = old.parentElement;
+                if (parent) {
+                    const dpr = Math.min(devicePixelRatio || 1, 2);
+                    fresh.width = parent.clientWidth * dpr;
+                    fresh.height = parent.clientHeight * dpr;
+                }
+                old.parentNode.replaceChild(fresh, old);
+            }
+        }
+
+        /* ═══════════════════════════════════════════
+           ADAPTER: Quantum (1 GPU context)
+           FIX: setActive(true) + direct mouse/touch wiring
+           ═══════════════════════════════════════════ */
+        class Vib3Quantum {
+            constructor(canvasId, opts = {}) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) { this.active = false; return; }
+                this.canvas = canvas;
+                this.active = true;
+                this.params = {
+                    geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
+                    morphFactor: 0.5, chaos: 0.2, intensity: 0.7, saturation: 0.8,
+                    rot4dXW: 0, rot4dYW: 0, rot4dZW: 0, rot4dXY: 0, rot4dXZ: 0, rot4dYZ: 0,
+                    dimension: 3.5, ...opts
+                };
+                try {
+                    this.engine = new QuantumEngine({ canvas, autoStart: true });
+                    // CRITICAL: Engine defaults isActive=false, render loop checks it
+                    this.engine.setActive(true);
+                    this.engine.updateParameters(this.params);
+                } catch (e) {
+                    console.warn('Quantum init failed', e);
+                    this.active = false; return;
+                }
+                // Wire mouse/touch interaction directly (engine skips in canvasOverride mode)
+                this._onMouse = (e) => {
+                    const r = canvas.getBoundingClientRect();
+                    const x = (e.clientX - r.left) / r.width;
+                    const y = (e.clientY - r.top) / r.height;
+                    this.engine.updateInteraction(x, y, 0.8);
+                };
+                this._onTouch = (e) => {
+                    if (!e.touches.length) return;
+                    const t = e.touches[0];
+                    const r = canvas.getBoundingClientRect();
+                    const x = (t.clientX - r.left) / r.width;
+                    const y = (t.clientY - r.top) / r.height;
+                    this.engine.updateInteraction(x, y, 0.9);
+                };
+                this._onLeave = () => { this.engine.updateInteraction(0.5, 0.5, 0); };
+                canvas.addEventListener('mousemove', this._onMouse);
+                canvas.addEventListener('touchmove', this._onTouch, { passive: true });
+                canvas.addEventListener('mouseleave', this._onLeave);
+                this._resizeObs = new ResizeObserver(() => {
+                    const p = canvas.parentElement;
+                    if (!p) return;
+                    const dpr = Math.min(devicePixelRatio || 1, 2);
+                    this.engine.resize(p.clientWidth, p.clientHeight, dpr);
+                });
+                this._resizeObs.observe(canvas.parentElement);
+            }
+            setParam(k, v) { this.params[k] = v; this.engine?.updateParameter(k, v); }
+            setParams(o) { Object.assign(this.params, o); this.engine?.updateParameters(o); }
+            render() { if (this.active) this.engine?.updateParameters(this.params); }
+            dispose() {
+                this.active = false;
+                this.canvas?.removeEventListener('mousemove', this._onMouse);
+                this.canvas?.removeEventListener('touchmove', this._onTouch);
+                this.canvas?.removeEventListener('mouseleave', this._onLeave);
+                this._resizeObs?.disconnect();
+                try { this.engine?.dispose(); } catch (e) {}
+            }
+        }
+
+        /* ═══════════════════════════════════════════
+           ADAPTER: Holographic (1 GPU context in single-canvas mode)
+           FIX: setActive(true) + direct mouse/touch wiring
+           ═══════════════════════════════════════════ */
+        class Vib3Holographic {
+            constructor(canvasId, opts = {}) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) { this.active = false; return; }
+                this.canvas = canvas;
+                this.active = true;
+                this.params = {
+                    geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
+                    morphFactor: 0.5, chaos: 0.2, intensity: 0.7, saturation: 0.8,
+                    rot4dXW: 0, rot4dYW: 0, rot4dZW: 0, rot4dXY: 0, rot4dXZ: 0, rot4dYZ: 0,
+                    dimension: 3.5, ...opts
+                };
+                try {
+                    this.system = new RealHolographicSystem({ canvas });
+                    // CRITICAL: System defaults isActive=false, render loop checks it
+                    this.system.setActive(true);
+                    for (const [k, v] of Object.entries(this.params)) {
+                        this.system.updateParameter(k, v);
+                    }
+                } catch (e) {
+                    console.warn('Holographic init failed', e);
+                    this.active = false; return;
+                }
+                // Wire mouse/touch for holographic moiré interaction
+                this._onMouse = (e) => {
+                    const r = canvas.getBoundingClientRect();
+                    const x = (e.clientX - r.left) / r.width;
+                    const y = (e.clientY - r.top) / r.height;
+                    if (this.system.visualizers) {
+                        this.system.visualizers.forEach(v => v.updateInteraction?.(x, y, 0.7));
+                    }
+                };
+                this._onTouch = (e) => {
+                    if (!e.touches.length) return;
+                    const t = e.touches[0];
+                    const r = canvas.getBoundingClientRect();
+                    const x = (t.clientX - r.left) / r.width;
+                    const y = (t.clientY - r.top) / r.height;
+                    if (this.system.visualizers) {
+                        this.system.visualizers.forEach(v => v.updateInteraction?.(x, y, 0.85));
+                    }
+                };
+                this._onLeave = () => {
+                    if (this.system.visualizers) {
+                        this.system.visualizers.forEach(v => v.updateInteraction?.(0.5, 0.5, 0));
+                    }
+                };
+                canvas.addEventListener('mousemove', this._onMouse);
+                canvas.addEventListener('touchmove', this._onTouch, { passive: true });
+                canvas.addEventListener('mouseleave', this._onLeave);
+                this._resizeObs = new ResizeObserver(() => {
+                    const p = canvas.parentElement;
+                    if (!p) return;
+                    const dpr = Math.min(devicePixelRatio || 1, 2);
+                    this.system.resize(p.clientWidth, p.clientHeight, dpr);
+                });
+                this._resizeObs.observe(canvas.parentElement);
+            }
+            setParam(k, v) { this.params[k] = v; this.system?.updateParameter(k, v); }
+            setParams(o) {
+                Object.assign(this.params, o);
+                for (const [k, v] of Object.entries(o)) this.system?.updateParameter(k, v);
+            }
+            render() {
+                if (!this.active) return;
+                for (const [k, v] of Object.entries(this.params)) this.system?.updateParameter(k, v);
+            }
+            dispose() {
+                this.active = false;
+                this.canvas?.removeEventListener('mousemove', this._onMouse);
+                this.canvas?.removeEventListener('touchmove', this._onTouch);
+                this.canvas?.removeEventListener('mouseleave', this._onLeave);
+                this._resizeObs?.disconnect();
+                try { this.system?.dispose(); } catch (e) {}
+            }
+        }
+
+        /* ═══════════════════════════════════════════
+           ADAPTER: Faceted (1 GPU context)
+           FacetedSystem.start() already sets isActive=true
+           ═══════════════════════════════════════════ */
+        class Vib3Faceted {
+            constructor(canvasId, opts = {}) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) { this.active = false; return; }
+                this.canvas = canvas;
+                this.active = true;
+                this.params = {
+                    geometry: 3, hue: 200, gridDensity: 24, speed: 1.0,
+                    morphFactor: 0.5, chaos: 0.2, intensity: 0.7, saturation: 0.8,
+                    rot4dXW: 0, rot4dYW: 0, rot4dZW: 0, rot4dXY: 0, rot4dXZ: 0, rot4dYZ: 0,
+                    dimension: 3.5, ...opts
+                };
+                try {
+                    this.faceted = new FacetedSystem();
+                    const ok = this.faceted.initialize(canvas);
+                    if (!ok) { this.active = false; return; }
+                    this.faceted.updateParameters(this.params);
+                    this.faceted.start(); // start() sets isActive=true internally
+                } catch (e) {
+                    console.warn('Faceted init failed', e);
+                    this.active = false; return;
+                }
+                this._resizeObs = new ResizeObserver(() => {
+                    const p = canvas.parentElement;
+                    if (!p) return;
+                    const dpr = Math.min(devicePixelRatio || 1, 2);
+                    this.faceted.resize(p.clientWidth, p.clientHeight, dpr);
+                });
+                this._resizeObs.observe(canvas.parentElement);
+            }
+            setParam(k, v) { this.params[k] = v; this.faceted?.updateParameters({ [k]: v }); }
+            setParams(o) { Object.assign(this.params, o); this.faceted?.updateParameters(o); }
+            render() { if (this.active) this.faceted?.updateParameters(this.params); }
+            dispose() {
+                this.active = false;
+                this._resizeObs?.disconnect();
+                try { this.faceted?.stop(); this.faceted?.dispose(); } catch (e) {}
+            }
+        }
+
+        /* ═══════════════════════════════════════════
+           ADAPTER: Canvas2D Procedural (no GPU context)
+           ═══════════════════════════════════════════ */
+        class Vib3Canvas2D {
+            constructor(canvasId, opts = {}) {
+                this.canvas = document.getElementById(canvasId);
+                if (!this.canvas) { this.active = false; return; }
+                this.ctx = this.canvas.getContext('2d');
+                this.active = true;
+                this.params = {
+                    geometry: 3, hue: 180, gridDensity: 24, speed: 1.0,
+                    morphFactor: 0.5, chaos: 0.2, intensity: 0.7,
+                    rot4dXW: 0, rot4dYW: 0, dimension: 3.5, ...opts
+                };
+                this.resize();
+                this._ro = new ResizeObserver(() => this.resize());
+                this._ro.observe(this.canvas.parentElement);
+            }
+            resize() {
+                if (!this.canvas) return;
+                const p = this.canvas.parentElement;
+                const dpr = Math.min(devicePixelRatio || 1, 2);
+                this.canvas.width = p.clientWidth * dpr;
+                this.canvas.height = p.clientHeight * dpr;
+                this.w = this.canvas.width; this.h = this.canvas.height;
+            }
+            setParam(k, v) { this.params[k] = v; }
+            setParams(o) { Object.assign(this.params, o); }
+            render(time) {
+                if (!this.active || !this.ctx) return;
+                const { ctx, w, h, params: p } = this;
+                const t = time * p.speed * 0.001;
+                const geo = Math.floor(p.geometry) % 24;
+                const base = geo % 8, core = Math.floor(geo / 8);
+                ctx.clearRect(0, 0, w, h);
+                const bg = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, Math.max(w,h)*0.7);
+                bg.addColorStop(0, `hsla(${p.hue}, 40%, 6%, 1)`);
+                bg.addColorStop(1, `hsla(${(p.hue+40)%360}, 30%, 2%, 1)`);
+                ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+                const cx = w/2, cy = h/2, sc = Math.min(w,h)*0.35;
+                const density = Math.max(4, Math.floor(p.gridDensity));
+                const dim = p.dimension || 3.5;
+                ctx.globalAlpha = p.intensity;
+                for (let i = 0; i < density; i++) {
+                    const f = i / density;
+                    const ang = f * Math.PI * 2 + t + (p.rot4dXW||0);
+                    const hShift = (p.hue + f * 120 + core * 60) % 360;
+                    ctx.strokeStyle = `hsla(${hShift}, 65%, 52%, ${0.12 + p.chaos*0.3})`;
+                    ctx.lineWidth = 1 + p.morphFactor * 0.5;
+                    const w4 = Math.sin(t*0.5 + f*3.14 + (p.rot4dYW||0)) * 0.4;
+                    const pf = 1.0 / (dim - w4);
+                    ctx.beginPath();
+                    switch (base) {
+                        case 0: for(let j=0;j<3;j++){const a=ang+j*2.094;const r=sc*(0.3+f*0.7)*pf;j===0?ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}ctx.closePath();break;
+                        case 1: {const s=sc*(0.2+f*0.6)*pf;ctx.save();ctx.translate(cx,cy);ctx.rotate(t*0.3+f*0.5+(p.rot4dXW||0));ctx.rect(-s/2,-s/2,s,s);ctx.restore();break;}
+                        case 2: ctx.arc(cx+Math.sin(t+f*2)*10,cy+Math.cos(t+f*2)*10,sc*f*pf,0,Math.PI*2);break;
+                        case 3: {const tr=sc*0.5*pf,to=sc*0.2*(1+f*0.5);ctx.arc(cx+Math.cos(ang)*tr,cy+Math.sin(ang)*tr,to*pf,0,Math.PI*2);break;}
+                        case 4: for(let k=0;k<=32;k++){const kt=k/32*Math.PI*2;const kr=sc*(0.3+0.15*Math.sin(kt*2+t))*pf;const kx=cx+Math.cos(kt+ang)*kr*(1+0.3*Math.sin(kt+t));const ky=cy+Math.sin(kt+ang)*kr;k===0?ctx.moveTo(kx,ky):ctx.lineTo(kx,ky);}break;
+                        case 5: {const fl=sc*0.5*pf,fa=ang+t*0.2;ctx.moveTo(cx+Math.cos(fa)*fl*f,cy+Math.sin(fa)*fl*f);ctx.lineTo(cx+Math.cos(fa+2.4)*fl*f*0.7,cy+Math.sin(fa+2.4)*fl*f*0.7);ctx.lineTo(cx+Math.cos(fa+4.8)*fl*f*0.5,cy+Math.sin(fa+4.8)*fl*f*0.5);break;}
+                        case 6: for(let x=0;x<w;x+=4){const wf=x/w;const wy=cy+Math.sin(wf*density*0.5+t+f*3)*sc*0.3*pf*(0.5+f);x===0?ctx.moveTo(x,wy):ctx.lineTo(x,wy);}break;
+                        case 7: {const cl=sc*0.4*pf,ca=ang+f*0.5;for(let ci=0;ci<6;ci++){const a2=ca+ci*Math.PI/3;ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a2)*cl*(0.5+f*0.5),cy+Math.sin(a2)*cl*(0.5+f*0.5));}break;}
+                    }
+                    ctx.stroke();
+                    if (core > 0 && i % 3 === 0) {
+                        ctx.strokeStyle = `hsla(${(hShift+180)%360}, 55%, 40%, 0.07)`;
+                        ctx.beginPath();
+                        if (core === 1) ctx.arc(cx, cy, sc*f*pf*1.1, 0, Math.PI*2);
+                        else { for(let v=0;v<5;v++){const a=f*Math.PI*2/5*v+t*0.2;const r=sc*0.4*pf;v===0?ctx.moveTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r):ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);}ctx.closePath(); }
+                        ctx.stroke();
+                    }
+                }
+                ctx.globalAlpha = 1;
+            }
+            dispose() { this.active = false; this._ro?.disconnect(); }
+        }
+
+        /* ═══════════════════════════════════════════
+           STATE
+           ═══════════════════════════════════════════ */
+        const pool = new ContextPool(2);
+        const c2d = new Map();
+
+        // Configuration — each system opens with its signature aesthetic
+        const heroOpts = {
+            geometry: 3, hue: 210, gridDensity: 28, speed: 0.4,
+            intensity: 0.75, chaos: 0.05, morphFactor: 0.6,
+            rot4dXW: 0.15, rot4dYW: 0.08, dimension: 3.6, saturation: 0.9
+        };
+        const trinityOpts = [
+            // Quantum: cool lattice, torus geometry, medium density
+            { geometry: 3, hue: 195, gridDensity: 24, speed: 0.5, intensity: 0.8, chaos: 0.08, morphFactor: 0.5, dimension: 3.5, saturation: 0.85 },
+            // Holographic: warm spectral, Klein bottle, lower density for moiré
+            { geometry: 4, hue: 310, gridDensity: 18, speed: 0.4, intensity: 0.85, chaos: 0.12, morphFactor: 0.4, dimension: 3.7, saturation: 0.9 },
+            // Faceted: golden precise, hypercube, high density for lattice clarity
+            { geometry: 1, hue: 45, gridDensity: 32, speed: 0.6, intensity: 0.75, chaos: 0.03, morphFactor: 0.8, dimension: 3.4, saturation: 0.8 },
+        ];
+        const energyCardOpts = {
+            geometry: 7, hue: 180, gridDensity: 26, speed: 0.6,
+            intensity: 0.65, chaos: 0.08, morphFactor: 0.7, dimension: 3.5, saturation: 0.85
+        };
+
+        const triFactories = [Vib3Quantum, Vib3Holographic, Vib3Faceted];
+        let triCurrent = -1;
+        let triSwapLock = false;
+
+        /* ═══════════════════════════════════════════
+           LIFECYCLE FUNCTIONS
+           ═══════════════════════════════════════════ */
+        function createHero() {
+            return pool.acquire('hero', 'hero-canvas', Vib3Quantum, heroOpts);
+        }
+
+        function createTriSystem(idx) {
+            if (pool.has('trinity')) pool.release('trinity');
+            const adapter = pool.acquire('trinity', 'trinity-canvas', triFactories[idx], trinityOpts[idx]);
+            triCurrent = adapter ? idx : -1;
+            return adapter;
+        }
+
+        function swapTriSystem(newIdx) {
+            if (newIdx === triCurrent || triSwapLock) return;
+            triSwapLock = true;
+            const flash = document.getElementById('trinityFlash');
+
+            // Animate labels
+            updateTriLabels(newIdx);
+            updateTriCounter(newIdx);
+
+            // Brief dark flash to mask the GPU swap
+            gsap.to(flash, { opacity: 0.9, duration: 0.1, ease: 'power2.in', onComplete: () => {
+                createTriSystem(newIdx);
+                // Wait 1 frame for the new shader to compile + render, then reveal
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        gsap.to(flash, { opacity: 0, duration: 0.25, ease: 'power2.out', onComplete: () => {
+                            triSwapLock = false;
+                        }});
+                    });
+                });
+            }});
+        }
+
+        function updateTriLabels(activeIdx) {
+            ['#triQLbl', '#triHLbl', '#triFLbl'].forEach((lbl, i) => {
+                const h2 = document.querySelector(`${lbl} h2`);
+                const p = document.querySelector(`${lbl} p`);
+                if (i === activeIdx) {
+                    gsap.to(h2, { opacity: 1, y: 0, duration: 0.7, delay: 0.12, ease: 'power3.out' });
+                    gsap.to(p, { opacity: 1, y: 0, duration: 0.6, delay: 0.2, ease: 'power2.out' });
+                } else {
+                    gsap.to(h2, { opacity: 0, y: -20, duration: 0.25, ease: 'power2.in' });
+                    gsap.to(p, { opacity: 0, y: -10, duration: 0.2, ease: 'power2.in' });
+                }
+            });
+        }
+
+        function updateTriCounter(idx) {
+            const counter = document.getElementById('triCounter');
+            if (counter) counter.innerHTML = `<span class="active">0${idx+1}</span> / 03`;
+            document.querySelectorAll('.ring-dot').forEach((d, i) => {
+                d.classList.toggle('active', i === idx);
+            });
+        }
+
+        /* ═══════════════════════════════════════════
+           CANVAS 2D INSTANCES (no GPU contexts)
+           ═══════════════════════════════════════════ */
+        function initCanvas2D() {
+            c2d.set('convQ', new Vib3Canvas2D('conv-canvas-q', {
+                geometry: 0, hue: 200, gridDensity: 20, speed: 0.8, intensity: 0.7, chaos: 0.15
+            }));
+            c2d.set('convH', new Vib3Canvas2D('conv-canvas-h', {
+                geometry: 3, hue: 300, gridDensity: 22, speed: 0.6, intensity: 0.7, chaos: 0.2
+            }));
+            c2d.set('convF', new Vib3Canvas2D('conv-canvas-f', {
+                geometry: 1, hue: 60, gridDensity: 18, speed: 0.7, intensity: 0.7, chaos: 0.1
+            }));
+            c2d.set('energyBg', new Vib3Canvas2D('energy-bg-canvas', {
+                geometry: 6, hue: 270, gridDensity: 16, speed: 0.3,
+                intensity: 0.2, chaos: 0.05, dimension: 4.0
+            }));
+            document.querySelectorAll('.cascade-card').forEach((card, i) => {
+                c2d.set(`cas${i}`, new Vib3Canvas2D(`cas-${i}`, {
+                    geometry: parseInt(card.dataset.geo),
+                    hue: parseInt(card.dataset.hue),
+                    gridDensity: 18, speed: 0.6, intensity: 0.75, chaos: 0.15,
+                    morphFactor: 0.6, dimension: 3.5
+                }));
+            });
+            c2d.set('cta', new Vib3Canvas2D('cta-canvas', {
+                geometry: 5, hue: 160, gridDensity: 14, speed: 0.3,
+                intensity: 0.2, chaos: 0.25, dimension: 4.0
+            }));
+        }
+
+        /* ═══════════════════════════════════════════
+           RENDER LOOP (Canvas2D only — GPU systems self-render)
+           ═══════════════════════════════════════════ */
+        function renderLoop(ts) {
+            for (const inst of c2d.values()) inst.render(ts);
+            requestAnimationFrame(renderLoop);
+        }
+
+        /* ═══════════════════════════════════════════
+           GSAP CHOREOGRAPHY
+           ═══════════════════════════════════════════ */
+
+        // ── Scroll Progress ──
+        gsap.to('#scrollProgress', {
+            scaleX: 1, ease: 'none',
+            scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 0.1 }
+        });
+
+        // ═══════════════════════════════════════
+        // HERO: Entrance + Scroll Choreography
+        // ═══════════════════════════════════════
+        function heroEntrance() {
+            const tl = gsap.timeline({ delay: 0.3 });
+            tl.to('#heroBadge', { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' });
+
+            const title = document.getElementById('heroTitle');
+            const text = title.textContent;
+            title.innerHTML = text.split('').map(c =>
+                c === ' ' ? ' ' : `<span class="char">${c}</span>`
+            ).join('');
+            tl.to('#heroTitle .char', {
+                opacity: 1, y: 0, duration: 0.6, stagger: 0.08, ease: 'power4.out'
+            }, '-=0.4');
+            tl.to('#heroSub', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.3');
+            tl.to('#heroSystemLabel', { opacity: 1, duration: 0.5 }, '-=0.3');
+            tl.to('#heroScroll', { opacity: 1, duration: 0.6 }, '-=0.2');
+        }
+
+        // Hero scroll — "Emergence": a point unfolds into the fourth dimension
+        // Story: stillness → first rotation → dimensional awakening → full hyperspace
+        ScrollTrigger.create({
+            trigger: '.hero',
+            start: 'top top', end: 'bottom top',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const p = self.progress;
+                const hero = pool.get('hero');
+                if (!hero) return;
+
+                // Ease: slow start, accelerating revelation
+                const ease = p * p * (3 - 2 * p); // smoothstep
+                const late = Math.max(0, (p - 0.4) / 0.6); // delayed ramp
+
+                hero.setParams({
+                    // Act 1 (0-30%): First 3D rotation awakens — gentle XY spin
+                    rot4dXY: ease * 0.4,
+                    rot4dXZ: ease * 0.25,
+                    // Act 2 (30-60%): Fourth dimension opens — XW plane rotation
+                    rot4dXW: late * Math.PI * 1.2,
+                    rot4dYW: late * Math.PI * 0.6,
+                    // Act 3 (60-100%): Full hyperspace — all planes active
+                    rot4dZW: Math.max(0, (p - 0.6) / 0.4) * Math.PI * 0.8,
+                    // Geometry evolves: torus → sphere → Klein bottle
+                    geometry: p < 0.3 ? 3 : p < 0.65 ? 2 : 4,
+                    // Density grows as structure complexifies
+                    gridDensity: 28 + ease * 32,
+                    // Color shifts from deep ocean to electric cyan
+                    hue: 210 + ease * 60 + Math.sin(p * Math.PI * 3) * 15,
+                    // Chaos: calm → turbulent at the boundary
+                    chaos: 0.05 + late * 0.35,
+                    // Intensity builds toward climax
+                    intensity: 0.75 + ease * 0.2,
+                    // Morph: rigid lattice → fluid waveform
+                    morphFactor: 0.6 + ease * 1.0,
+                    // Dimension: perspective narrows as we approach 4D
+                    dimension: 3.6 - ease * 0.4,
+                    saturation: 0.9 + late * 0.1,
+                });
+            }
+        });
+
+        // Hero content fade on scroll
+        gsap.to('#heroContent', {
+            opacity: 0, y: -100, ease: 'none',
+            scrollTrigger: { trigger: '.hero', start: '30% top', end: 'bottom top', scrub: 0.3 }
+        });
+        gsap.to('#heroScroll', {
+            opacity: 0, ease: 'none',
+            scrollTrigger: { trigger: '.hero', start: '10% top', end: '30% top', scrub: 0.3 }
+        });
+
+        // ═══════════════════════════════════════
+        // TRINITY: Single canvas, system swaps at 33%/66%
+        // Lifecycle: onEnter creates, onLeave destroys
+        // ═══════════════════════════════════════
+        ScrollTrigger.create({
+            trigger: '#trinitySection',
+            start: 'top top', end: 'bottom bottom',
+            pin: '#trinityPinned',
+            scrub: 0.4,
+            onEnter: () => {
+                // Entering trinity from above — dispose hero, create Quantum
+                pool.release('hero');
+                createTriSystem(0);
+                updateTriLabels(0);
+                updateTriCounter(0);
+            },
+            onLeave: () => {
+                // Scrolled past trinity — release GPU
+                pool.release('trinity');
+                triCurrent = -1;
+            },
+            onEnterBack: () => {
+                // Scrolling back up into trinity from convergence — create Faceted
+                createTriSystem(2);
+                updateTriLabels(2);
+                updateTriCounter(2);
+            },
+            onLeaveBack: () => {
+                // Scrolling back up past trinity — restore hero
+                pool.release('trinity');
+                triCurrent = -1;
+                createHero();
+            },
+            onUpdate: (self) => {
+                const p = self.progress;
+                const newIdx = p < 0.33 ? 0 : p < 0.66 ? 1 : 2;
+
+                // Swap system at boundaries
+                if (newIdx !== triCurrent && !triSwapLock) {
+                    swapTriSystem(newIdx);
+                }
+
+                // Drive shader parameters — each system tells a unique mathematical story
+                const adapter = pool.get('trinity');
+                if (!adapter) return;
+
+                const localP = newIdx === 0 ? p / 0.33
+                             : newIdx === 1 ? (p - 0.33) / 0.33
+                             : (p - 0.66) / 0.34;
+                const smooth = localP * localP * (3 - 2 * localP); // smoothstep
+                const pulse = Math.sin(localP * Math.PI); // bell curve 0→1→0
+
+                if (triCurrent === 0) {
+                    // ── QUANTUM: "Lattice Resonance" ──
+                    // A torus unfolds into complex interference patterns.
+                    // Slow rotation builds, density rises like crystallization,
+                    // color shifts from deep ocean to phosphorescent cyan.
+                    const breathe = Math.sin(localP * Math.PI * 4) * 0.15;
+                    adapter.setParams({
+                        geometry: localP < 0.5 ? 3 : localP < 0.8 ? 2 : 6, // torus → sphere → wave
+                        rot4dXW: smooth * Math.PI * 1.5,
+                        rot4dYW: smooth * Math.PI * 0.7,
+                        rot4dXY: Math.sin(localP * Math.PI * 2) * 0.3,
+                        gridDensity: 24 + smooth * 36 + breathe * 10,
+                        hue: 195 + smooth * 45 + Math.sin(localP * Math.PI * 6) * 20,
+                        chaos: 0.08 + pulse * 0.25,
+                        morphFactor: 0.5 + smooth * 0.9,
+                        intensity: 0.8 + pulse * 0.15,
+                        dimension: 3.5 - smooth * 0.3,
+                        saturation: 0.85 + pulse * 0.12,
+                    });
+                } else if (triCurrent === 1) {
+                    // ── HOLOGRAPHIC: "Spectral Folding" ──
+                    // Klein bottle geometry warps through Hypersphere core.
+                    // Color sweeps warm → cool → ultraviolet. Moiré interference
+                    // intensifies as the projection distance contracts.
+                    const warp = Math.sin(localP * Math.PI * 3) * 0.2;
+                    adapter.setParams({
+                        geometry: 8 + (localP < 0.4 ? 4 : localP < 0.7 ? 3 : 5), // HS-Klein → HS-Torus → HS-Fractal
+                        rot4dXW: smooth * Math.PI * 2.5,
+                        rot4dZW: smooth * Math.PI * 1.2,
+                        rot4dYZ: Math.sin(localP * Math.PI * 2) * 0.5,
+                        gridDensity: 18 + pulse * 22,
+                        hue: 310 - smooth * 80 + Math.sin(localP * Math.PI * 5) * 30, // magenta → cyan → violet
+                        chaos: 0.12 + smooth * 0.3 + warp,
+                        morphFactor: 0.4 + pulse * 0.8,
+                        intensity: 0.85 + pulse * 0.12,
+                        dimension: 3.7 - smooth * 0.5, // dramatic perspective squeeze
+                        saturation: 0.9 + pulse * 0.1,
+                    });
+                } else {
+                    // ── FACETED: "Crystalline Convergence" ──
+                    // Hypertetrahedron core — the pentatope.
+                    // Starts as clean hypercube lattice, evolves through crystal
+                    // geometries with golden precision. Minimal chaos, maximum structure.
+                    const facet = Math.sin(localP * Math.PI * 2) * 0.1;
+                    adapter.setParams({
+                        geometry: 16 + (localP < 0.3 ? 1 : localP < 0.6 ? 7 : localP < 0.85 ? 0 : 5),
+                        // HT-Cube → HT-Crystal → HT-Tetra → HT-Fractal
+                        rot4dXW: smooth * Math.PI * 2.0,
+                        rot4dYW: smooth * Math.PI * 0.4,
+                        rot4dXZ: Math.sin(localP * Math.PI * 1.5) * 0.4,
+                        gridDensity: 32 + smooth * 28 + facet * 8,
+                        hue: 45 + smooth * 75 + Math.sin(localP * Math.PI * 4) * 15, // gold → amber → copper
+                        chaos: 0.03 + pulse * 0.12, // stays clean
+                        morphFactor: 0.8 + smooth * 0.7,
+                        intensity: 0.75 + pulse * 0.2,
+                        dimension: 3.4 - smooth * 0.2,
+                        saturation: 0.8 + smooth * 0.15,
+                    });
+                }
+            }
+        });
+
+        // ═══════════════════════════════════════
+        // CONVERGENCE: Canvas2D coordinated waves
+        // ═══════════════════════════════════════
+        ScrollTrigger.create({
+            trigger: '#convSection',
+            start: 'top top', end: 'bottom bottom',
+            pin: '#convPinned',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const p = self.progress;
+                const q = c2d.get('convQ');
+                const h = c2d.get('convH');
+                const f = c2d.get('convF');
+                if (!q || !h || !f) return;
+
+                const overlay = document.getElementById('convOverlay');
+
+                if (p < 0.25) {
+                    // Divergent: each has own parameters
+                    const lp = p / 0.25;
+                    q.setParams({
+                        geometry: Math.floor(lp * 5), hue: 200 + lp * 40,
+                        rot4dXW: lp * 2, gridDensity: 16 + lp * 20, chaos: 0.1 + lp * 0.2
+                    });
+                    h.setParams({
+                        geometry: 3 + Math.floor(lp * 3), hue: 300 - lp * 30,
+                        rot4dXW: -lp * 1.5, gridDensity: 22 - lp * 5, chaos: 0.2
+                    });
+                    f.setParams({
+                        geometry: 1 + Math.floor(lp * 4), hue: 60 + lp * 20,
+                        rot4dXW: lp * 2.5, gridDensity: 18 + lp * 10, chaos: 0.1
+                    });
+                    if (overlay) {
+                        overlay.querySelector('h2').style.opacity = Math.max(0, 1 - lp * 3);
+                        overlay.querySelector('p').style.opacity = Math.max(0, 1 - lp * 3);
+                    }
+
+                } else if (p < 0.5) {
+                    // Color wave propagation
+                    const lp = (p - 0.25) / 0.25;
+                    const waveHue = 180 + Math.sin(lp * Math.PI * 2) * 80;
+                    const qDelay = 0, hDelay = 0.15, fDelay = 0.3;
+                    q.setParams({
+                        hue: waveHue + Math.sin((lp - qDelay) * Math.PI * 3) * 60,
+                        rot4dXW: 2 + lp * 4, gridDensity: 30 + Math.sin(lp * Math.PI * 4) * 15,
+                        geometry: 3 + Math.floor(Math.sin(lp * Math.PI) * 3),
+                        chaos: 0.2 + Math.sin(lp * Math.PI * 2) * 0.2,
+                        morphFactor: 0.8 + Math.sin(lp * Math.PI) * 0.6,
+                    });
+                    h.setParams({
+                        hue: waveHue + Math.sin((lp - hDelay) * Math.PI * 3) * 60,
+                        rot4dXW: -1.5 + lp * 3, gridDensity: 20 + Math.sin((lp - hDelay) * Math.PI * 4) * 15,
+                        geometry: 6 + Math.floor(Math.sin((lp - hDelay) * Math.PI) * 3),
+                        chaos: 0.2 + Math.sin((lp - hDelay) * Math.PI * 2) * 0.2,
+                        morphFactor: 0.6 + Math.sin((lp - hDelay) * Math.PI) * 0.6,
+                    });
+                    f.setParams({
+                        hue: waveHue + Math.sin((lp - fDelay) * Math.PI * 3) * 60,
+                        rot4dXW: 2.5 + lp * 3, gridDensity: 25 + Math.sin((lp - fDelay) * Math.PI * 4) * 15,
+                        geometry: 1 + Math.floor(Math.sin((lp - fDelay) * Math.PI) * 3),
+                        chaos: 0.1 + Math.sin((lp - fDelay) * Math.PI * 2) * 0.2,
+                        morphFactor: 1.0 + Math.sin((lp - fDelay) * Math.PI) * 0.5,
+                    });
+
+                } else if (p < 0.75) {
+                    // Convergence — all 3 unify
+                    const lp = (p - 0.5) / 0.25;
+                    const shared = {
+                        geometry: 3, hue: 180, gridDensity: 28,
+                        rot4dXW: lp * Math.PI * 4, rot4dYW: lp * 2,
+                        morphFactor: 1.2, chaos: 0.15, intensity: 0.8,
+                    };
+                    q.setParams(shared); h.setParams(shared); f.setParams(shared);
+                    if (overlay) {
+                        const convTitle = document.getElementById('convTitle');
+                        const convSub = document.getElementById('convSub');
+                        if (convTitle) { convTitle.textContent = 'Unified'; convTitle.style.opacity = Math.min(1, lp * 3); }
+                        if (convSub) { convSub.textContent = 'Three engines. One heartbeat.'; convSub.style.opacity = Math.min(1, lp * 3); }
+                    }
+
+                } else {
+                    // Burst divergence — dramatic new identities
+                    const lp = (p - 0.75) / 0.25;
+                    const rot = Math.PI * 4 + lp * Math.PI * 3;
+                    q.setParams({
+                        geometry: 16 + Math.floor(lp * 7), hue: lp * 180,
+                        rot4dXW: rot, rot4dYW: lp * 4,
+                        gridDensity: 28 + lp * 40, chaos: 0.15 + lp * 0.6,
+                        morphFactor: 1.2 + lp * 0.8, intensity: 0.8 + lp * 0.2,
+                    });
+                    h.setParams({
+                        geometry: 8 + Math.floor(lp * 7), hue: 300 + lp * 60,
+                        rot4dXW: -rot * 0.8, rot4dYW: -lp * 3,
+                        gridDensity: 28 - lp * 10, chaos: 0.15 + lp * 0.4,
+                        morphFactor: 1.2 - lp * 0.5, intensity: 0.8 + lp * 0.15,
+                    });
+                    f.setParams({
+                        geometry: Math.floor(lp * 7), hue: 60 + lp * 200,
+                        rot4dXW: rot * 1.2, rot4dZW: lp * Math.PI,
+                        gridDensity: 28 + lp * 25, chaos: 0.15 + lp * 0.5,
+                        morphFactor: 1.2 + lp * 0.6, intensity: 0.8 + lp * 0.2,
+                    });
+                    if (overlay) {
+                        overlay.querySelector('h2').style.opacity = Math.max(0, 1 - lp * 4);
+                        overlay.querySelector('p').style.opacity = Math.max(0, 1 - lp * 4);
+                    }
+                }
+            }
+        });
+
+        // Initial convergence overlay
+        gsap.set('#convTitle', { opacity: 1 });
+        gsap.set('#convSub', { opacity: 1 });
+
+        // ═══════════════════════════════════════
+        // ENERGY TRANSFER: Lazy GPU card + Canvas2D bg
+        // ═══════════════════════════════════════
+
+        // Lazy lifecycle for GPU card
+        ScrollTrigger.create({
+            trigger: '#energySection',
+            start: 'top 80%', end: 'bottom top',
+            onEnter: () => pool.acquire('energyCard', 'energy-card-canvas', Vib3Faceted, energyCardOpts),
+            onLeave: () => pool.release('energyCard'),
+            onEnterBack: () => pool.acquire('energyCard', 'energy-card-canvas', Vib3Faceted, energyCardOpts),
+            onLeaveBack: () => pool.release('energyCard'),
+        });
+
+        // Pin + scroll animation
+        ScrollTrigger.create({
+            trigger: '#energySection',
+            start: 'top top', end: 'bottom bottom',
+            pin: '#energyPinned',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const p = self.progress;
+                const bg = c2d.get('energyBg');
+                if (!bg) return;
+                bg.setParams({
+                    rot4dXW: p * 3,
+                    hue: 270 + p * 50,
+                    gridDensity: 16 + p * 10,
+                    intensity: 0.2 + p * 0.15,
+                });
+            }
+        });
+
+        // Card entrance
+        ScrollTrigger.create({
+            trigger: '#energySection',
+            start: 'top 60%',
+            once: true,
+            onEnter: () => {
+                gsap.to('#energyCard', { opacity: 1, y: 0, duration: 1, ease: 'power3.out' });
+            }
+        });
+
+        // Energy transfer button
+        const energyBtn = document.getElementById('energyBtn');
+        const energyFill = document.getElementById('energyFill');
+        if (energyBtn) {
+            let sweeping = false;
+            function energySweep() {
+                if (sweeping) return;
+                sweeping = true;
+                const card = pool.get('energyCard');
+                const bg = c2d.get('energyBg');
+                if (!card && !bg) { sweeping = false; return; }
+
+                const tl = gsap.timeline({ onComplete: () => { sweeping = false; } });
+
+                // Phase 1: Card drains — intensity collapses
+                if (card) {
+                    tl.to(card.params, {
+                        intensity: 0.05, gridDensity: 4, chaos: 0.6, hue: 320,
+                        duration: 0.8, ease: 'power3.in',
+                        onUpdate: () => card.render(),
+                    }, 0);
+                }
+                // Phase 1: Background surges — absorbs energy
+                if (bg) {
+                    tl.to(bg.params, {
+                        intensity: 0.8, gridDensity: 55, chaos: 0.5, hue: 180, morphFactor: 1.5,
+                        duration: 0.8, ease: 'power2.out',
+                        onUpdate: () => bg.render(),
+                    }, 0);
+                }
+                tl.to(energyFill, { width: '5%', duration: 0.8, ease: 'power3.in' }, 0);
+
+                // Phase 2: Color swap + geometry morph
+                if (card) {
+                    tl.to(card.params, {
+                        hue: 270, geometry: 5, rot4dXW: Math.PI,
+                        duration: 0.6, ease: 'power2.inOut',
+                        onUpdate: () => card.render(),
+                    }, 0.8);
+                }
+                if (bg) {
+                    tl.to(bg.params, {
+                        hue: 60, geometry: 3,
+                        duration: 0.6, ease: 'power2.inOut',
+                        onUpdate: () => bg.render(),
+                    }, 0.8);
+                }
+
+                // Phase 3: Card element morphs
+                tl.to('#energyCard', {
+                    scale: 0.96, borderColor: 'rgba(123,63,242,0.4)',
+                    boxShadow: '0 0 60px rgba(123,63,242,0.2)',
+                    duration: 0.5, ease: 'power2.in',
+                }, 0);
+                tl.to('#energyCard', {
+                    scale: 1, borderColor: 'rgba(255,255,255,0.06)',
+                    boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+                    duration: 0.8, ease: 'elastic.out(1, 0.4)',
+                }, 1.4);
+
+                // Phase 4: Elastic snap-back
+                if (card) {
+                    tl.to(card.params, {
+                        intensity: 0.6, gridDensity: 30, chaos: 0.1,
+                        hue: 180, geometry: 7, rot4dXW: 0,
+                        duration: 1.2, ease: 'elastic.out(1, 0.5)',
+                        onUpdate: () => card.render(),
+                    }, 1.5);
+                }
+                if (bg) {
+                    tl.to(bg.params, {
+                        intensity: 0.2, gridDensity: 16, chaos: 0.05,
+                        hue: 270, morphFactor: 0.5, geometry: 6,
+                        duration: 1.2, ease: 'elastic.out(1, 0.5)',
+                        onUpdate: () => bg.render(),
+                    }, 1.5);
+                }
+                tl.to(energyFill, { width: '50%', duration: 1, ease: 'elastic.out(1, 0.5)' }, 1.5);
+            }
+
+            energyBtn.addEventListener('click', energySweep);
+            energyBtn.addEventListener('touchstart', (e) => { e.preventDefault(); energySweep(); });
+        }
+
+        // ═══════════════════════════════════════
+        // CASCADE: Horizontal card scroll (Canvas2D)
+        // ═══════════════════════════════════════
+        const cascadeCards = document.querySelectorAll('.cascade-card');
+        const cascadeTrack = document.getElementById('cascadeTrack');
+
+        ScrollTrigger.create({
+            trigger: '#cascadeSection',
+            start: 'top 80%',
+            once: true,
+            onEnter: () => {
+                gsap.to('.cascade-card', {
+                    opacity: 1, y: 0, scale: 1,
+                    duration: 0.8, stagger: 0.12, ease: 'power3.out'
+                });
+            }
+        });
+
+        if (cascadeTrack && cascadeCards.length > 0) {
+            const cardW = 340 + 28;
+            const totalScroll = (cascadeCards.length - 1) * cardW;
+
+            ScrollTrigger.create({
+                trigger: '#cascadeSection',
+                start: 'top top', end: 'bottom bottom',
+                pin: '#cascadePinned',
+                scrub: 0.4,
+                onUpdate: (self) => {
+                    const p = self.progress;
+                    cascadeTrack.style.transform = `translateX(${-p * totalScroll}px)`;
+
+                    const activeIdx = Math.min(Math.floor(p * cascadeCards.length), cascadeCards.length - 1);
+                    const activeHue = parseInt(cascadeCards[activeIdx].dataset.hue);
+                    const localP = (p * cascadeCards.length) - activeIdx;
+
+                    cascadeCards.forEach((card, i) => {
+                        const inst = c2d.get(`cas${i}`);
+                        if (!inst) return;
+                        if (i === activeIdx) {
+                            inst.setParams({
+                                rot4dXW: localP * Math.PI,
+                                intensity: 0.75 + Math.sin(localP * Math.PI) * 0.15,
+                                morphFactor: 0.6 + localP * 0.4,
+                            });
+                            card.style.transform = `scale(${1 + Math.sin(localP * Math.PI) * 0.03})`;
+                        } else if (Math.abs(i - activeIdx) === 1) {
+                            const ownHue = parseInt(card.dataset.hue);
+                            const bleedAmount = i < activeIdx ? (1 - localP) * 0.3 : localP * 0.3;
+                            inst.setParams({
+                                hue: ownHue + (activeHue - ownHue) * bleedAmount,
+                                intensity: 0.6,
+                            });
+                            card.style.transform = 'scale(1)';
+                        } else {
+                            card.style.transform = 'scale(1)';
+                        }
+                    });
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════
+        // CTA: Gentle drift (Canvas2D)
+        // ═══════════════════════════════════════
+        ScrollTrigger.create({
+            trigger: '#ctaSection',
+            start: 'top bottom', end: 'bottom bottom',
+            scrub: 0.3,
+            onUpdate: (self) => {
+                const cta = c2d.get('cta');
+                if (!cta) return;
+                cta.setParams({
+                    rot4dXW: self.progress * 2,
+                    hue: 160 + self.progress * 80,
+                    intensity: 0.2 + self.progress * 0.1,
+                });
+            }
+        });
+
+        /* ═══════════════════════════════════════════
+           BOOT — Only 1 GPU context at startup
+           ═══════════════════════════════════════════ */
+        createHero();       // 1 GPU context (Quantum on hero-canvas)
+        initCanvas2D();     // 0 GPU contexts (all Canvas2D)
+        heroEntrance();     // GSAP text animations
+        requestAnimationFrame(renderLoop);
+
+        // Clean up on page hide (mobile tab switching)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                pool.releaseAll();
+            } else {
+                // Restore based on current scroll position
+                ScrollTrigger.refresh();
+            }
+        });
     </script>
 </body>
 </html>

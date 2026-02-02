@@ -72,19 +72,26 @@ export class ParameterManager {
     setParameter(name, value) {
         if (this.parameterDefs[name]) {
             const def = this.parameterDefs[name];
-            
+
+            // Coerce to number and reject NaN/Infinity
+            value = Number(value);
+            if (!Number.isFinite(value)) {
+                console.warn(`Parameter "${name}" received non-finite value, ignoring`);
+                return false;
+            }
+
             // Clamp value to valid range
             value = Math.max(def.min, Math.min(def.max, value));
-            
+
             // Apply type conversion
             if (def.type === 'int') {
                 value = Math.round(value);
             }
-            
+
             this.params[name] = value;
             return true;
         }
-        
+
         console.warn(`Unknown parameter: ${name}`);
         return false;
     }
@@ -125,13 +132,14 @@ export class ParameterManager {
             const element = document.getElementById(id);
             if (element) {
                 const value = parseFloat(element.value);
-                
+                if (!Number.isFinite(value)) return;
+
                 // Map slider IDs to parameter names
                 let paramName = id;
                 if (id === 'variationSlider') {
                     paramName = 'variation';
                 }
-                
+
                 this.setParameter(paramName, value);
             }
         });
@@ -244,16 +252,18 @@ export class ParameterManager {
      * Load parameter configuration
      */
     loadConfiguration(config) {
-        if (config && typeof config === 'object') {
-            // Validate and apply configuration
-            for (const [key, value] of Object.entries(config)) {
-                if (this.parameterDefs[key]) {
-                    this.setParameter(key, value);
-                }
+        if (!config || typeof config !== 'object') return false;
+
+        // If it has a parameters sub-object, use that (export format)
+        const params = config.parameters || config;
+        if (typeof params !== 'object') return false;
+
+        for (const [key, value] of Object.entries(params)) {
+            if (this.parameterDefs[key]) {
+                this.setParameter(key, value);
             }
-            return true;
         }
-        return false;
+        return true;
     }
     
     /**

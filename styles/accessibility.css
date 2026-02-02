@@ -1,0 +1,73 @@
+/**
+ * VIB3+ Accessibility Styles
+ *
+ * - Respects prefers-reduced-motion
+ * - Provides focus-visible outlines for keyboard navigation
+ * - Ensures minimum contrast on interactive elements
+ */
+
+/* Reduced motion: disable or slow all animations */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    /* Stop canvas animations from auto-playing */
+    canvas {
+        animation: none !important;
+    }
+}
+
+/* Focus-visible outlines for keyboard users */
+:focus-visible {
+    outline: 2px solid rgba(0, 255, 200, 0.7);
+    outline-offset: 2px;
+}
+
+/* Remove outlines for mouse users */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Skip to content link (hidden until focused) */
+.skip-to-content {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #0fc;
+    color: #000;
+    padding: 8px 16px;
+    z-index: 10000;
+    font-size: 14px;
+    text-decoration: none;
+    transition: top 0.2s;
+}
+
+.skip-to-content:focus {
+    top: 0;
+}
+
+/* Ensure interactive controls have readable labels */
+button,
+[role="button"],
+select,
+input[type="range"] {
+    cursor: pointer;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+    canvas {
+        border: 1px solid ButtonText;
+    }
+
+    button,
+    [role="button"] {
+        border: 1px solid ButtonText;
+    }
+}
