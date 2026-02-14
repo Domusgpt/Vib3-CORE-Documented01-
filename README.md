@@ -2,9 +2,10 @@
 
 **General-purpose 4D rotation visualization SDK** for plugins, extensions, wearables, and agentic AI integration.
 
-[![Tests](https://img.shields.io/badge/tests-693%2B%20passing-brightgreen)](#testing)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue)](#)
+[![Tests](https://img.shields.io/badge/tests-933%20passing-brightgreen)](#testing)
+[![Version](https://img.shields.io/badge/version-2.0.1-blue)](https://www.npmjs.com/package/@vib3code/sdk)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![npm](https://img.shields.io/npm/v/@vib3code/sdk)](https://www.npmjs.com/package/@vib3code/sdk)
 
 ---
 
@@ -16,7 +17,7 @@
 | **Rotation Planes** | 6 (XY, XZ, YZ + XW, YW, ZW) |
 | **Geometries** | 24 per system (8 base × 3 cores) |
 | **Canvas Layers** | 5 per system |
-| **MCP Tools** | 14 agent-accessible tools |
+| **MCP Tools** | 20 agent-accessible tools |
 
 ---
 
@@ -26,7 +27,7 @@
 - **24 Geometry Variants:** 8 base shapes × 3 core warp types (Base, Hypersphere, Hypertetrahedron)
 - **6D Rotation:** Full control over 3D planes (XY/XZ/YZ) and 4D hyperspace planes (XW/YW/ZW)
 - **Audio Reactivity:** Real-time visualization response to audio input (all 3 systems)
-- **Agentic Integration:** MCP server with 14 tools for AI agent control
+- **Agentic Integration:** MCP server with 20 tools for AI agent control
 - **Cross-Platform:** Web, WASM, Flutter support
 
 ### New in v2.0.0
@@ -41,28 +42,56 @@
 
 ## Quick Start
 
-```bash
-# Scaffold a new project
-npx @vib3code/sdk init my-app
-cd my-app
-npm install
-npm run dev
-```
-
-Or add to an existing project:
+### 1. Install
 
 ```bash
 npm install @vib3code/sdk
 ```
 
+### 2. Render in 5 lines
+
 ```javascript
 import { VIB3Engine } from '@vib3code/sdk/core';
 
 const engine = new VIB3Engine();
-await engine.initialize();
-await engine.switchSystem('quantum');
-engine.setParameter('geometry', 10);
-engine.setParameter('hue', 200);
+(async () => {
+  await engine.initialize();
+  await engine.switchSystem('quantum');
+  engine.setParameter('geometry', 10);  // Hypersphere + Sphere
+  engine.setParameter('hue', 200);
+})();
+```
+
+### 3. Complete working example
+
+Copy this into an HTML file and open it:
+
+```html
+<!DOCTYPE html>
+<html>
+<body style="margin:0;background:#000;">
+  <div id="vib3" style="width:100vw;height:100vh;"></div>
+  <script type="module">
+    import { VIB3Engine } from '@vib3code/sdk/core';
+    const engine = new VIB3Engine();
+    (async () => {
+      await engine.initialize('vib3');
+      await engine.switchSystem('quantum');
+      engine.setParameter('geometry', 10);
+      engine.setParameter('rot4dXW', 1.57);
+    })();
+  </script>
+</body>
+</html>
+```
+
+### 4. Or scaffold a full project
+
+```bash
+npx @vib3code/sdk init my-app
+cd my-app
+npm install
+npm run dev
 ```
 
 ### Development (this repo)
@@ -355,7 +384,7 @@ echo 'geometry 10' | node src/cli/index.js
 ├── tools/                    # Tooling (+ shader-sync-verify.js)
 ├── cpp/                      # C++ math core (WASM)
 ├── js/                       # Client-side integration
-├── tests/                    # Test suite (693+ tests)
+├── tests/                    # Test suite (933 tests)
 ├── DOCS/                     # Documentation
 │   ├── SYSTEM_INVENTORY.md   # Complete system reference
 │   ├── SYSTEM_AUDIT_2026-01-30.md  # Full system audit
@@ -379,21 +408,44 @@ npm test -- --coverage
 npm test -- tests/agent/AgentCLI.test.js
 ```
 
-**Current Status:** 693+ tests passing
+**Current Status:** 933 tests passing
+
+---
+
+## Bundle Size
+
+| Import | Gzipped | Description |
+|--------|---------|-------------|
+| Full package (npm) | ~653 KB | All systems, integrations, advanced features |
+| `@vib3code/sdk/core` | ~15 KB | Engine only, no visualization systems |
+| `+ quantum` | ~45 KB | Core + Quantum system |
+| `+ faceted` | ~40 KB | Core + Faceted system |
+| `+ holographic` | ~50 KB | Core + Holographic system |
+
+Run `npm run analyze:bundle` to inspect your specific imports.
 
 ---
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [`DOCS/SYSTEM_INVENTORY.md`](DOCS/SYSTEM_INVENTORY.md) | Complete technical reference (v2.0.0) |
-| [`DOCS/SYSTEM_AUDIT_2026-01-30.md`](DOCS/SYSTEM_AUDIT_2026-01-30.md) | Full system audit (v2.0.0) |
-| [`DOCS/CLI_ONBOARDING.md`](DOCS/CLI_ONBOARDING.md) | Agent CLI setup guide |
-| [`DOCS/CONTROL_REFERENCE.md`](DOCS/CONTROL_REFERENCE.md) | UI parameter reference |
-| [`24-GEOMETRY-6D-ROTATION-SUMMARY.md`](24-GEOMETRY-6D-ROTATION-SUMMARY.md) | Geometry encoding details |
-| [`DOCS/GPU_DISPOSAL_GUIDE.md`](DOCS/GPU_DISPOSAL_GUIDE.md) | Resource management |
-| [`CLAUDE.md`](CLAUDE.md) | AI/Developer technical reference (v2.0.0) |
+**Start here:**
+
+| Document | What you'll learn |
+|----------|-------------------|
+| [`CLAUDE.md`](CLAUDE.md) | Full technical reference — architecture, shader system, all APIs |
+| [`DOCS/SYSTEM_INVENTORY.md`](DOCS/SYSTEM_INVENTORY.md) | Complete system inventory with line counts and capabilities |
+| [`DOCS/CONTROL_REFERENCE.md`](DOCS/CONTROL_REFERENCE.md) | Every parameter, its range, and what it does |
+
+**Deep dives:**
+
+| Document | What you'll learn |
+|----------|-------------------|
+| [`DOCS/SYSTEM_AUDIT_2026-01-30.md`](DOCS/SYSTEM_AUDIT_2026-01-30.md) | Full system audit — what works, what doesn't, what's planned |
+| [`DOCS/CLI_ONBOARDING.md`](DOCS/CLI_ONBOARDING.md) | Setting up the agent CLI interface |
+| [`DOCS/GPU_DISPOSAL_GUIDE.md`](DOCS/GPU_DISPOSAL_GUIDE.md) | WebGL context lifecycle and resource management |
+| [`DOCS/EXPORT_FORMATS.md`](DOCS/EXPORT_FORMATS.md) | VIB3Package, Trading Card, Lottie export specs |
+| [`DOCS/OBS_SETUP_GUIDE.md`](DOCS/OBS_SETUP_GUIDE.md) | OBS browser source integration |
+| [`24-GEOMETRY-6D-ROTATION-SUMMARY.md`](24-GEOMETRY-6D-ROTATION-SUMMARY.md) | Geometry encoding formula and all 24 variants |
 
 ---
 

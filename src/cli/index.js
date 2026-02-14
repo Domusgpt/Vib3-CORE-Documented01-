@@ -644,8 +644,11 @@ async function handleInit(parsed, startTime) {
     writeFileSync(join(projectDir, 'main.js'), `import { VIB3Engine } from '@vib3code/sdk/core';
 
 const engine = new VIB3Engine();
-await engine.initialize();
-await engine.switchSystem('quantum');
+
+(async () => {
+  await engine.initialize();
+  await engine.switchSystem('quantum');
+})();
 
 document.getElementById('sys').addEventListener('change', (e) => engine.switchSystem(e.target.value));
 document.getElementById('geo').addEventListener('input', (e) => engine.setParameter('geometry', +e.target.value));
